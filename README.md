@@ -1,7 +1,8 @@
 After install BMv2 to your system, you need to do some addtional linking work enabling NS-3 to find BM library.
 
 `$ sudo vim /usr/local/lib/pkgconfig/bm.pc`
-paste in:
+
+Paste in:
 ```
 prefix=/usr/local
 exec_prefix=${prefix}
@@ -18,7 +19,7 @@ Cflags: -I${includedir}
 
 `$ sudo vim /usr/local/lib/pkgconfig/boost_system.pc`
 
-paste in:
+Paste:
 
 ```
 prefix=/usr/lib/
@@ -37,6 +38,7 @@ Cflags: -I${includedir}
 Now go back to your ns root folder, and run 
 
 `$ ./waf configure --enable-examples`
+
 `$ ./waf --run src/p4/examples/p4-example`
 
 Cheers!
