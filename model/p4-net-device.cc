@@ -56,7 +56,11 @@ int P4NetDevice::GetPortNumber(Ptr<NetDevice> port){
 P4NetDevice::P4NetDevice(){
 	NS_LOG_FUNCTION_NOARGS ();
 	p4Model = new P4Model;
-	p4Model->init(0,0);
+	char * a1 =(char*) &("--thrift-port"[0u]);
+	char * a2 =(char*) &"9091"[0u];
+	char * a3 =(char*) &"--no-p4"[0u];
+	char * args[3] = {a1,a2,a3};
+	p4Model->init(3,args);
 	NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 	}
 

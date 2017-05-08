@@ -48,7 +48,7 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 static void SinkRx (Ptr<const Packet> p, const Address &ad)
 {
-  std::cout << "Received from "<< ad << std::endl;
+  std::cout << "Received from  "<< ad << std::endl;
 }
 
 static void PingRtt (std::string context, Time rtt)
@@ -151,7 +151,7 @@ main (int argc, char *argv[])
  NodeContainer pingers;
  pingers.Add (terminals.Get (0));
  pingers.Add (terminals.Get (1));
- pingers.Add (terminals.Get (3));
+ pingers.Add (terminals.Get (2));
  apps = ping.Install (pingers);
  apps.Start (Seconds (2.0));
  apps.Stop (Seconds (5.0));
