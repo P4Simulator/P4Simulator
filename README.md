@@ -33,3 +33,10 @@ Libs: -L. -lboost_system
 Cflags: -I${includedir}
 
 ```
+
+Now go back to your ns root folder, and run 
+
+`$ ./waf configure --enable-examples`
+`$ ./waf --run src/p4/examples/p4-example`
+
+Cheers!
