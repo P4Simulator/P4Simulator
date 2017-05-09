@@ -67,8 +67,8 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
 	int egress_port_num = egress_packetandport->port_num;
 	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
-	Address * tmp_address = new Address;
-	outNetDevice->Send(egress_packet,*tmp_address,0);
+	Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
+	outNetDevice->Send(egress_packet->Copy(),dst48,0);
 }
 
 
