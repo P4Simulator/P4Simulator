@@ -46,12 +46,12 @@ private:
 };
 struct ns3PacketAndPort{
 	int port_num;
-	ns3::Packet * packet;
+	Packet * packet;
 };
 
 struct bm2PacketAndPort{
 	int port_num;
-	bm::Packet * packet;
+	std::unique_ptr<bm::Packet> packet;
 };
 
 
