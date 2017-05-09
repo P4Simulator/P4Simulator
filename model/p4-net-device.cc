@@ -1,12 +1,39 @@
 #include "p4-net-device.h"
 #include "ns3/log.h"
 #include <bm/bm_sim/switch.h>
-
+#include "ns3/node.h"
 using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
 
 NS_LOG_COMPONENT_DEFINE ("P4NetDevice");
+
+void
+P4NetDevice::AddBridgePort (Ptr<NetDevice> bridgePort)
+{
+  //NS_LOG_FUNCTION_NOARGS ();
+ // NS_ASSERT (bridgePort != this);
+  if (!Mac48Address::IsMatchingType (bridgePort->GetAddress ()))
+    {
+      NS_FATAL_ERROR ("Device does not support eui 48 addresses: cannot be added to bridge.");
+    }
+  if (!bridgePort->SupportsSendFrom ())
+    {
+      NS_FATAL_ERROR ("Device does not support SendFrom: cannot be added to bridge.");
+    }
+  if (m_address == Mac48Address ())
+    {
+      m_address = Mac48Address::ConvertFrom (bridgePort->GetAddress ());
+    }
+
+ // NS_LOG_DEBUG ("RegisterProtocolHandler for " << bridgePort->GetInstanceTypeId ().GetName ());
+  m_node->RegisterProtocolHandler (MakeCallback (&P4NetDevice::ReceiveFromDevice, this),
+                                   0, bridgePort, true);
+  m_ports.push_back (bridgePort);
+  m_channel->AddChannel (bridgePort->GetChannel ());
+}
+
+
 TypeId P4NetDevice::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::P4NetDevice")
@@ -27,19 +54,20 @@ TypeId P4Model::GetTypeId (void)
     ;
   return tid;
 }
-int P4NetDevice::ReceiveFromDevice(Ptr<NetDevice> device, Ptr<ns3::Packet> packet, uint16_t protocol,
+void
+P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet> packet_in, uint16_t protocol,
         Address const &source, Address const &destination, PacketType packetType){
 	int port_num = GetPortNumber(device);
+	//int port_num = device->get;
 	struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
 	ns3packet->port_num = port_num;
-	ns3packet->packet = packet.operator ->();
+	ns3packet->packet = packet_in->Copy().operator ->();
 	struct ns3PacketAndPort * egress_packetandport = p4Model->receivePacket(ns3packet);
 	Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
 	int egress_port_num = egress_packetandport->port_num;
 	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
 	Address * tmp_address = new Address;
-	int result = outNetDevice->Send(packet,*tmp_address,0);
-	return result;
+	outNetDevice->Send(egress_packet,*tmp_address,0);
 }
 
 
@@ -144,10 +172,11 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(struct bm2PacketAndPort *bm2packet)
 }
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(struct ns3PacketAndPort *ns3packet){
+	void * buffer = new uint8_t *[sizeof(uint8_t)*MAXSIZE];
+	ns3packet->packet->SetNixVector(NULL);
 	struct bm2PacketAndPort * ret = new struct bm2PacketAndPort;
 	int len = ns3packet->packet->GetSize();
 	int port_num = ns3packet->port_num;
-	void * buffer = new uint8_t *[sizeof(uint8_t)*MAXSIZE];
 	if (ns3packet->packet->Serialize((uint8_t *)buffer,MAXSIZE)){
 		 std::unique_ptr<bm::Packet> packet_= new_packet_ptr(port_num, pktID++, len,
 				bm::PacketBuffer(len + 512, (char *)buffer, len));
@@ -156,5 +185,3 @@ struct bm2PacketAndPort * P4Model::ns3tobmv2(struct ns3PacketAndPort *ns3packet)
 	ret-> port_num = port_num;
 	return ret;
 }
-
-

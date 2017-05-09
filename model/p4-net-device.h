@@ -57,9 +57,10 @@ struct bm2PacketAndPort{
 
 class P4NetDevice :public BridgeNetDevice{
 public:
+	void AddBridgePort(Ptr<NetDevice> bridgePort);
 	static TypeId GetTypeId (void);
 	P4NetDevice();
-	int ReceiveFromDevice(Ptr<NetDevice> device, Ptr<ns3::Packet> packet, uint16_t protocol,
+	void ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet> packet, uint16_t protocol,
 	        Address const &source, Address const &destination, PacketType packetType);
 private:
 	P4Model* p4Model ;
