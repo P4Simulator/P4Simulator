@@ -35,6 +35,25 @@ Cflags: -I${includedir}
 
 ```
 
+`$ sudo vim /usr/local/lib/pkgconfig/simple_switch.pc`
+
+Paste:
+
+``` 
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=/usr/local/include/bm
+
+Name: simple switch
+Description: Behaviral Model
+Version: 0.0.0
+Libs: -L${libdir} -lsimpleswitch_thrift
+Cflags: -I${includedir}
+```
+
+
+
 Now go back to your ns root folder, and run 
 
 `$ ./waf configure --enable-examples`
