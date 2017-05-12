@@ -10,10 +10,6 @@ def configure(conf):
     have_boost = conf.check_cfg(package='boost_system',uselib_store='BOOST' ,
                                   args=['--cflags', '--libs'],
                                   mandatory=True)
-    have_sw = conf.check_cfg(package='simple_switch',uselib_store='SW' ,
-                                  args=['--cflags', '--libs'],
-                                  mandatory=True)
-
 #    conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
 #    conf.env.append_value("LINKFLAGS", ["-L/usr/local/lib","bmall"])
 def build(bld):
@@ -22,7 +18,6 @@ def build(bld):
     module.source = [
         'model/p4-net-device.cc',
         'helper/p4-helper.cc',
-        'model/primitives.cpp'
         ]
 
     module_test = bld.create_ns3_module_test_library('p4')
@@ -42,4 +37,3 @@ def build(bld):
     # bld.ns3_python_bindings()
     module.use.append("BM")
     module.use.append("BOOST")
-    module.use.append("SW")

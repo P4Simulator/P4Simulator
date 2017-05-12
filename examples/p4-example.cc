@@ -36,7 +36,6 @@
 #include "ns3/applications-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/p4-model.h"
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 
@@ -112,6 +111,7 @@ main (int argc, char *argv[])
   Ptr<Node> switchNode = csmaSwitch.Get (0);
  // P4Helper bridge;
   P4Helper bridge;
+  NS_LOG_INFO("P4 bridge established");
   bridge.Install (switchNode, switchDevices);
 
   // Add internet stack to the terminals
