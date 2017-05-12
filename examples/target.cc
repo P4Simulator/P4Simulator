@@ -36,6 +36,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
+#include "ns3/p4-model.h"
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 
@@ -72,7 +73,7 @@ main (int argc, char *argv[])
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
  // LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_INFO);
+  LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
 
 
 
@@ -115,7 +116,6 @@ main (int argc, char *argv[])
 
   if (p4){
   P4Helper bridge;
-  NS_LOG_INFO("P4 bridge established");
   bridge.Install (switchNode, switchDevices);
 }
   else {
