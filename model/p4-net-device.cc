@@ -68,7 +68,8 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	int egress_port_num = egress_packetandport->port_num;
 	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
 	Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
-	outNetDevice->Send(egress_packet->Copy(),dst48,0);
+	std::cout<<"Send Called  "<<egress_packet.operator->()<<"\n";//TODO
+	outNetDevice->Send(egress_packet,dst48,0);
 }
 
 
@@ -174,7 +175,7 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(struct bm2PacketAndPort *bm2packet)
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(struct ns3PacketAndPort *ns3packet){
 	void * buffer = new uint8_t *[sizeof(uint8_t)*MAXSIZE];
-	ns3packet->packet->SetNixVector(NULL);
+	//ns3packet->packet->SetNixVector(NULL);
 	struct bm2PacketAndPort * ret = new struct bm2PacketAndPort;
 	int len = ns3packet->packet->GetSize();
 	int port_num = ns3packet->port_num;

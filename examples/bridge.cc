@@ -63,7 +63,7 @@ static void PingRtt (std::string context, Time rtt)
 int
 main (int argc, char *argv[])
 {
-	  int p4 = 1;
+	  int p4 = 0;
 
   //
   // Users may find it convenient to turn on explicit debugging
@@ -73,7 +73,7 @@ main (int argc, char *argv[])
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
  // LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_INFO);
+  //LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
 
 
 

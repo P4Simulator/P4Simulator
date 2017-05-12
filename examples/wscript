@@ -2,5 +2,7 @@
 
 def build(bld):
     obj = bld.create_ns3_program('p4-example', ['p4'])
-    obj.source = 'p4-example.cc'
+    obj1 = bld.create_ns3_program('bridge_ref',['p4'])
+    obj.source = ['p4-example.cc']
+    obj1.source = ['bridge.cc']
 
