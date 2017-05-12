@@ -36,7 +36,6 @@
 #include "ns3/applications-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/p4-model.h"
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 
