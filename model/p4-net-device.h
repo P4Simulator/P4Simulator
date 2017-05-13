@@ -42,7 +42,7 @@ private:
 	int pktID = 0;
     using clock = std::chrono::high_resolution_clock;
     bm::TargetParserBasic * argParser;
-
+	std::shared_ptr<bm::McSimplePre> pre;
 };
 struct ns3PacketAndPort{
 	int port_num;
