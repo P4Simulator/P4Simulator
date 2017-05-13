@@ -164,25 +164,94 @@
     "meter_arrays": [],
     "actions": [
         {
-            "name": "_nop",
+            "name": "mac_learn",
             "id": 0,
             "runtime_data": [],
-            "primitives": []
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "intrinsic_metadata",
+                                "learn_id"
+                            ]
+                        },
+                        {
+                            "type": "hexstr",
+                            "value": "0x0"
+                        }
+                    ]
+                },
+                {
+                    "op": "generate_digest",
+                    "parameters": [
+                        {
+                            "type": "hexstr",
+                            "value": "0x1"
+                        },
+                        {
+                            "type": "hexstr",
+                            "value": "0x1"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "name": "broadcast",
             "id": 1,
             "runtime_data": [],
-            "primitives": []
-        },
-        {
-            "name": "mac_learn",
-            "id": 2,
-            "runtime_data": [],
-            "primitives": []
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "intrinsic_metadata",
+                                "mgid"
+                            ]
+                        },
+                        {
+                            "type": "hexstr",
+                            "value": "0x1"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "name": "forward",
+            "id": 2,
+            "runtime_data": [
+                {
+                    "name": "port",
+                    "bitwidth": 9
+                }
+            ],
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "standard_metadata",
+                                "egress_port"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "_nop",
             "id": 3,
             "runtime_data": [],
             "primitives": []
@@ -267,7 +336,28 @@
     ],
     "calculations": [],
     "checksums": [],
-    "learn_lists": [],
+    "learn_lists": [
+        {
+            "id": 1,
+            "name": "mac_learn_digest",
+            "elements": [
+                {
+                    "type": "field",
+                    "value": [
+                        "ethernet",
+                        "srcAddr"
+                    ]
+                },
+                {
+                    "type": "field",
+                    "value": [
+                        "standard_metadata",
+                        "ingress_port"
+                    ]
+                }
+            ]
+        }
+    ],
     "field_lists": [],
     "counter_arrays": [],
     "register_arrays": [],
