@@ -6,6 +6,14 @@
 #include <bm/SimpleSwitch.h>
 #include "ns3/node.h"
 #include <memory.h>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
+#include <chrono>         // std::chrono::seconds
+#include <thread>
 using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -15,6 +23,19 @@ NS_LOG_COMPONENT_DEFINE ("P4NetDevice");
 // namespace sswitch_runtime {
 // shared_ptr<SimpleSwitchIf> get_handler(bm::SwitchWContexts *sw);
 // }  // namespace sswitch_runtime
+
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != NULL)
+            result += buffer.data();
+    }
+    return result;
+}
 
 void
 P4NetDevice::AddBridgePort (Ptr<NetDevice> bridgePort)
@@ -74,8 +95,12 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
 	int egress_port_num = egress_packetandport->port_num;
 	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
-	Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
-	std::cout<<"Send Called  "<<egress_packet.operator->()<<"\n";//TODO
+	//TODO
+	//Mac48Address dst48 = Mac48Address::ConvertFrom (outNetDevice);
+	Mac48Address dst48 = Mac48Address::ConvertFrom(outNetDevice->GetAddress());
+
+	std::cout<<"Send Called  "<<egress_packet.operator->()<<"\n";
+	//TODO
 	outNetDevice->Send(egress_packet,dst48,0);
 }
 
@@ -95,7 +120,7 @@ P4NetDevice::P4NetDevice(){
 	p4Model = new P4Model;
 	//char * a1 =(char*) &("--thrift-port"[0u]);
 	//char * a2 =(char*) &"9091"[0u];
-	char * a3 =(char*) &"/home/yhs/p4-sdn/l2_switch.json"[0u];
+	char * a3 =(char*) &"/home/mark/workspace/NS4/src/p4/l2_switch.json"[0u];
 	char * args[2] = {NULL,a3};
 	p4Model->init(2,args);
 	NS_LOG_LOGIC("A P4 Netdevice was initialized.");
@@ -142,8 +167,11 @@ int P4Model::init(int argc, char *argv[]){
     this->init_from_command_line_options(argc, argv, argParser);
     int thrift_port = this->get_runtime_port();
     bm_runtime::start_server(this, thrift_port);
+    //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
+    std::cout<<"\n Night is coming. Sleep for 10 seconds.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
     return 0;
 }
