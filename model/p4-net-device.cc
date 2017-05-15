@@ -124,7 +124,7 @@ P4NetDevice::P4NetDevice(){
 	p4Model = new P4Model;
 	//char * a1 =(char*) &("--thrift-port"[0u]);
 	//char * a2 =(char*) &"9091"[0u];
-	char * a3 =(char*) &"/home/mark/workspace/NS4/src/p4/l2_switch.json"[0u];
+	char * a3 =(char*) &"/home/yhs/workspace/ns-3-dev/src/p4/l2_switch.json"[0u];
 	char * args[2] = {NULL,a3};
 	p4Model->init(2,args);
 	NS_LOG_LOGIC("A P4 Netdevice was initialized.");
