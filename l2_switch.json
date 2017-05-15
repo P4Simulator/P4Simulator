@@ -221,25 +221,61 @@
     "meter_arrays": [],
     "actions": [
         {
-            "name": "broadcast",
+            "name": "mac_learn",
             "id": 0,
             "runtime_data": [],
-            "primitives": []
+            "primitives": [
+                {
+                    "op": "generate_digest",
+                    "parameters": [
+                        {
+                            "type": "hexstr",
+                            "value": "0x1"
+                        },
+                        {
+                            "type": "hexstr",
+                            "value": "0x1"
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "name": "mac_learn",
+            "name": "forward",
             "id": 1,
-            "runtime_data": [],
-            "primitives": []
+            "runtime_data": [
+                {
+                    "name": "port",
+                    "bitwidth": 9
+                }
+            ],
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "standard_metadata",
+                                "egress_port"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "name": "_nop",
+            "name": "broadcast",
             "id": 2,
             "runtime_data": [],
             "primitives": []
         },
         {
-            "name": "forward",
+            "name": "_nop",
             "id": 3,
             "runtime_data": [],
             "primitives": []
@@ -324,7 +360,28 @@
     ],
     "calculations": [],
     "checksums": [],
-    "learn_lists": [],
+    "learn_lists": [
+        {
+            "id": 1,
+            "name": "mac_learn_digest",
+            "elements": [
+                {
+                    "type": "field",
+                    "value": [
+                        "ethernet",
+                        "srcAddr"
+                    ]
+                },
+                {
+                    "type": "field",
+                    "value": [
+                        "standard_metadata",
+                        "ingress_port"
+                    ]
+                }
+            ]
+        }
+    ],
     "field_lists": [],
     "counter_arrays": [],
     "register_arrays": [],
