@@ -93,6 +93,7 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	ns3packet->port_num = port_num;
 	ns3packet->packet = packet_in->Copy().operator ->();
 	struct ns3PacketAndPort * egress_packetandport = p4Model->receivePacket(ns3packet);
+	if (egress_packetandport){
 	Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
 	int egress_port_num = egress_packetandport->port_num;
 	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
@@ -103,6 +104,8 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	std::cout<<"Send Called  "<<egress_packet.operator->()<<"\n";
 	//TODO
 	outNetDevice->Send(egress_packet,dst48,0);
+	}
+	else std::cout<<"Null packet!\n";
 }
 
 
@@ -185,6 +188,7 @@ int P4Model::init(int argc, char *argv[]){
 struct ns3PacketAndPort * P4Model::receivePacket(struct ns3PacketAndPort *ns3packet){
 	struct bm2PacketAndPort * bm2packet= ns3tobmv2(ns3packet);
 	std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
+	if (packet){
 	int port_num = bm2packet->port_num;
 	int len = packet.get()->get_data_size();
 	packet.get()->set_ingress_port(port_num);
@@ -227,7 +231,8 @@ struct ns3PacketAndPort * P4Model::receivePacket(struct ns3PacketAndPort *ns3pac
     outPacket->packet = std::move(packet);
     outPacket->port_num = egress_port;
     return bmv2tons3(outPacket);
-
+	}
+	return NULL;
 }
 
 

@@ -72,7 +72,7 @@ main (int argc, char *argv[])
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
  // LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-  LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_INFO);
+  LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
 
 
 
