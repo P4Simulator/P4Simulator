@@ -96,7 +96,8 @@ P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet
 	if (egress_packetandport){
 	Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
 	int egress_port_num = egress_packetandport->port_num;
-	Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
+	std::cout<<"\n egress port = "<<egress_port_num;
+        Ptr<NetDevice>outNetDevice = GetBridgePort(egress_port_num);
 	//TODO
 	//Mac48Address dst48 = Mac48Address::ConvertFrom (outNetDevice);
 	Mac48Address dst48 = Mac48Address::ConvertFrom(outNetDevice->GetAddress());
@@ -124,7 +125,7 @@ P4NetDevice::P4NetDevice(){
 	p4Model = new P4Model;
 	//char * a1 =(char*) &("--thrift-port"[0u]);
 	//char * a2 =(char*) &"9091"[0u];
-	char * a3 =(char*) &"/home/yhs/workspace/ns-3-dev/src/p4/l2_switch.json"[0u];
+	char * a3 =(char*) &"/home/mark/workspace/NS4/src/p4/test/test.json"[0u];
 	char * args[2] = {NULL,a3};
 	p4Model->init(2,args);
 	NS_LOG_LOGIC("A P4 Netdevice was initialized.");

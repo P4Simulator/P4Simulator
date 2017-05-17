@@ -1,0 +1,2 @@
+table_set_default test _drop()
+table_add test try_modify_egress 10 => 99
