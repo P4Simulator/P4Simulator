@@ -8,6 +8,6 @@ We also provided beginners' guide to help you get started.
 2. [Build and Install NS4](https://github.com/ns-4/NS4/wiki/Build-and-Install-NS4)
 3. [A Hands-on Example](https://github.com/ns-4/NS4/wiki/A-Hands-on-Example)
 
-NS4 is now being developed by students at NetArch Lab at Tsinghua University. NS4 is an open-source project under [Apache License 2.0](https://github.com/ns-4/NS4/blob/master/License.md) We are longing for contributions. See [How to Contribute](https://github.com/ns-4/NS4/wiki/How-to-contribute) for details.sdf
+NS4 is now being developed by NetArch Lab at Tsinghua University. NS4 is an open-source project under [Apache License 2.0](https://github.com/ns-4/NS4/blob/master/License.md). We are longing for contributions. See [How to Contribute](https://github.com/ns-4/NS4/wiki/How-to-contribute) for details.
 
 *This project is still under development at this time and may not support all P4 programs.*
