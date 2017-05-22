@@ -1,6 +1,7 @@
 
-# This is a installation and usage instructions for NS4. 
----
+# This is a installation and usage instructions for NS4.(Under development) 
+
+# A virtual machine version is being prepared and will be released soon. Stay tuned!
 
 We now implemented NS4 prototype based on [ns-3](https://www.nsnam.org ns-3 homepage) and [bmv2](https://github.com/p4lang/behavioral-model behavioral-model). To install NS4 enviornment, please follow  [NS4 Installation Instructions](#install). To run a demo of NS4, follow [NS4 Simulation Instructions](#simulate)
 
