@@ -1,5 +1,6 @@
 #ifndef NS4_NS4_MODEL_H_H
 #define NS4_NS4_MODEL_H_H
+#include <vector>
 #include "ns3/log.h"
 #include <ns3/bridge-net-device.h>
 #include <ns3/net-device.h>
@@ -19,9 +20,6 @@
 #include <bm/bm_sim/logger.h>
 #include <bm/bm_sim/switch.h>
 #include <chrono>
-
-
-
 
 using namespace ns3;
 
@@ -45,13 +43,13 @@ using namespace ns3;
  * loss of metadata. We are currently working on reserving the metadata.
  *
  */
-class P4Model : public bm::Switch{
+class P4Model: public bm::Switch {
 public:
 	/**
 	 * \brief Get the type ID.
 	 * \return the object TypeId
 	 */
-	static TypeId GetTypeId (void);
+	static TypeId GetTypeId(void);
 
 	/**
 	 * \brief a function from bm which will be called every time a
@@ -61,15 +59,17 @@ public:
 	 * simulation enviornment. Instead we just borrow its processing pipeline,
 	 * which means this receive_() will never be called, so we just return 0.
 	 */
-	int receive_(int port_num, const char *buffer, int len) {return 0;}
+	int receive_(int port_num, const char *buffer, int len) {
+		return 0;
+	}
 
 	/**
 	 * \brief a function from bm called to initialize the P4 device.
 	 *
 	 * Never called either for the same reason with receive_()
 	 */
-	void start_and_return_(){}
-
+	void start_and_return_() {
+	}
 
 	/**
 	 * \brief Process a packet using P4 pipeline. Called every time
@@ -80,7 +80,6 @@ public:
 	 * transmission.
 	 */
 	struct ns3PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
-
 
 	/**
 	 * \brief Initialize the P4 Model
@@ -116,8 +115,6 @@ private:
 	 */
 	struct bm2PacketAndPort * ns3tobmv2(struct ns3PacketAndPort * ns3packet);
 
-
-
 	/**
 	 * \brief Transform a bm::packet and a ns::packet
 	 *
@@ -130,22 +127,17 @@ private:
 	 */
 	int pktID = 0;
 
+	using clock = std::chrono::high_resolution_clock;
 
-    using clock = std::chrono::high_resolution_clock;
+	/**
+	 * \brief Structure of parsers
+	 */
+	bm::TargetParserBasic * argParser;
 
-
-
-    /**
-     * \brief Structure of parsers
-     */
-    bm::TargetParserBasic * argParser;
-
-
-
-    /**
-     * A simple, 2-level, packet replication engine,
-     * configurable by the control plane.
-     */
+	/**
+	 * A simple, 2-level, packet replication engine,
+	 * configurable by the control plane.
+	 */
 	std::shared_ptr<bm::McSimplePre> pre;
 };
 
@@ -155,7 +147,7 @@ private:
  *
  * \TODO Find a better way.
  */
-struct ns3PacketAndPort{
+struct ns3PacketAndPort {
 	int port_num;
 	Packet * packet;
 };
@@ -166,7 +158,7 @@ struct ns3PacketAndPort{
  *
  * \TODO Find a better way.
  */
-struct bm2PacketAndPort{
+struct bm2PacketAndPort {
 	int port_num;
 	std::unique_ptr<bm::Packet> packet;
 };
@@ -186,34 +178,109 @@ struct bm2PacketAndPort{
  * \TODO Create a new channel class supporting arbitrary underlying channel.
  *
  */
-class P4NetDevice :public BridgeNetDevice{
+class P4NetDevice: public NetDevice {
 public:
+	/**
+	 * \brief Get the type ID.
+	 * \return the object TypeId
+	 */
+	static TypeId GetTypeId(void);
+
+	P4NetDevice();
+	virtual ~P4NetDevice();
+
+	/**
+	 * \brief Gets the number of bridged 'ports', i.e., the NetDevices currently bridged.
+	 *
+	 * \return the number of bridged ports.
+	 */
+	uint32_t GetNBridgePorts(void) const;
+
+	/**
+	 * \brief Gets the n-th bridged port.
+	 * \param n the port index
+	 * \return the n-th bridged NetDevice
+	 */
+	Ptr<NetDevice> GetBridgePort(uint32_t n) const;
+
 	/**
 	 * \brief Add a port connected to the P4 target.
 	 * @param
 	 */
 	void AddBridgePort(Ptr<NetDevice> bridgePort);
 
-	/**
-	 * \brief Get TypeId
-	 */
-	static TypeId GetTypeId (void);
+	// inherited from NetDevice base class.
+	virtual void SetIfIndex(const uint32_t index);
+	virtual uint32_t GetIfIndex(void) const;
+	virtual Ptr<Channel> GetChannel(void) const;
+	virtual void SetAddress(Address address);
+	virtual Address GetAddress(void) const;
+	virtual bool SetMtu(const uint16_t mtu);
+	virtual uint16_t GetMtu(void) const;
+	virtual bool IsLinkUp(void) const;
+	virtual void AddLinkChangeCallback(Callback<void> callback);
+	virtual bool IsBroadcast(void) const;
+	virtual Address GetBroadcast(void) const;
+	virtual bool IsMulticast(void) const;
+	virtual Address GetMulticast(Ipv4Address multicastGroup) const;
+	virtual bool IsPointToPoint(void) const;
+	virtual bool IsBridge(void) const;
+	virtual bool Send(Ptr<Packet> packet, const Address& dest,
+			uint16_t protocolNumber);//Deprecated, use SendFrom instead.
+	virtual bool SendFrom(Ptr<Packet> packet, const Address& source,
+			const Address& dest, uint16_t protocolNumber,Ptr<NetDevice> outPort);
+	virtual Ptr<Node> GetNode(void) const;
+	virtual void SetNode(Ptr<Node> node);
+	virtual bool NeedsArp(void) const;
+	virtual void SetReceiveCallback(NetDevice::ReceiveCallback cb);
+	virtual void SetPromiscReceiveCallback(
+			NetDevice::PromiscReceiveCallback cb);
+	virtual bool SupportsSendFrom() const;
+	virtual Address GetMulticast(Ipv6Address addr) const;
 
-	P4NetDevice();
-
-
+protected:
+	  virtual void DoDispose (void);
 	/**
 	 * \brief Callback function when a new packet is received from one of
 	 * underlying channels. It sends the packet to P4 Model for modification
 	 * and sends it out.
 	 *
 	 */
-	void ReceiveFromDevice(Ptr<ns3::NetDevice> device, Ptr<const ns3::Packet> packet, uint16_t protocol,
-	        Address const &source, Address const &destination, PacketType packetType);
+	void ReceiveFromDevice(Ptr<ns3::NetDevice> device,
+			Ptr<const ns3::Packet> packet, uint16_t protocol,
+			Address const &source, Address const &destination,
+			PacketType packetType);
+
 private:
-	P4Model* p4Model ;
+	P4Model* p4Model;
+	/**
+	 * \brief Copy constructor
+	 *
+	 * Defined and unimplemented to avoid misuse
+	 */
+	P4NetDevice(const BridgeNetDevice &);
+
+	/**
+	 * \brief Copy constructor
+	 *
+	 * Defined and unimplemented to avoid misuse
+	 * \returns
+	 */
+	BridgeNetDevice &operator =(const BridgeNetDevice &);
+
+	NetDevice::ReceiveCallback m_rxCallback; //!< receive callback
+	NetDevice::PromiscReceiveCallback m_promiscRxCallback; //!< promiscuous receive callback
+
+	Mac48Address m_address; //!< MAC address of the NetDevice
+	Ptr<Node> m_node; //!< node owning this NetDevice
+	Ptr<BridgeChannel> m_channel; //!< virtual bridged channel
+	uint32_t m_ifIndex; //!< Interface index
+	uint16_t m_mtu; //!< MTU of the bridged NetDevice
+
+	/**
+	 * \brief get the port number of a net device connected to P4 net device.
+	 */
 	int GetPortNumber(Ptr<NetDevice>);
-};
+}; //namespace ns3
 
-
-#endif
+#endif/* NS4_NS4_MODEL_H_H */
