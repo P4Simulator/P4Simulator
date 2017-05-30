@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <array>
-#include <chrono>         // std::chrono::seconds
+#include <chrono>
 #include <thread>
 using namespace ns3;
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
@@ -26,6 +26,7 @@ NS_LOG_COMPONENT_DEFINE ("P4NetDevice");
 // }  // namespace sswitch_runtime
 
 
+// Run outside programs
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
