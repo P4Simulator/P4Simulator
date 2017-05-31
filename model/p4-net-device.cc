@@ -91,24 +91,51 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 		Address const &source, Address const &destination,
 		PacketType packetType) {
 	int port_num = GetPortNumber(device);
-	//int port_num = device->get;
 	struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
 	ns3packet->port_num = port_num;
 	ns3packet->packet = packet_in->Copy().operator ->();
-	struct ns3PacketAndPort * egress_packetandport = p4Model->receivePacket(
+	struct bm2PacketAndPort * egress_packetandport = p4Model->receivePacket(
 			ns3packet);
 	if (egress_packetandport) {
-		Ptr<ns3::Packet> egress_packet = egress_packetandport->packet;
+		Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
 		int egress_port_num = egress_packetandport->port_num;
 		std::cout << "\n egress port = " << egress_port_num;
 		Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
-		//TODO
-		//Mac48Address dst48 = Mac48Address::ConvertFrom (outNetDevice);
+		/******************************************************************
 		Mac48Address dst48 = Mac48Address::ConvertFrom(
 				outNetDevice->GetAddress());
+		******************************************************************/
 
+
+		/**
+		 * TODO The problem is that we cannot get the destination address
+		 * of the link layer and transmits it.
+		 *
+		 * To do this, we have to extract this info from bm packets and s
+		 * end it into the channel adapter, and then channel adapter do the trick.
+		 *
+		 * ChannelAdapter is a NetDevice. It receives and sends packets.
+		 *
+		 * When sending a packet, it first checks the outPort type, and
+		 * chooses the corresponding handling function. That channel-specific
+		 * function takes the packet and outPort as parameters and does:
+		 * 1. extract link layer destination address according to the protocol.
+		 * This should be done by manipulating packet headers or metadata (NOT sure)
+		 * (For example, MAC address for IEEE 802 series protocol)
+		 * 2. call the outPort's send function to transmit the packet.
+		 * (For example, Send(Ptr<Packet> packet, const Address& dest) for
+		 * IEEE 802 outPort)
+		 *
+		 */
+
+		dst = ChannelAdapter.getDest(egress_packet);//Not implementated yeta
+		outPacket = ns2bm(egress_packet);
+
+
+
+		if(SendPacket(egress_packet->Copy(),  dst, outNetDevice)){
 		std::cout << "Send Called  " << egress_packet.operator->() << "\n";
-		SendFrom (egress_packet->Copy(), m_address,  dst48, 0,outNetDevice);
+	}
 	} else
 		std::cout << "Null packet!\n";
 }
@@ -127,7 +154,6 @@ P4NetDevice::P4NetDevice() :
 	NS_LOG_FUNCTION_NOARGS ();
 	m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
 	p4Model = new P4Model;
-
 	char * a3 = (char*) &"/home/mark/workspace/NS4/src/p4/test/test.json"[0u];
 	char * args[2] = { NULL, a3 };
 	p4Model->init(2, args);
@@ -298,18 +324,20 @@ P4NetDevice::IsBridge (void) const
 bool
 P4NetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
+	return false;
 }
 
 bool
-P4NetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& dest, uint16_t protocolNumber,Ptr<NetDevice> outPort)
+P4NetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& dest, uint16_t protocolNumber)
 {
-  NS_LOG_FUNCTION_NOARGS ();
-  Mac48Address dst = Mac48Address::ConvertFrom (dest);
-  outPort->SendFrom (packet, src, dest, protocolNumber);
-  return true;
+	return false;
 }
 
 
+bool P4NetDevice::SendPacket(Ptr<Packet> packet, Ptr<NetDevice>outDevice){
+	  NS_LOG_FUNCTION_NOARGS ();
+	  outDevice->Send();
+}
 
 
 Ptr<Node>
@@ -414,7 +442,7 @@ int P4Model::init(int argc, char *argv[]) {
 	return 0;
 }
 
-struct ns3PacketAndPort * P4Model::receivePacket(
+struct bm2PacketAndPort * P4Model::receivePacket(
 		struct ns3PacketAndPort *ns3packet) {
 	struct bm2PacketAndPort * bm2packet = ns3tobmv2(ns3packet);
 	std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
@@ -460,7 +488,8 @@ struct ns3PacketAndPort * P4Model::receivePacket(
 		struct bm2PacketAndPort * outPacket = new struct bm2PacketAndPort;
 		outPacket->packet = std::move(packet);
 		outPacket->port_num = egress_port;
-		return bmv2tons3(outPacket);
+		return outPacket;
+		///return bmv2tons3(outPacket);
 	}
 	return NULL;
 }

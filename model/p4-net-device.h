@@ -79,7 +79,7 @@ public:
 	 * \return Processed ns-3 packet to be put back to P4 Device for
 	 * transmission.
 	 */
-	struct ns3PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
+	struct bm2PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
 
 	/**
 	 * \brief Initialize the P4 Model
@@ -209,6 +209,11 @@ public:
 	 */
 	void AddBridgePort(Ptr<NetDevice> bridgePort);
 
+	/**
+	 * \brief Send a packet to one of the ports.
+	 */
+	bool SendPacket(Ptr<Packet> packet, const Address& dest , Ptr<NetDevice>outDevice);
+
 	// inherited from NetDevice base class.
 	virtual void SetIfIndex(const uint32_t index);
 	virtual uint32_t GetIfIndex(void) const;
@@ -226,9 +231,9 @@ public:
 	virtual bool IsPointToPoint(void) const;
 	virtual bool IsBridge(void) const;
 	virtual bool Send(Ptr<Packet> packet, const Address& dest,
-			uint16_t protocolNumber);//Deprecated, use SendFrom instead.
+			uint16_t protocolNumber);//Deprecated, use SendPacket instead.
 	virtual bool SendFrom(Ptr<Packet> packet, const Address& source,
-			const Address& dest, uint16_t protocolNumber,Ptr<NetDevice> outPort);
+			const Address& dest, uint16_t protocolNumber);//Deprecated, use SendPacket instead.
 	virtual Ptr<Node> GetNode(void) const;
 	virtual void SetNode(Ptr<Node> node);
 	virtual bool NeedsArp(void) const;
