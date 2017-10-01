@@ -18,22 +18,23 @@ def configure(conf):
 #    conf.env.append_value("LINKFLAGS", ["-L/usr/local/lib","bmall"])
 def build(bld):
     all_modules = [mod[len("ns3-"):] for mod in bld.env['NS3_ENABLED_MODULES']]
-    module = bld.create_ns3_module('NS4', ['antenna', 'aodv', 'applications', 'bridge', 'buildings', 'config-store', 'core', 'csma', 'csma-layout', 'dsdv', 'dsr', 'energy', 'fd-net-device', 'flow-monitor', 'internet', 'internet-apps', 'lr-wpan', 'lte', 'mesh', 'mobility', 'mpi', 'netanim', 'network', 'nix-vector-routing', 'olsr', 'point-to-point', 'point-to-point-layout', 'propagation', 'sixlowpan', 'spectrum', 'stats', 'test', 'topology-read', 'traffic-control', 'uan', 'virtual-net-device', 'wave', 'wifi', 'wimax'])
+    module = bld.create_ns3_module('ns4', ['antenna', 'aodv', 'applications', 'bridge', 'buildings', 'config-store', 'core', 'csma', 'csma-layout', 'dsdv', 'dsr', 'energy', 'fd-net-device', 'flow-monitor', 'internet', 'internet-apps', 'lr-wpan', 'lte', 'mesh', 'mobility', 'mpi', 'netanim', 'network', 'nix-vector-routing', 'olsr', 'point-to-point', 'point-to-point-layout', 'propagation', 'sixlowpan', 'spectrum', 'stats', 'test', 'topology-read', 'traffic-control', 'uan', 'virtual-net-device', 'wave', 'wifi', 'wimax'])
     module.source = [
         'model/p4-net-device.cc',
         'helper/p4-helper.cc',
         'model/primitives.cpp'
         ]
 
-    module_test = bld.create_ns3_module_test_library('NS4')
+    module_test = bld.create_ns3_module_test_library('ns4')
     module_test.source = [
         'test/p4-test-suite.cc',
         ]
 
     headers = bld(features='ns3header')
-    headers.module = 'NS4'
+    headers.module = 'ns4'
     headers.source = [
         'model/p4-net-device.h',
+        'model/p4.h',
         'helper/p4-helper.h',
         ]
 
