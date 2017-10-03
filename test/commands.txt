@@ -1,2 +1,5 @@
-table_set_default test _drop()
-table_add test try_modify_egress 10 => 99
+table_set_default test _drop
+table_add test try_modify_egress 10.1.1.1 => 4
+table_add test try_modify_egress 10.1.1.2 => 4
+table_add test try_modify_egress 10.1.1.3 => 4
+table_add test try_modify_egress 10.1.1.4 => 4

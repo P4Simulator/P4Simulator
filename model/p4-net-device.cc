@@ -17,6 +17,8 @@
 #include <thread>
 using namespace ns3;
 
+#define MAXSIZE 512
+
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
 
@@ -79,30 +81,43 @@ void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
 //          ;
 //  return tid;
 // }
-// TypeId P4Model::GetTypeId(void) {
-//  static TypeId tid = TypeId("ns3::P4Model").SetParent<Object>().SetGroupName(
-//          "Network")
-//          // .AddConstructor<P4Model> ()
+TypeId P4Model::GetTypeId(void) {
+ static TypeId tid = TypeId("ns3::P4Model").SetParent<Object>().SetGroupName(
+         "Network")
+         // .AddConstructor<P4Model> ()
 
-//          ;
-//  return tid;
-// }
+         ;
+ return tid;
+}
 
 void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         Ptr<const ns3::Packet> packet_in, uint16_t protocol,
         Address const &source, Address const &destination,
         PacketType packetType) {
+    NS_LOG_FUNCTION(this);
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;
     ns3packet->packet = packet_in->Copy().operator ->();
-    struct bm2PacketAndPort * egress_packetandport = p4Model->receivePacket(
-            ns3packet);
+
+    uint8_t* buffer = new uint8_t [sizeof(uint8_t) * 148];
+    ns3packet->packet->Serialize((uint8_t *) buffer, 148);
+
+    NS_LOG_LOGIC("--------------");
+    ns3packet->packet->EnablePrinting();
+    ns3packet->packet->Print(std::cout);
+    // NS_LOG_LOGIC(sizeof(*(ns3packet->packet)));
+    // NS_LOG_LOGIC(ns3packet->packet->GetSerializedSize());
+
+    struct bm2PacketAndPort * egress_packetandport = p4Model->receivePacket(ns3packet);
+    NS_LOG_LOGIC(egress_packetandport->port_num);
+
     if (egress_packetandport) {
-        Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
-        int egress_port_num = egress_packetandport->port_num;
-        std::cout << "\n egress port = " << egress_port_num;
-        Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
+        // Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
+        // int egress_port_num = egress_packetandport->port_num;
+        // std::cout << "\n egress port = " << egress_port_num;
+        // Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
+
         /******************************************************************
         Mac48Address dst48 = Mac48Address::ConvertFrom(
                 outNetDevice->GetAddress());
@@ -130,12 +145,12 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
          *
          */
 
-        dst = ChannelAdapter.getDest(egress_packet);//Not implementated yeta
-        outPacket = ns2bm(egress_packet);
+        // dst = ChannelAdapter.getDest(egress_packet);//Not implementated yeta
+        // outPacket = ns2bm(egress_packet);
 
-        if(SendPacket(egress_packet->Copy(),  dst, outNetDevice)) {
-            std::cout << "Send Called  " << egress_packet.operator->() << "\n";
-        }
+        // if(SendPacket(egress_packet->Copy(),  dst, outNetDevice)) {
+        //     std::cout << "Send Called  " << egress_packet.operator->() << "\n";
+        // }
     } else std::cout << "Null packet!\n";
 }
 
@@ -149,38 +164,26 @@ int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
 }
 
 P4NetDevice::P4NetDevice() :
-        m_node(0), m_ifIndex(0) {
+    m_node(0), m_ifIndex(0) {
     NS_LOG_FUNCTION_NOARGS ();
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
-    char * a3 = (char*) &"/home/mark/workspace/NS4/src/p4/test/test.json"[0u];
+    char * a3 = (char*) &"/home/baijiasong/Codes/ns-allinone-3.26/ns-3.26/src/ns4/test/simple.json"[0u];
     char * args[2] = { NULL, a3 };
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 }
 
-void
-P4NetDevice::DoDispose () {
-    NS_LOG_FUNCTION_NOARGS ();
-    for (std::vector< Ptr<NetDevice> >::iterator iter = m_ports.begin (); iter != m_ports.end (); iter++)
-    {
-      *iter = 0;
-    }
-    m_ports.clear ();
-    m_channel = 0;
-    m_node = 0;
-    NetDevice::DoDispose ();
-}
-
 uint32_t
 P4NetDevice::GetNBridgePorts (void) const {
-    NS_LOG_FUNCTION_NOARGS ();
+    // NS_LOG_FUNCTION_NOARGS ();
     return m_ports.size ();
 }
 
 Ptr<NetDevice>
 P4NetDevice::GetBridgePort (uint32_t n) const {
-    NS_LOG_FUNCTION_NOARGS ();
+    // NS_LOG_FUNCTION_NOARGS ();
+    if (n >= m_ports.size()) return NULL;
     return m_ports[n];
 }
 
@@ -307,10 +310,17 @@ P4NetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& de
     return false;
 }
 
+bool
+P4NetDevice::SendPacket (Ptr<Packet> packet, const Address& dest, Ptr<NetDevice>outDevice) {
+    NS_LOG_FUNCTION_NOARGS ();
+    // outDevice->Send();
+    return false;
+}
 
 bool P4NetDevice::SendPacket(Ptr<Packet> packet, Ptr<NetDevice>outDevice){
     NS_LOG_FUNCTION_NOARGS ();
-    outDevice->Send();
+    // outDevice->Send();
+    return false;
 }
 
 
@@ -397,13 +407,14 @@ P4Model::P4Model() :
 }
 
 int P4Model::init(int argc, char *argv[]) {
+    NS_LOG_FUNCTION(this);
     this->init_from_command_line_options(argc, argv, argParser);
     int thrift_port = this->get_runtime_port();
     bm_runtime::start_server(this, thrift_port);
     //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
-    std::cout << "\n Night is coming. Sleep for 10 seconds.\n";
+    std::cout << "\nNight is coming. Sleep for 10 seconds.\n";
     std::this_thread::sleep_for(std::chrono::seconds(10));
     //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
     return 0;
@@ -424,8 +435,7 @@ struct bm2PacketAndPort * P4Model::receivePacket(
         //Field &f_instance_type = phv->get_field("standard_metadata.instance_type");
 
         if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
-            phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(
-                    0);
+            phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(0);
         }
 
         // Ingress
@@ -437,10 +447,9 @@ struct bm2PacketAndPort * P4Model::receivePacket(
 
         ingress_mau->apply(packet.get());
 
-        packet.get()->reset_exit();
+        packet->reset_exit();
 
-        bm::Field &f_egress_spec = phv->get_field(
-                "standard_metadata.egress_spec");
+        bm::Field &f_egress_spec = phv->get_field("standard_metadata.egress_spec");
         int egress_port = f_egress_spec.get_int();
 
         // Egress
@@ -463,6 +472,7 @@ struct bm2PacketAndPort * P4Model::receivePacket(
 
 struct ns3PacketAndPort * P4Model::bmv2tons3(
         struct bm2PacketAndPort *bm2packet) {
+    // NS_LOG_FUNCTION(this);
     struct ns3PacketAndPort * ret = new struct ns3PacketAndPort;
     // Extract and set buffer
     void *buffer_start = bm2packet->packet.get()->data();
@@ -477,14 +487,15 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
-    void * buffer = new uint8_t *[sizeof(uint8_t) * MAXSIZE];
+    // NS_LOG_FUNCTION(this);
+    void * buffer = new uint8_t [sizeof(uint8_t) * MAXSIZE];
     //ns3packet->packet->SetNixVector(NULL);
     struct bm2PacketAndPort * ret = new struct bm2PacketAndPort;
     int len = ns3packet->packet->GetSize();
     int port_num = ns3packet->port_num;
     if (ns3packet->packet->Serialize((uint8_t *) buffer, MAXSIZE)) {
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
-                len, bm::PacketBuffer(len + 512, (char *) buffer, len));
+            len, bm::PacketBuffer(len + 512, (char *) buffer, len));
         ret->packet = std::move(packet_);
     }
     ret->port_num = port_num;

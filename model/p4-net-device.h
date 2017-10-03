@@ -220,6 +220,7 @@ public:
     /**
      * \brief Send a packet to one of the ports.
      */
+    bool SendPacket(Ptr<Packet> packet, Ptr<NetDevice>outDevice);
     bool SendPacket(Ptr<Packet> packet, const Address& dest , Ptr<NetDevice>outDevice);
 
     // inherited from NetDevice base class.

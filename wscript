@@ -38,7 +38,7 @@ def build(bld):
         'helper/p4-helper.h',
         ]
 
-    if bld.env.ENABLE_EXAMPLES:
+    if bld.env['ENABLE_EXAMPLES']:
         bld.recurse('examples')
     # bld.ns3_python_bindings()
     module.use.append("BM")
