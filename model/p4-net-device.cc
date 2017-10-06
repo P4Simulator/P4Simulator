@@ -1,15 +1,19 @@
 #include "p4-net-device.h"
 #include "ns3/log.h"
+#include "ns3/node.h"
+
 #include <bm/bm_sim/switch.h>
 #include <bm/bm_sim/core/primitives.h>
 #include <bm/bm_runtime/bm_runtime.h>
 #include <bm/bm_sim/simple_pre.h>
 #include <bm/SimpleSwitch.h>
-#include "ns3/node.h"
+
 #include <memory.h>
-#include <cstdio>
-#include <iostream>
 #include <memory>
+#include <iomanip>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <array>
@@ -100,23 +104,24 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     ns3packet->port_num = port_num;
     ns3packet->packet = packet_in->Copy().operator ->();
 
-    uint8_t* buffer = new uint8_t [sizeof(uint8_t) * 148];
-    ns3packet->packet->Serialize((uint8_t *) buffer, 148);
+    // int bufferSize = ns3packet->packet->GetSize();
+    // uint8_t* buffer = new uint8_t [bufferSize];
+    // ns3packet->packet->CopyData(buffer, bufferSize);
 
-    NS_LOG_LOGIC("--------------");
-    ns3packet->packet->EnablePrinting();
+    // for (int i = 0; i < bufferSize; i ++) std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)buffer[i] << ' ';
+    // std::cout << '\n';
+
     ns3packet->packet->Print(std::cout);
-    // NS_LOG_LOGIC(sizeof(*(ns3packet->packet)));
-    // NS_LOG_LOGIC(ns3packet->packet->GetSerializedSize());
+    std::cout.flush();
 
     struct bm2PacketAndPort * egress_packetandport = p4Model->receivePacket(ns3packet);
     NS_LOG_LOGIC(egress_packetandport->port_num);
 
     if (egress_packetandport) {
-        // Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
-        // int egress_port_num = egress_packetandport->port_num;
-        // std::cout << "\n egress port = " << egress_port_num;
-        // Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
+        Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
+        int egress_port_num = egress_packetandport->port_num;
+        std::cout << "\n egress port = " << egress_port_num;
+        Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
 
         /******************************************************************
         Mac48Address dst48 = Mac48Address::ConvertFrom(
@@ -422,8 +427,15 @@ int P4Model::init(int argc, char *argv[]) {
 
 struct bm2PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {
+    NS_LOG_FUNCTION(this);
     struct bm2PacketAndPort * bm2packet = ns3tobmv2(ns3packet);
     std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
+
+    // char* bmData = packet->data();
+    // int dataSize = packet->get_data_size();
+    // for (int i = 0; i < dataSize; i ++) std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bmData[i] << ' ';
+    // std::cout << '\n';
+
     if (packet) {
         int port_num = bm2packet->port_num;
         int len = packet.get()->get_data_size();
@@ -488,14 +500,15 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
     // NS_LOG_FUNCTION(this);
-    void * buffer = new uint8_t [sizeof(uint8_t) * MAXSIZE];
+    int length = ns3packet->packet->GetSize();
+    uint8_t* buffer = new uint8_t[length];
     //ns3packet->packet->SetNixVector(NULL);
     struct bm2PacketAndPort * ret = new struct bm2PacketAndPort;
     int len = ns3packet->packet->GetSize();
     int port_num = ns3packet->port_num;
-    if (ns3packet->packet->Serialize((uint8_t *) buffer, MAXSIZE)) {
+    if (ns3packet->packet->CopyData(buffer, length)) {
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
-            len, bm::PacketBuffer(len + 512, (char *) buffer, len));
+            len, bm::PacketBuffer(2048, (char *) buffer, len));
         ret->packet = std::move(packet_);
     }
     ret->port_num = port_num;

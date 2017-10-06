@@ -48,44 +48,20 @@
             "max_length": null
         },
         {
-            "name": "arp_t",
+            "name": "th",
             "id": 1,
             "fields": [
                 [
-                    "hw_type",
-                    16
+                    "a",
+                    2
                 ],
                 [
-                    "protocol_type",
-                    16
+                    "b",
+                    1
                 ],
                 [
-                    "hw_size",
-                    8
-                ],
-                [
-                    "protocol_size",
-                    8
-                ],
-                [
-                    "opcode",
-                    16
-                ],
-                [
-                    "srcMac",
-                    48
-                ],
-                [
-                    "srcIp",
-                    32
-                ],
-                [
-                    "dstMac",
-                    48
-                ],
-                [
-                    "dstIp",
-                    32
+                    "_padding",
+                    5
                 ]
             ],
             "length_exp": null,
@@ -100,9 +76,9 @@
             "metadata": true
         },
         {
-            "name": "arp",
+            "name": "th_t",
             "id": 1,
-            "header_type": "arp_t",
+            "header_type": "th",
             "metadata": false
         }
     ],
@@ -122,7 +98,7 @@
                             "parameters": [
                                 {
                                     "type": "regular",
-                                    "value": "arp"
+                                    "value": "th_t"
                                 }
                             ]
                         }
@@ -146,7 +122,7 @@
             "name": "deparser",
             "id": 0,
             "order": [
-                "arp"
+                "th_t"
             ]
         }
     ],
@@ -211,8 +187,8 @@
                         {
                             "match_type": "exact",
                             "target": [
-                                "arp",
-                                "dstIp"
+                                "th_t",
+                                "a"
                             ],
                             "mask": null
                         }

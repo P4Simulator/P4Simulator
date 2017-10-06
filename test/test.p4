@@ -1,7 +1,7 @@
 header_type th {
     fields {
-        a : 8;
-        b : 8;
+        a : 2;
+        b : 1;
     }
 }
 
@@ -35,6 +35,4 @@ control ingress {
     apply(test);
 }
 
-control egress {
-    
-}
+control egress {}
