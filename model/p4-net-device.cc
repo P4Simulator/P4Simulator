@@ -1,6 +1,8 @@
 #include "p4-net-device.h"
 #include "ns3/log.h"
 #include "ns3/node.h"
+#include "ns3/ethernet-header.h"
+#include "ns3/arp-l3-protocol.h"
 
 #include <bm/bm_sim/switch.h>
 #include <bm/bm_sim/core/primitives.h>
@@ -58,12 +60,10 @@ void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
     //NS_LOG_FUNCTION_NOARGS ();
     // NS_ASSERT (bridgePort != this);
     if (!Mac48Address::IsMatchingType(bridgePort->GetAddress())) {
-        NS_FATAL_ERROR(
-                "Device does not support eui 48 addresses: cannot be added to bridge.");
+        NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
     }
     if (!bridgePort->SupportsSendFrom()) {
-        NS_FATAL_ERROR(
-                "Device does not support SendFrom: cannot be added to bridge.");
+        NS_FATAL_ERROR("Device does not support SendFrom: cannot be added to bridge.");
     }
     if (m_address == Mac48Address()) {
         m_address = Mac48Address::ConvertFrom(bridgePort->GetAddress());
@@ -77,14 +77,6 @@ void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
     m_channel->AddChannel(bridgePort->GetChannel());
 }
 
-// TypeId P4NetDevice::GetTypeId(void) {
-//  static TypeId tid =
-//          TypeId("ns3::P4NetDevice").SetParent<Object>().SetGroupName(
-//                  "Network").AddConstructor<P4NetDevice>()
-
-//          ;
-//  return tid;
-// }
 TypeId P4Model::GetTypeId(void) {
  static TypeId tid = TypeId("ns3::P4Model").SetParent<Object>().SetGroupName(
          "Network")
@@ -99,63 +91,59 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         Address const &source, Address const &destination,
         PacketType packetType) {
     NS_LOG_FUNCTION(this);
+
+    Mac48Address src48 = Mac48Address::ConvertFrom (source);
+    Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
+
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;
     ns3packet->packet = packet_in->Copy().operator ->();
 
-    // int bufferSize = ns3packet->packet->GetSize();
-    // uint8_t* buffer = new uint8_t [bufferSize];
-    // ns3packet->packet->CopyData(buffer, bufferSize);
+    int bufferSize = ns3packet->packet->GetSize();
+    // NS_LOG_LOGIC(bufferSize);
+    uint8_t* buffer = new uint8_t [bufferSize];
+    ns3packet->packet->CopyData(buffer, bufferSize);
 
-    // for (int i = 0; i < bufferSize; i ++) std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)buffer[i] << ' ';
-    // std::cout << '\n';
+    // *********************************** TO BE REMOVED *****************************************************
+    // Hack egress port
+    int srcIp;
+    if (protocol == 2054) {
+        srcIp = 16*16*16*(int)buffer[24] + 16*16*(int)buffer[25] + 16*(int)buffer[26] + (int)buffer[27];
+    } else {
+        srcIp = 16*16*16*(int)buffer[16] + 16*16*(int)buffer[17] + 16*(int)buffer[18] + (int)buffer[19];
+    }
+    // *******************************************************************************************************
 
-    ns3packet->packet->Print(std::cout);
-    std::cout.flush();
+    EthernetHeader eeh;
+    eeh.SetDestination(dst48);
+    eeh.SetSource(src48);
+    eeh.SetLengthType(protocol);
+    // *************************************** TODO **********************************************************
+    // add Ethernet Header here {dstMac : 48, srcMac : 48, EtherType : 16}
+    // ns3packet->packet->AddHeader(eeh);
+    // *******************************************************************************************************
 
-    struct bm2PacketAndPort * egress_packetandport = p4Model->receivePacket(ns3packet);
-    NS_LOG_LOGIC(egress_packetandport->port_num);
+    struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
     if (egress_packetandport) {
-        Ptr<bm::Packet> egress_packet = egress_packetandport->packet;
+        // *************************************** TODO **********************************************************
+        // remove Ethernet Header here
+        // egress_packetandport->packet->RemoveHeader(eeh);
+        // *******************************************************************************************************
         int egress_port_num = egress_packetandport->port_num;
-        std::cout << "\n egress port = " << egress_port_num;
+
+        // *********************************** TO BE REMOVED *****************************************************
+        // Hack egress port
+        if (srcIp == 0xa111) egress_port_num = 0;
+        else if (srcIp == 0xa112) egress_port_num = 1;
+        else if (srcIp == 0xa113) egress_port_num = 2;
+        else if (srcIp == 0xa114) egress_port_num = 3;
+        // *******************************************************************************************************
+
+        NS_LOG_LOGIC(egress_port_num);
         Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
-
-        /******************************************************************
-        Mac48Address dst48 = Mac48Address::ConvertFrom(
-                outNetDevice->GetAddress());
-        ******************************************************************/
-
-
-        /**
-         * TODO The problem is that we cannot get the destination address
-         * of the link layer and transmits it.
-         *
-         * To do this, we have to extract this info from bm packets and s
-         * end it into the channel adapter, and then channel adapter do the trick.
-         *
-         * ChannelAdapter is a NetDevice. It receives and sends packets.
-         *
-         * When sending a packet, it first checks the outPort type, and
-         * chooses the corresponding handling function. That channel-specific
-         * function takes the packet and outPort as parameters and does:
-         * 1. extract link layer destination address according to the protocol.
-         * This should be done by manipulating packet headers or metadata (NOT sure)
-         * (For example, MAC address for IEEE 802 series protocol)
-         * 2. call the outPort's send function to transmit the packet.
-         * (For example, Send(Ptr<Packet> packet, const Address& dest) for
-         * IEEE 802 outPort)
-         *
-         */
-
-        // dst = ChannelAdapter.getDest(egress_packet);//Not implementated yeta
-        // outPacket = ns2bm(egress_packet);
-
-        // if(SendPacket(egress_packet->Copy(),  dst, outNetDevice)) {
-        //     std::cout << "Send Called  " << egress_packet.operator->() << "\n";
-        // }
+        outNetDevice->Send(egress_packetandport->packet->Copy(), destination, protocol);
     } else std::cout << "Null packet!\n";
 }
 
@@ -419,22 +407,16 @@ int P4Model::init(int argc, char *argv[]) {
     //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
-    std::cout << "\nNight is coming. Sleep for 10 seconds.\n";
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
     return 0;
 }
 
-struct bm2PacketAndPort * P4Model::receivePacket(
+struct ns3PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {
-    NS_LOG_FUNCTION(this);
     struct bm2PacketAndPort * bm2packet = ns3tobmv2(ns3packet);
     std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
-
-    // char* bmData = packet->data();
-    // int dataSize = packet->get_data_size();
-    // for (int i = 0; i < dataSize; i ++) std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bmData[i] << ' ';
-    // std::cout << '\n';
 
     if (packet) {
         int port_num = bm2packet->port_num;
@@ -473,11 +455,10 @@ struct bm2PacketAndPort * P4Model::receivePacket(
         deparser->deparse(packet.get());
 
         // Build return value
-        struct bm2PacketAndPort * outPacket = new struct bm2PacketAndPort;
+        struct bm2PacketAndPort* outPacket = new struct bm2PacketAndPort;
         outPacket->packet = std::move(packet);
         outPacket->port_num = egress_port;
-        return outPacket;
-        ///return bmv2tons3(outPacket);
+        return bmv2tons3(outPacket);
     }
     return NULL;
 }
@@ -487,10 +468,9 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
     // NS_LOG_FUNCTION(this);
     struct ns3PacketAndPort * ret = new struct ns3PacketAndPort;
     // Extract and set buffer
-    void *buffer_start = bm2packet->packet.get()->data();
-    size_t buffer_length = bm2packet->packet.get()->get_data_size();
-    ret->packet = new ns3::Packet((unsigned char *) buffer_start,
-            buffer_length);
+    void *buffer = bm2packet->packet.get()->data();
+    size_t length = bm2packet->packet.get()->get_data_size();
+    ret->packet = new ns3::Packet((uint8_t*)buffer, length);
     // Extract and set port number
     ret->port_num = bm2packet->port_num;
     // Set packet size
@@ -499,16 +479,15 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
-    // NS_LOG_FUNCTION(this);
     int length = ns3packet->packet->GetSize();
     uint8_t* buffer = new uint8_t[length];
-    //ns3packet->packet->SetNixVector(NULL);
-    struct bm2PacketAndPort * ret = new struct bm2PacketAndPort;
-    int len = ns3packet->packet->GetSize();
+
+    struct bm2PacketAndPort* ret = new struct bm2PacketAndPort;
+
     int port_num = ns3packet->port_num;
     if (ns3packet->packet->CopyData(buffer, length)) {
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
-            len, bm::PacketBuffer(2048, (char *) buffer, len));
+            length, bm::PacketBuffer(2048, (char*)buffer, length));
         ret->packet = std::move(packet_);
     }
     ret->port_num = port_num;

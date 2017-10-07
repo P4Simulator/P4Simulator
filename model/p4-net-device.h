@@ -87,7 +87,7 @@ public:
      * \return Processed ns-3 packet to be put back to P4 Device for
      * transmission.
      */
-    struct bm2PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
+    struct ns3PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
 
     /**
      * \brief Initialize the P4 Model
@@ -222,6 +222,17 @@ public:
      */
     bool SendPacket(Ptr<Packet> packet, Ptr<NetDevice>outDevice);
     bool SendPacket(Ptr<Packet> packet, const Address& dest , Ptr<NetDevice>outDevice);
+
+    /**
+     * \brief Forwards a broadcast or a multicast packet
+     * \param incomingPort the packet incoming port
+     * \param packet the packet
+     * \param protocol the packet protocol (e.g., Ethertype)
+     * \param src the packet source
+     * \param dst the packet destination
+     */
+    void ForwardBroadcast (Ptr<NetDevice> incomingPort, Ptr<const Packet> packet,
+        uint16_t protocol, Mac48Address src, Mac48Address dst);
 
     // inherited from NetDevice base class.
     virtual void SetIfIndex(const uint32_t index);

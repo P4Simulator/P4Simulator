@@ -14,6 +14,8 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("P4Test");
 
 int main (int argc, char *argv[]) {
+    int p4 = 0;
+
     LogComponentEnable ("P4Test", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
@@ -42,16 +44,22 @@ int main (int argc, char *argv[]) {
         switchDevices.Add(link.Get(1));
     }
 
-    // bind switch devices to each switch
-    P4Helper bridge;
     Ptr<Node> switchNode = csmaSwitch.Get(0);
-    bridge.Install (switchNode, switchDevices);
+
+    if (p4) {
+        P4Helper bridge;
+        NS_LOG_INFO("P4 bridge established");
+        bridge.Install (switchNode, switchDevices);
+    } else {
+       BridgeHelper bridge;
+       bridge.Install (switchNode, switchDevices);
+    }
 
     InternetStackHelper internet;
     internet.Install (nodes);
 
     Ipv4AddressHelper ipv4;
-    ipv4.SetBase ("10.0.0.0", "255.255.255.0");
+    ipv4.SetBase ("10.1.1.0", "255.255.255.0");
     Ipv4InterfaceContainer addresses = ipv4.Assign(terminalDevices);
 
     // Create Applications
