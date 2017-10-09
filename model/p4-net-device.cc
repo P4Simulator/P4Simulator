@@ -91,6 +91,20 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         Address const &source, Address const &destination,
         PacketType packetType) {
     NS_LOG_FUNCTION(this);
+    
+    //  *************View received packet real content, can be removed*******************
+    int pkgSize = packet_in->GetSize();
+    NS_LOG_LOGIC("received packet_in size:"<<pkgSize);
+    packet_in->EnablePrinting();
+    packet_in->Print(std::cout);
+    std::cout<<std::endl;
+    //  ******************************************************************
+    // output packet real content to debug
+    /*uint8_t* bu = new uint8_t [buSize];
+    packet_in->CopyData(bu, buSize);
+    for (int i = 0; i < buSize; i ++) 
+        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
+    std::cout << '\n';*/
 
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
@@ -98,14 +112,25 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;
-    ns3packet->packet = packet_in->Copy().operator ->();
+    //  *****************************TO DO********************************
+    // there exists some problems in using packet_in->Copy().operator ->() 
+    //ns3packet->packet = packet_in->Copy().operator ->();
+    /**using the following methods realizing copy function temporarily, may find
+     * some better ways latter.
+     */  
 
+    ns3packet->packet=(ns3::Packet*)packet_in.operator ->();
+    //  *******************************************************************
     int bufferSize = ns3packet->packet->GetSize();
-    // NS_LOG_LOGIC(bufferSize);
+    //NS_LOG_LOGIC(bufferSize);
     uint8_t* buffer = new uint8_t [bufferSize];
     ns3packet->packet->CopyData(buffer, bufferSize);
+    // output packet content after CopyDaTa to debug
+    /*for (int i = 0; i < bufferSize; i ++) 
+        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)buffer[i] << ' ';
+    std::cout << '\n';*/
 
-    // *********************************** TO BE REMOVED *****************************************************
+    // ************************View src ip, can be removed *****************************************************
     // Hack egress port
     int srcIp;
     if (protocol == 2054) {
@@ -113,35 +138,38 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     } else {
         srcIp = 16*16*16*(int)buffer[16] + 16*16*(int)buffer[17] + 16*(int)buffer[18] + (int)buffer[19];
     }
+    NS_LOG_LOGIC("src IP: "<<std::hex<<srcIp);
     // *******************************************************************************************************
 
     EthernetHeader eeh;
     eeh.SetDestination(dst48);
     eeh.SetSource(src48);
     eeh.SetLengthType(protocol);
-    // *************************************** TODO **********************************************************
-    // add Ethernet Header here {dstMac : 48, srcMac : 48, EtherType : 16}
-    // ns3packet->packet->AddHeader(eeh);
-    // *******************************************************************************************************
+    // ouput added ethernetHeader info to debug
+    /*NS_LOG_LOGIC("EthernetHeader size: "<<eeh.GetHeaderSize());
+    eeh.Print(std::cout);
+    std::cout<<std::endl;*/
 
+    ns3packet->packet->AddHeader(eeh);
+    
     struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
     if (egress_packetandport) {
-        // *************************************** TODO **********************************************************
-        // remove Ethernet Header here
-        // egress_packetandport->packet->RemoveHeader(eeh);
-        // *******************************************************************************************************
+        egress_packetandport->packet->RemoveHeader(eeh);
         int egress_port_num = egress_packetandport->port_num;
 
         // *********************************** TO BE REMOVED *****************************************************
         // Hack egress port
-        if (srcIp == 0xa111) egress_port_num = 0;
+
+        /*if (srcIp == 0xa111) egress_port_num = 0;
         else if (srcIp == 0xa112) egress_port_num = 1;
         else if (srcIp == 0xa113) egress_port_num = 2;
-        else if (srcIp == 0xa114) egress_port_num = 3;
+        else if (srcIp == 0xa114) egress_port_num = 3;*/
         // *******************************************************************************************************
-
-        NS_LOG_LOGIC(egress_port_num);
+        
+        // ***********View egress port num, can be removed ***************************
+        NS_LOG_LOGIC("egress_port_num: "<<egress_port_num);
+        // ***************************************************************************
         Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
         outNetDevice->Send(egress_packetandport->packet->Copy(), destination, protocol);
     } else std::cout << "Null packet!\n";
@@ -161,7 +189,7 @@ P4NetDevice::P4NetDevice() :
     NS_LOG_FUNCTION_NOARGS ();
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
-    char * a3 = (char*) &"/home/baijiasong/Codes/ns-allinone-3.26/ns-3.26/src/ns4/test/simple.json"[0u];
+    char * a3 = (char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/simple.json"[0u];
     char * args[2] = { NULL, a3 };
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");

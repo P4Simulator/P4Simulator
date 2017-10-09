@@ -61,7 +61,8 @@ int main (int argc, char *argv[]) {
 
     LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
-    // LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
     // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("Packet", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
@@ -100,7 +101,7 @@ int main (int argc, char *argv[]) {
 
     // Create the p4 netdevice, which will do the packet switching
     Ptr<Node> switchNode = csmaSwitch.Get (0);
-
+    //p4=0;
     if (p4) {
         P4Helper bridge;
         NS_LOG_INFO("P4 bridge established");
