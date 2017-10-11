@@ -109,6 +109,9 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
 
+    NS_LOG_LOGIC("src mac: "<<std::hex<<src48);
+    NS_LOG_LOGIC("dst mac: "<<std::hex<<dst48);
+
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;
@@ -151,12 +154,21 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     std::cout<<std::endl;*/
 
     ns3packet->packet->AddHeader(eeh);
+    // output packet content after CopyDaTa and AddHeader to debug
+    int bS = ns3packet->packet->GetSize();
+    uint8_t* b = new uint8_t [bS];
+    ns3packet->packet->CopyData(b, bS);
+    for (int i = 0; i < bS; i ++) 
+        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)b[i] << ' ';
+    std::cout << '\n';
     
     struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
     if (egress_packetandport) {
         egress_packetandport->packet->RemoveHeader(eeh);
         int egress_port_num = egress_packetandport->port_num;
+        // judge whether packet drop
+        if(egress_port_num!=511){
 
         // *********************************** TO BE REMOVED *****************************************************
         // Hack egress port
@@ -171,7 +183,9 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         NS_LOG_LOGIC("egress_port_num: "<<egress_port_num);
         // ***************************************************************************
         Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
-        outNetDevice->Send(egress_packetandport->packet->Copy(), destination, protocol);
+        outNetDevice->Send(egress_packetandport->packet->Copy(), destination, protocol);}
+        else
+            std::cout<<"drop packet!\n";
     } else std::cout << "Null packet!\n";
 }
 
@@ -189,7 +203,7 @@ P4NetDevice::P4NetDevice() :
     NS_LOG_FUNCTION_NOARGS ();
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
-    char * a3 = (char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/simple.json"[0u];
+    char * a3 = (char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
     char * args[2] = { NULL, a3 };
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");

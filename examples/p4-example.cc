@@ -145,7 +145,7 @@ int main (int argc, char *argv[]) {
     apps.Start (Seconds (0.0));
     apps.Stop (Seconds (11.0));
 
-    NS_LOG_INFO ("Create pinger");
+    /*NS_LOG_INFO ("Create pinger");
     V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
     NodeContainer pingers;
     pingers.Add (terminals.Get (0));
@@ -154,7 +154,7 @@ int main (int argc, char *argv[]) {
     apps = ping.Install (pingers);
     apps.Start (Seconds (2.0));
     apps.Stop (Seconds (5.0));
-    NS_LOG_INFO ("Configure Tracing.");
+    NS_LOG_INFO ("Configure Tracing.");*/
 
     // first, pcap tracing in non-promiscuous mode
     csma.EnablePcapAll ("p4-example", false);

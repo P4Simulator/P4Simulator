@@ -1,0 +1,6 @@
+table_set_default firewall_with_tcp noop
+table_set_default firewall_with_udp noop
+table_add forward_table forward 0 => 3
+table_add forward_table forward 3 => 0
+table_add firewall_with_tcp block 0x0a010101&&&0xffffffff 0x0a010104&&&0xffffffff => 1 
+table_add firewall_with_udp block 0x0a010104&&&0xffffffff 0x0a010101&&&0xffffffff => 1
