@@ -53,7 +53,7 @@ header ipv4_t ipv4;
 header tcp_t  tcp;
 header udp_t  udp;
 
-#define ETHERTYPE_IPv4 0x0806
+#define ETHERTYPE_IPv4 0x0800
 #define IPPROTCOL_UDP 17
 #define IPPROTCOL_TCP 6
 parser start {

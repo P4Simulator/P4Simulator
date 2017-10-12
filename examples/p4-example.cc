@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -42,6 +43,8 @@
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
+
+std::string networkFunc;
 
 static void SinkRx (Ptr<const Packet> p, const Address &ad) {
     std::cout << "Rx" << "Received from  "<< ad << std::endl;
@@ -63,6 +66,14 @@ int main (int argc, char *argv[]) {
     LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
+    
+    // ******************TO DO *******************************************
+    // may be can consider networkFunc as a parm form command line load
+    // now implmented network function includes: simple firewall 
+    //networkFunc="simple";
+    networkFunc="firewall";
+    // *******************************************************************
+
     // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("Packet", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
@@ -145,16 +156,21 @@ int main (int argc, char *argv[]) {
     apps.Start (Seconds (0.0));
     apps.Stop (Seconds (11.0));
 
-    /*NS_LOG_INFO ("Create pinger");
-    V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
-    NodeContainer pingers;
-    pingers.Add (terminals.Get (0));
-    pingers.Add (terminals.Get (1));
-    pingers.Add (terminals.Get (2));
-    apps = ping.Install (pingers);
-    apps.Start (Seconds (2.0));
-    apps.Stop (Seconds (5.0));
-    NS_LOG_INFO ("Configure Tracing.");*/
+    if(networkFunc.compare("firewall")!=0){
+
+      NS_LOG_INFO ("Create pinger");
+      V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
+      NodeContainer pingers;
+      pingers.Add (terminals.Get (0));
+      pingers.Add (terminals.Get (1));
+      pingers.Add (terminals.Get (2));
+      apps = ping.Install (pingers);
+      apps.Start (Seconds (2.0));
+      apps.Stop (Seconds (5.0));
+
+    }
+
+    NS_LOG_INFO ("Configure Tracing.");
 
     // first, pcap tracing in non-promiscuous mode
     csma.EnablePcapAll ("p4-example", false);

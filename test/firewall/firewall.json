@@ -380,31 +380,31 @@
             "order": [
                 "ethernet",
                 "ipv4",
-                "tcp",
-                "udp"
+                "udp",
+                "tcp"
             ]
         }
     ],
     "meter_arrays": [],
     "actions": [
         {
-            "name": "block",
+            "name": "noop",
             "id": 0,
             "runtime_data": [],
             "primitives": [
                 {
-                    "op": "drop",
+                    "op": "no_op",
                     "parameters": []
                 }
             ]
         },
         {
-            "name": "noop",
+            "name": "block",
             "id": 1,
             "runtime_data": [],
             "primitives": [
                 {
-                    "op": "no_op",
+                    "op": "drop",
                     "parameters": []
                 }
             ]
@@ -447,7 +447,7 @@
                 {
                     "name": "firewall_with_tcp",
                     "id": 0,
-                    "match_type": "exact",
+                    "match_type": "ternary",
                     "type": "simple",
                     "max_size": 16384,
                     "with_counters": false,
@@ -455,7 +455,7 @@
                     "support_timeout": false,
                     "key": [
                         {
-                            "match_type": "exact",
+                            "match_type": "ternary",
                             "target": [
                                 "ipv4",
                                 "srcAddr"
@@ -463,10 +463,26 @@
                             "mask": null
                         },
                         {
-                            "match_type": "exact",
+                            "match_type": "ternary",
                             "target": [
                                 "ipv4",
                                 "dstAddr"
+                            ],
+                            "mask": null
+                        },
+                        {
+                            "match_type": "ternary",
+                            "target": [
+                                "tcp",
+                                "srcPort"
+                            ],
+                            "mask": null
+                        },
+                        {
+                            "match_type": "ternary",
+                            "target": [
+                                "tcp",
+                                "dstPort"
                             ],
                             "mask": null
                         }
@@ -484,7 +500,7 @@
                 {
                     "name": "firewall_with_udp",
                     "id": 1,
-                    "match_type": "exact",
+                    "match_type": "ternary",
                     "type": "simple",
                     "max_size": 16384,
                     "with_counters": false,
@@ -492,7 +508,7 @@
                     "support_timeout": false,
                     "key": [
                         {
-                            "match_type": "exact",
+                            "match_type": "ternary",
                             "target": [
                                 "ipv4",
                                 "srcAddr"
@@ -500,10 +516,26 @@
                             "mask": null
                         },
                         {
-                            "match_type": "exact",
+                            "match_type": "ternary",
                             "target": [
                                 "ipv4",
                                 "dstAddr"
+                            ],
+                            "mask": null
+                        },
+                        {
+                            "match_type": "ternary",
+                            "target": [
+                                "udp",
+                                "srcPort"
+                            ],
+                            "mask": null
+                        },
+                        {
+                            "match_type": "ternary",
+                            "target": [
+                                "udp",
+                                "dstPort"
                             ],
                             "mask": null
                         }
