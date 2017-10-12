@@ -1,0 +1,2 @@
+table_add dmac forward 0x000000000001 => 0
+table_add dmac forward 0xffffffffffff => 3

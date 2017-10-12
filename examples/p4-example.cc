@@ -69,9 +69,10 @@ int main (int argc, char *argv[]) {
     
     // ******************TO DO *******************************************
     // may be can consider networkFunc as a parm form command line load
-    // now implmented network function includes: simple firewall 
-    //networkFunc="simple";
-    networkFunc="firewall";
+    // now implmented network function includes: simple firewall l2_switch
+    networkFunc="simple";
+    //networkFunc="firewall";
+    //networkFunc="l2_switch";
     // *******************************************************************
 
     // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
@@ -156,7 +157,7 @@ int main (int argc, char *argv[]) {
     apps.Start (Seconds (0.0));
     apps.Stop (Seconds (11.0));
 
-    if(networkFunc.compare("firewall")!=0){
+    if(networkFunc.compare("simple")==0){
 
       NS_LOG_INFO ("Create pinger");
       V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
