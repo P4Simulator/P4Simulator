@@ -16,14 +16,17 @@
 
 // Network topology
 //
-//        n0     n1
-//        |      |
+//          n0     
+//           |      
 //       ----------
-//       | Switch |
+//       | S0     |
 //       ----------
 //        |      |
-//        n2     n3
-//
+//        n1   ----------
+//             | S1     |   
+//             ----------
+//                 |
+//                 n2    
 //
 // - CBR/UDP flows from n0 to n1 and from n3 to n0
 // - DropTail queues
@@ -43,11 +46,10 @@
 
 using namespace ns3;
 
-int switchIndex=0;
-
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 std::string networkFunc;
+int switchIndex=0;
 
 static void SinkRx (Ptr<const Packet> p, const Address &ad) {
     std::cout << "Rx" << "Received from  "<< ad << std::endl;
@@ -73,7 +75,7 @@ int main (int argc, char *argv[]) {
     // ******************TO DO *******************************************
     // may be can consider networkFunc as a parm form command line load
     // now implmented network function includes: simple firewall l2_switch router
-    //networkFunc="l2_switch";
+    //networkFunc="simple";
     //networkFunc="firewall";
     //networkFunc="l2_switch";
     networkFunc="router";
@@ -94,10 +96,10 @@ int main (int argc, char *argv[]) {
     //
     NS_LOG_INFO ("Create nodes.");
     NodeContainer terminals;
-    terminals.Create (4);
+    terminals.Create (3);
 
     NodeContainer csmaSwitch;
-    csmaSwitch.Create (1);
+    csmaSwitch.Create (2);
 
     NS_LOG_INFO ("Build Topology");
     CsmaHelper csma;
@@ -106,26 +108,44 @@ int main (int argc, char *argv[]) {
 
     // Create the csma links, from each terminal to the switch
 
-    NetDeviceContainer terminalDevices;
-    NetDeviceContainer switchDevices;
+    NetDeviceContainer terminalDevice1,terminalDevice2;
+    NetDeviceContainer switchDevice1,switchDevice2;
+    // terminalDevice1(n0,n1),terminalDevice2(n2);
+    // switchDevice1(s0),switchDevice2(s1);
 
-    for (int i = 0; i < 4; i++) {
-      NetDeviceContainer link = csma.Install (NodeContainer (terminals.Get (i), csmaSwitch));
-      terminalDevices.Add (link.Get (0));
-      switchDevices.Add (link.Get (1));
+    for (int i = 0; i < 2; i++) {
+      NetDeviceContainer link = csma.Install (NodeContainer (terminals.Get (i), csmaSwitch.Get(0)));
+      terminalDevice1.Add (link.Get (0));
+      switchDevice1.Add (link.Get (1));
     }
 
+    NetDeviceContainer link1=csma.Install(NodeContainer(csmaSwitch.Get(0),csmaSwitch.Get(1)));
+    switchDevice1.Add(link1.Get(0));
+    switchDevice2.Add(link1.Get(1));
+
+    NetDeviceContainer link2=csma.Install(NodeContainer(terminals.Get(2),csmaSwitch.Get(1)));
+    terminalDevice2.Add(link2.Get(0));
+    switchDevice2.Add(link2.Get(1));
+
+
+
     // Create the p4 netdevice, which will do the packet switching
-    Ptr<Node> switchNode = csmaSwitch.Get (0);
+    Ptr<Node> switchNode0 = csmaSwitch.Get (0);
+    Ptr<Node> switchNode1 = csmaSwitch.Get (1);
     //p4=0;
     if (p4) {
         P4Helper bridge;
         NS_LOG_INFO("P4 bridge established");
-        bridge.Install (switchNode, switchDevices);
+        bridge.Install (switchNode0, switchDevice1);
+        switchIndex++;// to decide thrift_port
+        bridge.Install (switchNode1,switchDevice2);
     } else {
        BridgeHelper bridge;
-       bridge.Install (switchNode, switchDevices);
+       bridge.Install (switchNode0, switchDevice1);
+       bridge.Install(switchNode1,switchDevice2);
     }
+
+
 
     // Add internet stack to the terminals
     InternetStackHelper internet;
@@ -136,7 +156,10 @@ int main (int argc, char *argv[]) {
     NS_LOG_INFO ("Assign IP Addresses.");
     Ipv4AddressHelper ipv4;
     ipv4.SetBase ("10.1.1.0", "255.255.255.0");
-    Ipv4InterfaceContainer addresses = ipv4.Assign (terminalDevices);
+    Ipv4InterfaceContainer addresses1 = ipv4.Assign (terminalDevice1);
+    //ipv4.SetBase ("10.1.2.0", "255.255.255.0");
+    Ipv4InterfaceContainer addresses2 = ipv4.Assign (terminalDevice2);
+
 
     //
     // Create an OnOff application to send UDP datagrams from node zero to node 1.
@@ -145,8 +168,10 @@ int main (int argc, char *argv[]) {
 
     NS_LOG_INFO ("Create Source");
     Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
-
-    InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));
+    
+    // no -> n2
+    InetSocketAddress dst = InetSocketAddress (addresses2.GetAddress (0));
+    NS_LOG_LOGIC("n2 addr: "<<dst);
     OnOffHelper onoff = OnOffHelper ("ns3::TcpSocketFactory", dst);
     onoff.SetConstantRate (DataRate (15000));
     onoff.SetAttribute ("PacketSize", UintegerValue (1200));
@@ -154,16 +179,17 @@ int main (int argc, char *argv[]) {
     ApplicationContainer apps = onoff.Install (terminals.Get (0));
     apps.Start (Seconds (1.0));
     apps.Stop (Seconds (10.0));
-
+    
+    // n2 responce n0
     NS_LOG_INFO ("Create Sink.");
     PacketSinkHelper sink = PacketSinkHelper ("ns3::TcpSocketFactory", dst);
-    apps = sink.Install (terminals.Get (3));
+    apps = sink.Install (terminals.Get (2));
     apps.Start (Seconds (0.0));
     apps.Stop (Seconds (11.0));
 
-    if(networkFunc.compare("simple")==0){
+    /*if(networkFunc.compare("simple")==0){
 
-      /*NS_LOG_INFO ("Create pinger");
+      NS_LOG_INFO ("Create pinger");
       V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
       NodeContainer pingers;
       pingers.Add (terminals.Get (0));
@@ -171,9 +197,9 @@ int main (int argc, char *argv[]) {
       pingers.Add (terminals.Get (2));
       apps = ping.Install (pingers);
       apps.Start (Seconds (2.0));
-      apps.Stop (Seconds (5.0));*/
+      apps.Stop (Seconds (5.0));
 
-    }
+    }*/
 
     NS_LOG_INFO ("Configure Tracing.");
 

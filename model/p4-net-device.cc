@@ -22,12 +22,15 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
 using namespace ns3;
 
 #define MAXSIZE 512
 
 std::string networkFunc; // define in p4-example.cc
 //networkFunc=std::string("firewall");
+int switchIndex; //define in p4-example.cc, to decide thrift_port
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
 
@@ -171,6 +174,28 @@ int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
     }
     return -1;
 }
+char * int_to_str(int num)
+{
+    char *ss=new char[10];
+    int pos = 0;
+
+    if (num == 0)
+        ss[0] = '0';
+    while (num)
+    {
+        ss[pos++] = num % 10 + '0';
+        num = num / 10;
+    }
+    char temp;
+    for (int i = 0; i < pos / 2; i++)
+    {
+        temp = ss[i];
+        ss[i] = ss[pos - 1 - i];
+        ss[pos - 1 - i] = temp;
+    }
+    ss[pos] = '\0';
+    return ss;
+}
 
 P4NetDevice::P4NetDevice() :
     m_node(0), m_ifIndex(0) {
@@ -192,9 +217,34 @@ P4NetDevice::P4NetDevice() :
             {
                 a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/l2_switch/l2_switch.json"[0u];
             }
+            else
+            {
+                if(networkFunc.compare("router")==0)
+                {
+                    //a3=(char*) &" --thrift-port 9091 /home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
+                    a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
+                }
+            }
         }
     }
-    char * args[2] = { NULL, a3 };
+    // TO modify thrift_port
+
+    /*char parms[200]="--thrift-port ";
+    //char parms[200]="pcap";
+    int thrift_port_num=9090+switchIndex;
+    char* thrift_port_str;
+    //itoa(thrift_port_num,thrift_port_str,10);
+    thrift_port_str=int_to_str(thrift_port_num);
+    //strcpy(parms,a3);
+    strcat(parms,thrift_port_str);
+    //NS_LOG_LOGIC("parms: "<<parms);
+    strcat(parms," ");
+    strcat(parms,a3);
+    NS_LOG_LOGIC("parms: "<<parms);*/
+    // Usage: SWITCH_NAME [options] <path to JSON config file>
+    // --thrift-port arg        TCP port on which to run the Thrift runtime server
+    char * args[2] = { NULL,a3};
+    //char * args[2] = { NULL, a3 };
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 }
@@ -431,10 +481,22 @@ P4Model::P4Model() :
     import_primitives();
 }
 
+/*int init_from_command_line_options(
+      int argc, char *argv[],
+      TargetParserIface *tp = nullptr,
+      std::shared_ptr<TransportIface> my_transport = nullptr,
+      std::unique_ptr<DevMgrIface> my_dev_mgr = nullptr);*/
 int P4Model::init(int argc, char *argv[]) {
     NS_LOG_FUNCTION(this);
+    //NS_LOG_LOGIC("argc: "<<argc);
+    //for(int i=0;i<argc;i++)
+        //std::cout<<argv[i]<<std::endl;
+    //NS_LOG_LOGIC("switchIndex: "<<switchIndex);
     this->init_from_command_line_options(argc, argv, argParser);
     int thrift_port = this->get_runtime_port();
+
+    //NS_LOG_LOGIC("thrift_port: "<<thrift_port);
+
     bm_runtime::start_server(this, thrift_port);
     //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
