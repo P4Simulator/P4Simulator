@@ -107,6 +107,17 @@ public:
      * `standard_metadata` and `intrinsic_metadata`
      */
     P4Model();
+
+    /**
+     * \brief configure switch with json file
+     */
+    int my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp = nullptr);
+    /**
+     * \brief populate flow table 
+     * @parm:
+     */
+    //void populate_flow_table();
+
 private:
 
     /**

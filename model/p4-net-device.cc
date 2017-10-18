@@ -3,13 +3,12 @@
 #include "ns3/node.h"
 #include "ns3/ethernet-header.h"
 #include "ns3/arp-l3-protocol.h"
-
 #include <bm/bm_sim/switch.h>
 #include <bm/bm_sim/core/primitives.h>
 #include <bm/bm_runtime/bm_runtime.h>
 #include <bm/bm_sim/simple_pre.h>
 #include <bm/SimpleSwitch.h>
-
+#include <bm/bm_sim/options_parse.h>
 #include <memory.h>
 #include <memory>
 #include <iomanip>
@@ -106,11 +105,12 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     std::cout<<std::endl;
     //  ******************************************************************
     // output packet real content to debug
-    /*uint8_t* bu = new uint8_t [buSize];
+    int buSize = packet_in->GetSize();
+    uint8_t* bu = new uint8_t [buSize];
     packet_in->CopyData(bu, buSize);
     for (int i = 0; i < buSize; i ++) 
         std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
-    std::cout << '\n';*/
+    std::cout << '\n';
 
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
@@ -129,6 +129,7 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
      */  
 
     ns3packet->packet=(ns3::Packet*)packet_in.operator ->();
+    NS_LOG_LOGIC("after copy");
     //  *******************************************************************
     EthernetHeader eeh;
     eeh.SetDestination(dst48);
@@ -141,12 +142,14 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 
     ns3packet->packet->AddHeader(eeh);
     // output packet content after CopyDaTa and AddHeader to debug
-    /*int bS = ns3packet->packet->GetSize();
+    int bS = ns3packet->packet->GetSize();
     uint8_t* b = new uint8_t [bS];
     ns3packet->packet->CopyData(b, bS);
-    for (int i = 34; i < 38&&i<bS; i ++) 
+    //for (int i = 34; i < 38&&i<bS; i ++) 
+    for (int i = 0; i < bS; i ++)
         std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)b[i] << ' ';
-    std::cout << '\n';*/
+    std::cout << '\n';
+    NS_LOG_LOGIC("add Headers");
     
     struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
@@ -491,33 +494,57 @@ int P4Model::init(int argc, char *argv[]) {
     //NS_LOG_LOGIC("argc: "<<argc);
     //for(int i=0;i<argc;i++)
         //std::cout<<argv[i]<<std::endl;
-    //NS_LOG_LOGIC("switchIndex: "<<switchIndex);
-    this->init_from_command_line_options(argc, argv, argParser);
-    int thrift_port = this->get_runtime_port();
+    NS_LOG_LOGIC("switchIndex: "<<switchIndex);
+    //this->init_from_command_line_options(argc, argv, argParser);
+    //this->init_from_command_line_options(argc, argv);
+    this->my_init_from_command_line_options(argc, argv, argParser);
+    //int thrift_port = this->get_runtime_port();
 
     //NS_LOG_LOGIC("thrift_port: "<<thrift_port);
 
-    bm_runtime::start_server(this, thrift_port);
+    //bm_runtime::start_server(this, thrift_port);
     //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
     std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
     return 0;
 }
+int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp)
+{
+    NS_LOG_FUNCTION(this);
+    bm::OptionsParser parser;
+    parser.parse(argc,argv,tp);
+    return 0;
+}
+/*int P4Model::init_from_command_line_options(
+      int argc, char *argv[],
+      TargetParserIface *tp = nullptr,
+      std::shared_ptr<TransportIface> my_transport = nullptr,
+      std::unique_ptr<DevMgrIface> my_dev_mgr = nullptr){
+    NS_LOG_LOGIC("self-defined init_from_command_line_options");
+    OptionsParser parser;
+    parser.parse(argc,argv,tp);
+    return 0;
+
+}*/
 
 struct ns3PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {
+    NS_LOG_FUNCTION(this);
     struct bm2PacketAndPort * bm2packet = ns3tobmv2(ns3packet);
+    NS_LOG_LOGIC("ns3tobmv2");
     std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
 
     if (packet) {
+        NS_LOG_LOGIC("packet");
         int port_num = bm2packet->port_num;
         int len = packet.get()->get_data_size();
         packet.get()->set_ingress_port(port_num);
         bm::PHV *phv = packet.get()->get_phv();
         phv->reset_metadata();
+        NS_LOG_LOGIC("reset_metadata");
         phv->get_field("standard_metadata.ingress_port").set(port_num);
         phv->get_field("standard_metadata.packet_length").set(len);
         //Field &f_instance_type = phv->get_field("standard_metadata.instance_type");
@@ -525,13 +552,16 @@ struct ns3PacketAndPort * P4Model::receivePacket(
         if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
             phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(0);
         }
+        NS_LOG_LOGIC("come to ingress");
 
         // Ingress
         bm::Parser *parser = this->get_parser("parser");
         bm::Pipeline *ingress_mau = this->get_pipeline("ingress");
         phv = packet.get()->get_phv();
+        NS_LOG_LOGIC("come to parse");
 
         parser->parse(packet.get());
+        NS_LOG_LOGIC("come to apply");
 
         ingress_mau->apply(packet.get());
 
@@ -559,11 +589,12 @@ struct ns3PacketAndPort * P4Model::receivePacket(
 
 struct ns3PacketAndPort * P4Model::bmv2tons3(
         struct bm2PacketAndPort *bm2packet) {
-    // NS_LOG_FUNCTION(this);
+    //NS_LOG_FUNCTION(this);
     struct ns3PacketAndPort * ret = new struct ns3PacketAndPort;
     // Extract and set buffer
     void *buffer = bm2packet->packet.get()->data();
     size_t length = bm2packet->packet.get()->get_data_size();
+    //NS_LOG_LOGIC("get buffer and length");
     ret->packet = new ns3::Packet((uint8_t*)buffer, length);
     // Extract and set port number
     ret->port_num = bm2packet->port_num;
@@ -573,17 +604,30 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
+    NS_LOG_FUNCTION(this);
     int length = ns3packet->packet->GetSize();
     uint8_t* buffer = new uint8_t[length];
+    // view ns3packet
+    // ****************************************
+    int buSize = ns3packet->packet->GetSize();
+    uint8_t* bu = new uint8_t [buSize];
+    ns3packet->packet->CopyData(bu, buSize);
+    for (int i = 0; i < buSize; i ++) 
+        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
+    std::cout << '\n';
+    // *************************************
 
     struct bm2PacketAndPort* ret = new struct bm2PacketAndPort;
 
     int port_num = ns3packet->port_num;
+    NS_LOG_LOGIC("port set");
     if (ns3packet->packet->CopyData(buffer, length)) {
+        NS_LOG_LOGIC("CopyData"<<port_num);
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
             length, bm::PacketBuffer(2048, (char*)buffer, length));
         ret->packet = std::move(packet_);
     }
+    NS_LOG_LOGIC("copy_data");
     ret->port_num = port_num;
     return ret;
 }
