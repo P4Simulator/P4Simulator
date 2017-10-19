@@ -50,6 +50,7 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 std::string networkFunc;
 int switchIndex=0;
+std::string flowtable_path;
 
 static void SinkRx (Ptr<const Packet> p, const Address &ad) {
     std::cout << "Rx" << "Received from  "<< ad << std::endl;
@@ -134,10 +135,16 @@ int main (int argc, char *argv[]) {
     Ptr<Node> switchNode1 = csmaSwitch.Get (1);
     //p4=0;
     if (p4) {
+        std::string flowtable_parentdir("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/flowtable_dir/");
+        std::string childdir("router_flowtable/");
+        std::string flowtable_name("command1.txt");
         P4Helper bridge;
         NS_LOG_INFO("P4 bridge established");
+        flowtable_path=flowtable_parentdir+childdir+flowtable_name; 
         bridge.Install (switchNode0, switchDevice1);
         switchIndex++;// to decide thrift_port
+        flowtable_name="command2.txt";
+        flowtable_path=flowtable_parentdir+childdir+flowtable_name; 
         bridge.Install (switchNode1,switchDevice2);
     } else {
        BridgeHelper bridge;

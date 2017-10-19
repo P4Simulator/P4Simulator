@@ -343,36 +343,8 @@
     "meter_arrays": [],
     "actions": [
         {
-            "name": "set_smac",
-            "id": 0,
-            "runtime_data": [
-                {
-                    "name": "smac",
-                    "bitwidth": 48
-                }
-            ],
-            "primitives": [
-                {
-                    "op": "modify_field",
-                    "parameters": [
-                        {
-                            "type": "field",
-                            "value": [
-                                "ethernet",
-                                "srcAddr"
-                            ]
-                        },
-                        {
-                            "type": "runtime_data",
-                            "value": 0
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "name": "set_dmac",
-            "id": 1,
+            "id": 0,
             "runtime_data": [
                 {
                     "name": "dmac",
@@ -420,7 +392,7 @@
         },
         {
             "name": "set_nhop",
-            "id": 2,
+            "id": 1,
             "runtime_data": [
                 {
                     "name": "nhop_ipv4",
@@ -464,7 +436,7 @@
         },
         {
             "name": "set_arp_nhop",
-            "id": 3,
+            "id": 2,
             "runtime_data": [
                 {
                     "name": "nhop_ipv4",
@@ -492,12 +464,40 @@
         },
         {
             "name": "_drop",
-            "id": 4,
+            "id": 3,
             "runtime_data": [],
             "primitives": [
                 {
                     "op": "drop",
                     "parameters": []
+                }
+            ]
+        },
+        {
+            "name": "set_smac",
+            "id": 4,
+            "runtime_data": [
+                {
+                    "name": "smac",
+                    "bitwidth": 48
+                }
+            ],
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "ethernet",
+                                "srcAddr"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
                 }
             ]
         }

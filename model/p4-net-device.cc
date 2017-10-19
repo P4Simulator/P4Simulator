@@ -23,13 +23,15 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 using namespace ns3;
 
 #define MAXSIZE 512
 
-std::string networkFunc; // define in p4-example.cc
-//networkFunc=std::string("firewall");
+std::string networkFunc; // define in p4-example.cc,to select nf
 int switchIndex; //define in p4-example.cc, to decide thrift_port
+std::string flowtable_path;//define in p4-example.cc
+
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
 
@@ -105,12 +107,12 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     std::cout<<std::endl;
     //  ******************************************************************
     // output packet real content to debug
-    int buSize = packet_in->GetSize();
+    /*int buSize = packet_in->GetSize();
     uint8_t* bu = new uint8_t [buSize];
     packet_in->CopyData(bu, buSize);
     for (int i = 0; i < buSize; i ++) 
         std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
-    std::cout << '\n';
+    std::cout << '\n';*/
 
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
@@ -129,7 +131,7 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
      */  
 
     ns3packet->packet=(ns3::Packet*)packet_in.operator ->();
-    NS_LOG_LOGIC("after copy");
+    //NS_LOG_LOGIC("after copy");
     //  *******************************************************************
     EthernetHeader eeh;
     eeh.SetDestination(dst48);
@@ -142,14 +144,14 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 
     ns3packet->packet->AddHeader(eeh);
     // output packet content after CopyDaTa and AddHeader to debug
-    int bS = ns3packet->packet->GetSize();
+    /*int bS = ns3packet->packet->GetSize();
     uint8_t* b = new uint8_t [bS];
     ns3packet->packet->CopyData(b, bS);
     //for (int i = 34; i < 38&&i<bS; i ++) 
     for (int i = 0; i < bS; i ++)
         std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)b[i] << ' ';
     std::cout << '\n';
-    NS_LOG_LOGIC("add Headers");
+    NS_LOG_LOGIC("add Headers");*/
     
     struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
@@ -489,46 +491,301 @@ P4Model::P4Model() :
       TargetParserIface *tp = nullptr,
       std::shared_ptr<TransportIface> my_transport = nullptr,
       std::unique_ptr<DevMgrIface> my_dev_mgr = nullptr);*/
+
 int P4Model::init(int argc, char *argv[]) {
     NS_LOG_FUNCTION(this);
     //NS_LOG_LOGIC("argc: "<<argc);
     //for(int i=0;i<argc;i++)
         //std::cout<<argv[i]<<std::endl;
-    NS_LOG_LOGIC("switchIndex: "<<switchIndex);
-    //this->init_from_command_line_options(argc, argv, argParser);
-    //this->init_from_command_line_options(argc, argv);
-    this->my_init_from_command_line_options(argc, argv, argParser);
-    //int thrift_port = this->get_runtime_port();
-
-    //NS_LOG_LOGIC("thrift_port: "<<thrift_port);
-
-    //bm_runtime::start_server(this, thrift_port);
-    //exec("python ");
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
-    std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
+    NS_LOG_LOGIC("switchIndex: "<<switchIndex);
+    std::string populate_flowtable_type;// runtime_CLI  local_call
+    populate_flowtable_type="local_call";
+    //populate_flowtable_type="runtime_CLI";
+    // ************************************************************
+    // use local call to populate flowtable
+    if(populate_flowtable_type.compare("local_call")==0)
+    {
+        this->my_init_from_command_line_options(argc, argv, argParser);
+        std::string flowtable_parentdir("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/flowtable_dir/");
+        std::string childdir("router_flowtable");
+        std::string flowtable_name("/command1.txt");
+        //populate_flow_table(flowtable_path);
+        populate_flow_table(flowtable_parentdir+childdir+flowtable_name);
+        //**********************************************
+        std::vector<bm::MatchTable::Entry> entries=mt_get_entries(0,std::string("arp_nhop"));
+        std::cout<<"arp_nhop entry num:"<<entries.size()<<std::endl;
+        for(size_t i=0;i<entries.size();i++);
+        //**********************************************
+         //**********************************************
+        std::vector<bm::MatchTable::Entry> entries1=mt_get_entries(0,std::string("forward_table"));
+        std::cout<<"forward_table entry num:"<<entries1.size()<<std::endl;
+        for(size_t i=0;i<entries1.size();i++);
+        //**********************************************
+         //**********************************************
+        std::vector<bm::MatchTable::Entry> entries2=mt_get_entries(0,std::string("send_frame"));
+        std::cout<<"send_frame entry num:"<<entries2.size()<<std::endl;
+        for(size_t i=0;i<entries2.size();i++);
+        //**********************************************
+    }
+    // **************************************************************
+    else
+    {
+        // ******************************TO DO*************************************
+        // start thrift server , use runtime_CLI populate flowtable
+        // have problem in modify default thrift port
+        if(populate_flowtable_type.compare("runtime_CLI")==0)
+        {
+            this->init_from_command_line_options(argc, argv, argParser);
+            int thrift_port = this->get_runtime_port();
+            //NS_LOG_LOGIC("thrift_port: "<<thrift_port);
+            bm_runtime::start_server(this, thrift_port);
+            //exec("python ");
+            std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
+        }
+        //*********************************************************************
+    }
     return 0;
 }
+
 int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp)
 {
     NS_LOG_FUNCTION(this);
     bm::OptionsParser parser;
     parser.parse(argc,argv,tp);
-    return 0;
+    std::shared_ptr<bm::TransportIface> transport=nullptr;
+    int status = 0;
+    if (transport == nullptr) {
+#ifdef BMNANOMSG_ON
+    //notifications_addr = parser.notifications_addr;
+    transport = std::shared_ptr<bm::TransportIface>(
+        TransportIface::make_nanomsg(parser.notifications_addr));
+#else
+    //notifications_addr = "";
+    transport = std::shared_ptr<bm::TransportIface>(bm::TransportIface::make_dummy());
+#endif
+  }
+ if (parser.no_p4)
+    status = init_objects_empty(parser.device_id, transport);
+  else
+    status = init_objects(parser.config_file_path, parser.device_id, transport);
+    return status;
 }
-/*int P4Model::init_from_command_line_options(
-      int argc, char *argv[],
-      TargetParserIface *tp = nullptr,
-      std::shared_ptr<TransportIface> my_transport = nullptr,
-      std::unique_ptr<DevMgrIface> my_dev_mgr = nullptr){
-    NS_LOG_LOGIC("self-defined init_from_command_line_options");
-    OptionsParser parser;
-    parser.parse(argc,argv,tp);
-    return 0;
 
+/*void P4Model::populate_flow_table(std::string command_path)
+{
+    std::fstream fp;
+    fp.open(command_path);
+    if(!fp)
+    {
+        std::cout<<command_path<<" can't open."<<std::endl;
+    }
+    else
+    {
+        bm::ActionData action_data;
+        mt_set_default_action(0,std::string("arp_nhop"),std::string("_drop"),action_data);
+    }
 }*/
+void P4Model::populate_flow_table(std::string command_path)
+{
+    //get switch all table name
+    //get key field
+    //according to table name get all action name
+    //according to action name get parm num and type
+    //without test parms error
+
+    std::fstream fp;
+    fp.open(command_path);
+    if (!fp)
+    {
+        std::cout <<"in P4Model::populate_flow_table, "<< command_path << " can't open." << std::endl;
+    }
+    else
+    {
+        const int max_size=500;
+        char row[max_size];
+        while (fp.getline(row, max_size))
+        {
+            //std::cout << row << std::endl;
+            parse_flowtable_command(std::string(row));
+        }
+    }
+}
+void P4Model::parse_flowtable_command(std::string command_row)
+{
+    std::vector<std::string> parms;
+    int last_p = 0, cur_p = 0;
+    //int action_end = command_row.find("=>");
+    //if(action_end<command_row.size)
+    for (size_t i = 0; i < command_row.size(); i++,cur_p++)
+    {
+        if (command_row[i] == ' ')
+        {
+            parms.push_back(command_row.substr(last_p, cur_p - last_p));
+            last_p = i + 1;
+        }
+    }
+    if (last_p < cur_p)
+    {
+        parms.push_back(command_row.substr(last_p, cur_p - last_p));
+    }
+    for (size_t i = 0; i < parms.size(); i++)
+        std::cout << parms[i] << " ";
+    std::cout<<std::endl;
+    if (parms.size() > 0)
+    {
+        if (parms[0].compare("table_set_default") == 0)
+        {
+            //table_set_default ipv4_nhop _drop
+            //        table_name action_name action_data
+            bm::ActionData action_data;
+            if (parms.size() > 3)
+            {
+                for (size_t i = 3; i < parms.size(); i++)
+                    action_data.push_back_action_data(str_to_int(parms[i]));
+                 //void push_back_action_data(const Data &data)
+                 ///usr/local/include/bm/bm_sim/actions.h 
+                //build action_data
+            }
+            mt_set_default_action(0, parms[1], parms[2], action_data);
+        }
+        else
+        {
+            if (parms[0].compare("table_add") == 0)
+            {
+                //table_add ipv4_nhop set_nhop 0x0a010104 => 0x0a0a0a0a
+                //table_name action_name match_key=>action_data
+                // need to match type
+                NS_LOG_LOGIC("come to table_add");
+                std::vector<bm::MatchKeyParam> match_key;
+                bm::ActionData action_data;
+                bm::entry_handle_t *handle=new bm::entry_handle_t(1);// table entry num
+                /*
+                 *enum class Type {
+                 *              RANGE,
+                 *              VALID,
+                 *              EXACT,
+                 *              LPM,
+                 *              TERNARY
+                 *             };
+                 */
+                //*************************TO DO**********************************
+                // should accord to p4 json file to decide every table key match type
+                // now use EXACT temporarily 
+                bm::MatchKeyParam::Type match_type=bm::MatchKeyParam::Type::EXACT;
+                //****************************************************************
+                unsigned int key_num=0;
+                unsigned int action_data_num=0;
+                size_t i;
+                for(i=3;i<parms.size();i++)
+                {
+                    if(parms[i].compare("=>")!=0)
+                    {
+                        key_num++;
+                        match_key.push_back(bm::MatchKeyParam(match_type,parms[i]));
+                        NS_LOG_LOGIC("match_key:"<<" "<<parms[i]);
+                    }
+                    else
+                        break;
+                }
+                i++;
+                int priority;
+                //judge key_num equal table need key num
+                if(match_type!=bm::MatchKeyParam::Type::TERNARY&&match_type!=bm::MatchKeyParam::Type::RANGE)
+                {
+                    for(;i<parms.size();i++)
+                    {
+                        action_data_num++;
+                        action_data.push_back_action_data(str_to_int(parms[i]));
+                        NS_LOG_LOGIC("action_data:"<<parms[i]);
+                    }
+                    priority=0;
+                    // judge action_data_num equal action need num
+                     mt_add_entry(0, parms[1], match_key, parms[2], action_data, handle,priority);
+
+                     //******************************************************
+                      std::cout<<"table_name:"<<parms[1]<<std::endl;
+                      std::cout<<"match_key num:"<<match_key.size()<<std::endl;
+                      std::cout<<"action_name:"<<parms[2]<<std::endl;
+                      std::cout<<"action_data num:"<<action_data.size()<<std::endl;
+                      std::cout<<"entry_handle:"<<*handle<<std::endl;
+                     //******************************************************
+                }
+                else
+                {
+                    for(;i<parms.size()-1;i++)
+                    {
+                        action_data_num++;
+                        action_data.push_back_action_data(str_to_int(parms[i]));
+                    }
+                    // judge action_data_num equal action need num
+                    priority=str_to_int(parms[parms.size()-1]);
+                    mt_add_entry(0, parms[1], match_key, parms[2], action_data, handle, priority);
+                }
+            }
+        }
+    }
+}
+unsigned int P4Model::str_to_int(const std::string str)
+{
+    unsigned int res = 0;
+    if (str.find("0x") < str.size())//16
+    {
+        for (size_t i = 2; i < str.size(); i++)
+        {
+            if (str[i] >= '0'&&str[i] <= '9')
+            {
+                res = res * 16 + str[i] - '0';
+            }
+            else
+            {
+                if (str[i] >= 'a'&&str[i] <= 'f')
+                {
+                    res = res * 16 + str[i] - 'a'+10;
+                }
+                else
+                {
+                    std::cout << "in P4Model::str_to_int, action data error!" << std::endl;
+                }
+            }
+        }
+    }
+    else
+    {
+        if (str.find("0b") < str.size())//2
+        {
+            for (size_t i = 2; i < str.size(); i++)
+            {
+                if (str[i] >= '0'&&str[i] <= '1')
+                {
+                    res = res * 2 + str[i] - '0';
+                }
+                else
+                {
+                    std::cout << "in P4Model::str_to_int, action data error!" << std::endl;
+                }
+            }
+        }
+        else //10
+        {
+            for (size_t i = 0; i < str.size(); i++)
+            {
+                if (str[i] >= '0'&&str[i] <= '9')
+                {
+                    res = res * 10 + str[i] - '0';
+                }
+                else
+                {
+                    std::cout << "in P4Model::str_to_int, action data error!" << std::endl;
+                }
+            }
+        }
+    }
+    return res;
+}
 
 struct ns3PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {
@@ -538,13 +795,13 @@ struct ns3PacketAndPort * P4Model::receivePacket(
     std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
 
     if (packet) {
-        NS_LOG_LOGIC("packet");
+        //NS_LOG_LOGIC("packet");
         int port_num = bm2packet->port_num;
         int len = packet.get()->get_data_size();
         packet.get()->set_ingress_port(port_num);
         bm::PHV *phv = packet.get()->get_phv();
         phv->reset_metadata();
-        NS_LOG_LOGIC("reset_metadata");
+        //NS_LOG_LOGIC("reset_metadata");
         phv->get_field("standard_metadata.ingress_port").set(port_num);
         phv->get_field("standard_metadata.packet_length").set(len);
         //Field &f_instance_type = phv->get_field("standard_metadata.instance_type");
@@ -552,16 +809,16 @@ struct ns3PacketAndPort * P4Model::receivePacket(
         if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
             phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(0);
         }
-        NS_LOG_LOGIC("come to ingress");
+        //NS_LOG_LOGIC("come to ingress");
 
         // Ingress
         bm::Parser *parser = this->get_parser("parser");
         bm::Pipeline *ingress_mau = this->get_pipeline("ingress");
         phv = packet.get()->get_phv();
-        NS_LOG_LOGIC("come to parse");
+        //NS_LOG_LOGIC("come to parse");
 
         parser->parse(packet.get());
-        NS_LOG_LOGIC("come to apply");
+        //NS_LOG_LOGIC("come to apply");
 
         ingress_mau->apply(packet.get());
 
@@ -604,30 +861,30 @@ struct ns3PacketAndPort * P4Model::bmv2tons3(
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
-    NS_LOG_FUNCTION(this);
+    //NS_LOG_FUNCTION(this);
     int length = ns3packet->packet->GetSize();
     uint8_t* buffer = new uint8_t[length];
     // view ns3packet
     // ****************************************
-    int buSize = ns3packet->packet->GetSize();
+    /*int buSize = ns3packet->packet->GetSize();
     uint8_t* bu = new uint8_t [buSize];
     ns3packet->packet->CopyData(bu, buSize);
     for (int i = 0; i < buSize; i ++) 
         std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
-    std::cout << '\n';
+    std::cout << '\n';*/
     // *************************************
 
     struct bm2PacketAndPort* ret = new struct bm2PacketAndPort;
 
     int port_num = ns3packet->port_num;
-    NS_LOG_LOGIC("port set");
+    //NS_LOG_LOGIC("port set");
     if (ns3packet->packet->CopyData(buffer, length)) {
-        NS_LOG_LOGIC("CopyData"<<port_num);
+        //NS_LOG_LOGIC("CopyData"<<port_num);
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
             length, bm::PacketBuffer(2048, (char*)buffer, length));
         ret->packet = std::move(packet_);
     }
-    NS_LOG_LOGIC("copy_data");
+    //NS_LOG_LOGIC("copy_data");
     ret->port_num = port_num;
     return ret;
 }

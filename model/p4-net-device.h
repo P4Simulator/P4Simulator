@@ -23,13 +23,14 @@
 #include <bm/bm_sim/parser.h>
 #include <bm/bm_sim/tables.h>
 #include <bm/bm_sim/logger.h>
-#include <bm/bm_sim/switch.h>
+#include <fstream>
 
 #include <memory>
 #include <vector>
 #include <chrono>
 
 using namespace ns3;
+//
 
 /**
  *
@@ -116,7 +117,11 @@ public:
      * \brief populate flow table 
      * @parm:
      */
-    //void populate_flow_table();
+    void populate_flow_table(std::string command_path);
+
+    void parse_flowtable_command(std::string command_row);
+
+    unsigned int str_to_int(const std::string str);
 
 private:
 

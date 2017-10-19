@@ -1,0 +1,14 @@
+table_set_default ipv4_nhop _drop
+table_set_default arp_nhop _drop
+table_set_default forward_table set_dmac 0xffffffffffff 2
+table_set_default send_frame set_smac 0x000000000001
+table_add ipv4_nhop set_nhop 0x0a010103 => 0x0a0a0a0a
+table_add arp_nhop set_arp_nhop 0x0a010103 => 0x00000a0a
+table_add forward_table set_dmac 0x0a0a0a0a => 0x000000000007 2 
+table_add forward_table set_dmac 0x00000a0a => 0xffffffffffff 2
+table_add send_frame set_smac 0x0002 => 0x000000000001
+table_add ipv4_nhop set_nhop 0x0a010101 => 0x0b0b0b0b
+table_add arp_nhop set_arp_nhop 0x0a010101 => 0x00000b0b
+table_add forward_table set_dmac 0x0b0b0b0b => 0x000000000001 0
+table_add forward_table set_dmac 0x00000b0b => 0x000000000000 0
+table_add send_frame set_smac 0x0000 => 0xffffffffffff

@@ -76,7 +76,7 @@ int main (int argc, char *argv[]) {
     //networkFunc="l2_switch";
     //networkFunc="firewall";
     //networkFunc="l2_switch";
-    networkFunc="firewall";
+    networkFunc="router";
     // *******************************************************************
 
     // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
