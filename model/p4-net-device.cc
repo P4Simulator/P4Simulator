@@ -508,11 +508,15 @@ int P4Model::init(int argc, char *argv[]) {
     if(populate_flowtable_type.compare("local_call")==0)
     {
         this->my_init_from_command_line_options(argc, argv, argParser);
-        std::string flowtable_parentdir("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/flowtable_dir/");
+
+        //***************************To Remove****************************************
+        /*std::string flowtable_parentdir("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/flowtable_dir/");
         std::string childdir("router_flowtable");
         std::string flowtable_name("/command1.txt");
-        //populate_flow_table(flowtable_path);
-        populate_flow_table(flowtable_parentdir+childdir+flowtable_name);
+        populate_flow_table(flowtable_parentdir+childdir+flowtable_name);*/
+        //*********************************************************************
+
+        populate_flow_table(flowtable_path);
         //**********************************************
         std::vector<bm::MatchTable::Entry> entries=mt_get_entries(0,std::string("arp_nhop"));
         std::cout<<"arp_nhop entry num:"<<entries.size()<<std::endl;
@@ -641,11 +645,14 @@ void P4Model::parse_flowtable_command(std::string command_row)
         {
             //table_set_default ipv4_nhop _drop
             //        table_name action_name action_data
+            //"Set default action for a match table: table_set_default <table name> <action name> <action parameters>"
             bm::ActionData action_data;
             if (parms.size() > 3)
             {
                 for (size_t i = 3; i < parms.size(); i++)
-                    action_data.push_back_action_data(str_to_int(parms[i]));
+                    //action_data.push_back_action_data(str_to_int(parms[i]));
+                    action_data.push_back_action_data(bm::Data(parms[i]));
+
                  //void push_back_action_data(const Data &data)
                  ///usr/local/include/bm/bm_sim/actions.h 
                 //build action_data
@@ -659,7 +666,8 @@ void P4Model::parse_flowtable_command(std::string command_row)
                 //table_add ipv4_nhop set_nhop 0x0a010104 => 0x0a0a0a0a
                 //table_name action_name match_key=>action_data
                 // need to match type
-                NS_LOG_LOGIC("come to table_add");
+                //"Add entry to a match table: table_add <table name> <action name> <match fields> => <action parameters> [priority]"
+                //NS_LOG_LOGIC("come to table_add");
                 std::vector<bm::MatchKeyParam> match_key;
                 bm::ActionData action_data;
                 bm::entry_handle_t *handle=new bm::entry_handle_t(1);// table entry num
@@ -685,8 +693,8 @@ void P4Model::parse_flowtable_command(std::string command_row)
                     if(parms[i].compare("=>")!=0)
                     {
                         key_num++;
-                        match_key.push_back(bm::MatchKeyParam(match_type,parms[i]));
-                        NS_LOG_LOGIC("match_key:"<<" "<<parms[i]);
+                        match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i])));
+                        //NS_LOG_LOGIC("match_key:"<<" "<<parms[i]);
                     }
                     else
                         break;
@@ -699,19 +707,20 @@ void P4Model::parse_flowtable_command(std::string command_row)
                     for(;i<parms.size();i++)
                     {
                         action_data_num++;
-                        action_data.push_back_action_data(str_to_int(parms[i]));
-                        NS_LOG_LOGIC("action_data:"<<parms[i]);
+                        //action_data.push_back_action_data(str_to_int(parms[i]));
+                        action_data.push_back_action_data(bm::Data(parms[i]));
+                        //NS_LOG_LOGIC("action_data:"<<parms[i]);
                     }
                     priority=0;
                     // judge action_data_num equal action need num
                      mt_add_entry(0, parms[1], match_key, parms[2], action_data, handle,priority);
 
                      //******************************************************
-                      std::cout<<"table_name:"<<parms[1]<<std::endl;
+                      /*std::cout<<"table_name:"<<parms[1]<<std::endl;
                       std::cout<<"match_key num:"<<match_key.size()<<std::endl;
                       std::cout<<"action_name:"<<parms[2]<<std::endl;
                       std::cout<<"action_data num:"<<action_data.size()<<std::endl;
-                      std::cout<<"entry_handle:"<<*handle<<std::endl;
+                      std::cout<<"entry_handle:"<<*handle<<std::endl;*/
                      //******************************************************
                 }
                 else
@@ -719,7 +728,8 @@ void P4Model::parse_flowtable_command(std::string command_row)
                     for(;i<parms.size()-1;i++)
                     {
                         action_data_num++;
-                        action_data.push_back_action_data(str_to_int(parms[i]));
+                        //action_data.push_back_action_data(str_to_int(parms[i]));
+                        action_data.push_back_action_data(bm::Data(parms[i]));
                     }
                     // judge action_data_num equal action need num
                     priority=str_to_int(parms[parms.size()-1]);
@@ -783,6 +793,41 @@ unsigned int P4Model::str_to_int(const std::string str)
                 }
             }
         }
+    }
+    return res;
+}
+int P4Model::hexchar_to_int(char c)
+{
+    int temp=0;
+    if (c >= '0'&&c <= '9')
+        temp = c - '0';
+    else
+    {
+        if (c >= 'a'&&c <= 'f')
+            temp = c - 'a' + 10;
+        else
+        {
+            std::cout << "str_to_bytes error" << std::endl;
+        }
+    }
+    return temp;
+}
+std::string P4Model::hexstr_to_bytes(std::string str)
+{
+    std::string hex_str;
+    if (str.find("0x") < str.size())
+    {
+        hex_str = str.substr(2);
+    }
+    else
+    {
+        hex_str = str;
+    }
+    std::string res;
+    res.resize(hex_str.size() / 2);
+    for (size_t i = 0,j=0; i < hex_str.size(); i += 2,j++)
+    {
+        res[j] = hexchar_to_int(hex_str[i]) * 16 + hexchar_to_int(hex_str[i + 1]);
     }
     return res;
 }

@@ -115,13 +115,27 @@ public:
     int my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp = nullptr);
     /**
      * \brief populate flow table 
-     * @parm:
+     * @parm command_path is command's path
      */
     void populate_flow_table(std::string command_path);
-
+    /**
+     *\brief handle every command
+     *@parm command_row is a concrete command, such as table_set_default, table_add and so on
+     */
     void parse_flowtable_command(std::string command_row);
-
+    /**
+     *\brief change string to unsigned int, can handle hexadecimal,binary and decimal
+     */
     unsigned int str_to_int(const std::string str);
+    /**
+     *\brief change hexadecimal char to int
+     */
+    int hexchar_to_int(char c);
+    /**
+     *\brief compress two hexadecimal chars to one ascll char, so return string size
+     * is the half of input string size 
+     */
+    std::string hexstr_to_bytes(std::string str);
 
 private:
 
