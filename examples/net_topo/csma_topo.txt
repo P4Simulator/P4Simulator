@@ -1,0 +1,6 @@
+6 5
+3 terminal 0 0 switch 0
+4 terminal 0 0 switch 0
+0 switch 0 1 switch 1
+5 terminal 1 1 switch 1
+2 terminal 1 1 switch 1

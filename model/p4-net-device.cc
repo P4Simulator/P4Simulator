@@ -575,6 +575,7 @@ int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::Target
  if (parser.no_p4)
     status = init_objects_empty(parser.device_id, transport);
   else
+    // load p4 json to switch
     status = init_objects(parser.config_file_path, parser.device_id, transport);
     return status;
 }
@@ -593,7 +594,7 @@ int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::Target
         mt_set_default_action(0,std::string("arp_nhop"),std::string("_drop"),action_data);
     }
 }*/
-void P4Model::populate_flow_table(std::string command_path)
+void P4Model::populate_flow_table(const std::string command_path)
 {
     //get switch all table name
     //get key field
@@ -618,7 +619,7 @@ void P4Model::populate_flow_table(std::string command_path)
         }
     }
 }
-void P4Model::parse_flowtable_command(std::string command_row)
+void P4Model::parse_flowtable_command(const std::string command_row)
 {
     std::vector<std::string> parms;
     int last_p = 0, cur_p = 0;
@@ -812,7 +813,7 @@ int P4Model::hexchar_to_int(char c)
     }
     return temp;
 }
-std::string P4Model::hexstr_to_bytes(std::string str)
+std::string P4Model::hexstr_to_bytes(const std::string str)
 {
     std::string hex_str;
     if (str.find("0x") < str.size())

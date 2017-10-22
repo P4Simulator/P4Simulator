@@ -22,7 +22,10 @@ def build(bld):
     module.source = [
         'model/p4-net-device.cc',
         'helper/p4-helper.cc',
-        'model/primitives.cpp'
+        'model/primitives.cpp',
+        'model/csma-topology-reader.cc',
+        'model/p4-topology-reader.cc',
+        'helper/p4-topology-reader-helper.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('ns4')
@@ -36,6 +39,9 @@ def build(bld):
         'model/p4-net-device.h',
         'model/p4.h',
         'helper/p4-helper.h',
+        'helper/p4-topology-reader-helper.h',
+        'model/csma-topology-reader.h',
+        'model/p4-topology-reader.h',
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

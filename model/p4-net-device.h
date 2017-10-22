@@ -117,12 +117,12 @@ public:
      * \brief populate flow table 
      * @parm command_path is command's path
      */
-    void populate_flow_table(std::string command_path);
+    void populate_flow_table(const std::string command_path);
     /**
      *\brief handle every command
      *@parm command_row is a concrete command, such as table_set_default, table_add and so on
      */
-    void parse_flowtable_command(std::string command_row);
+    void parse_flowtable_command(const std::string command_row);
     /**
      *\brief change string to unsigned int, can handle hexadecimal,binary and decimal
      */
@@ -135,7 +135,7 @@ public:
      *\brief compress two hexadecimal chars to one ascll char, so return string size
      * is the half of input string size 
      */
-    std::string hexstr_to_bytes(std::string str);
+    std::string hexstr_to_bytes(const std::string str);
 
 private:
 

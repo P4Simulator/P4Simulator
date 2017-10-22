@@ -44,10 +44,10 @@
 using namespace ns3;
 
 int switchIndex=0;
+std::string networkFunc;
+std::string flowtable_path;
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
-
-std::string networkFunc;
 
 static void SinkRx (Ptr<const Packet> p, const Address &ad) {
     std::cout << "Rx" << "Received from  "<< ad << std::endl;
