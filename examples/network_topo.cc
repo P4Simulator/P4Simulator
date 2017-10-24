@@ -44,6 +44,7 @@
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 #include "ns3/p4-topology-reader-helper.h"
+#include "ns3/tree-topo-helper.h"
 
 using namespace ns3;
 
@@ -88,6 +89,12 @@ int main (int argc, char *argv[]) {
     LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
     LogComponentEnable("P4TopologyReader",LOG_LEVEL_LOGIC);
     LogComponentEnable("CsmaTopologyReader",LOG_LEVEL_LOGIC);
+    LogComponentEnable("TreeTopoHelper",LOG_LEVEL_LOGIC);
+
+    //build tree topo
+    std::string topo_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/examples/net_topo/csma_topo.txt";
+    TreeTopoHelper treeTopo(2,topo_path);
+    treeTopo.Write();
     
     // ******************TO DO *******************************************
     // may be can consider networkFunc as a parm form command line load
@@ -102,8 +109,7 @@ int main (int argc, char *argv[]) {
     // run-time, via command-line arguments
     //
     std::string format ("CsmaTopo");
-    std::string input ("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/examples/net_topo/csma_topo.txt");
-
+    std::string input (topo_path);
     CommandLine cmd;
     cmd.AddValue ("format", "Format to use for data input [Orbis|Inet|Rocketfuel|CsmaNetTopo].",
                 format);
@@ -153,8 +159,8 @@ int main (int argc, char *argv[]) {
     NetDeviceContainer* switchDevices=new NetDeviceContainer[switchNum];// every switch linked device, at the end of switch
     std::vector<std::string> *switchPortInfo=new std::vector<std::string>[switchNum];// every switch linked port info (0s,0t)
     unsigned int* terminalNodeLinkedSwitchIndex=new unsigned int[terminalNum];
-    unsigned int* terminalNodeLinkedSwitchPort=new unsigned int[terminalNum];
-    unsigned int* terminalNodeLinkedSwitchNumber=new unsigned int[terminalNum];
+    unsigned int* terminalNodeLinkedSwitchPort=new unsigned int[terminalNum];// from 0 count
+    unsigned int* terminalNodeLinkedSwitchNumber=new unsigned int[terminalNum];//from 1 count
 
    
     P4TopologyReader::ConstLinksIterator iter;
@@ -162,6 +168,12 @@ int main (int argc, char *argv[]) {
     int curTerminalIndex=0;
     for ( iter = inFile->LinksBegin (); iter != inFile->LinksEnd (); iter++, i++ )
     {
+         //************************* TO DO ***********************************
+         // may accord every switch level set dataRate and delay
+         // csma.SetChannelAttribute ("DataRate", DataRateValue (5000000));
+         // csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+         //*******************************************************************
+
          NetDeviceContainer link = csma.Install(NodeContainer (iter->GetFromNode (), iter->GetToNode ()));
 
          if(iter->GetFromType().compare("terminal")==0&&iter->GetToType().compare("switch")==0)
@@ -206,10 +218,13 @@ int main (int argc, char *argv[]) {
             }
          }
     }
+    // view every terminal link info
     for(size_t k=0;k<terminalNum;k++)
-        std::cout<<terminalNodeLinkedSwitchIndex[k]<<" "<<terminalNodeLinkedSwitchPort[k]<<" "<<terminalNodeLinkedSwitchNumber[k]<<std::endl;
+        std::cout<<"t"<<k<<": "<<terminalNodeLinkedSwitchIndex[k]<<" "<<terminalNodeLinkedSwitchPort[k]<<" "<<terminalNodeLinkedSwitchNumber[k]<<std::endl;
+    // view every switch port info
     for(size_t k=0;k<switchNum;k++)
     {
+        std::cout<<"s"<<k<<": ";
         for(std::vector<std::string>::iterator iter=switchPortInfo[k].begin();iter!=switchPortInfo[k].end();iter++)
         {
             std::cout<<*iter<<" ";
@@ -264,6 +279,10 @@ int main (int argc, char *argv[]) {
 
         ipv4.NewNetwork ();
     }
+    // view every terminal ip
+    for(size_t k=0;k<terminalNum;k++)
+        std::cout<<"t"<<k<<": "<<terminalIpv4s[terminalNodeLinkedSwitchIndex[k]].GetAddress (terminalNodeLinkedSwitchNumber[k]-1)<<std::endl;
+    
     // random select a node as server
     Ptr<UniformRandomVariable> unifRandom = CreateObject<UniformRandomVariable> ();
     unifRandom->SetAttribute ("Min", DoubleValue (0));

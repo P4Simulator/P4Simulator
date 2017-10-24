@@ -25,7 +25,8 @@ def build(bld):
         'model/primitives.cpp',
         'model/csma-topology-reader.cc',
         'model/p4-topology-reader.cc',
-        'helper/p4-topology-reader-helper.cc'
+        'helper/p4-topology-reader-helper.cc',
+        'helper/tree-topo-helper.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('ns4')
@@ -42,6 +43,7 @@ def build(bld):
         'helper/p4-topology-reader-helper.h',
         'model/csma-topology-reader.h',
         'model/p4-topology-reader.h',
+        'helper/tree-topo-helper.h',
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

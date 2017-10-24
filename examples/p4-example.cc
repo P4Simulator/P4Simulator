@@ -40,8 +40,29 @@
 #include "ns3/internet-module.h"
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
+#include <unistd.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+
 
 using namespace ns3;
+unsigned long getTickCount(void)
+{
+        unsigned long currentTime=0;
+#ifdef WIN32
+        currentTime = GetTickCount();
+#endif
+        struct timeval current;
+        gettimeofday(&current, NULL);
+        currentTime = current.tv_sec * 1000 + current.tv_usec / 1000;
+#ifdef OS_VXWORKS
+        ULONGA timeSecond = tickGet() / sysClkRateGet();
+        ULONGA timeMilsec = tickGet() % sysClkRateGet() * 1000 / sysClkRateGet();
+        currentTime = timeSecond * 1000 + timeMilsec;
+#endif
+        return currentTime;
+}
+
 
 int switchIndex=0;
 std::string networkFunc;
@@ -58,6 +79,7 @@ static void PingRtt (std::string context, Time rtt) {
 }
 
 int main (int argc, char *argv[]) {
+     unsigned long start = getTickCount();
     int p4 = 1;
 
     //
@@ -146,7 +168,22 @@ int main (int argc, char *argv[]) {
     NS_LOG_INFO ("Create Source");
     Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
 
-    InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));
+    UdpEchoServerHelper echoServer (9);
+
+    ApplicationContainer serverApps = echoServer.Install (terminals.Get (0));
+    serverApps.Start (Seconds (1.0));
+    serverApps.Stop (Seconds (10.0));
+
+    UdpEchoClientHelper echoClient (addresses.GetAddress (0), 9);
+    echoClient.SetAttribute ("MaxPackets", UintegerValue (20));
+    echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+    echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+
+    ApplicationContainer clientApps = echoClient.Install (terminals.Get (3));
+    clientApps.Start (Seconds (2.0));
+    clientApps.Stop (Seconds (10.0));
+
+    /*InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));
     OnOffHelper onoff = OnOffHelper ("ns3::TcpSocketFactory", dst);
     onoff.SetConstantRate (DataRate (15000));
     onoff.SetAttribute ("PacketSize", UintegerValue (1200));
@@ -159,7 +196,7 @@ int main (int argc, char *argv[]) {
     PacketSinkHelper sink = PacketSinkHelper ("ns3::TcpSocketFactory", dst);
     apps = sink.Install (terminals.Get (3));
     apps.Start (Seconds (0.0));
-    apps.Stop (Seconds (11.0));
+    apps.Stop (Seconds (11.0));*/
 
     if(networkFunc.compare("simple")==0){
 
@@ -191,4 +228,7 @@ int main (int argc, char *argv[]) {
     Simulator::Run ();
     Simulator::Destroy ();
     NS_LOG_INFO ("Done.");
+    unsigned long end = getTickCount();
+    NS_LOG_INFO("Running time: "<<end-start);
+
 }
