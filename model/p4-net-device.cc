@@ -23,14 +23,17 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <fstream>
+#include <map>
 using namespace ns3;
 
 #define MAXSIZE 512
-
 std::string networkFunc; // define in p4-example.cc,to select nf
 int switchIndex; //define in p4-example.cc, to decide thrift_port
 std::string flowtable_path;//define in p4-example.cc
+std::map<std::string,bm::MatchKeyParam::Type> tableaction_matchtype;
+std::string tableaction_matchtype_path;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -168,7 +171,9 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
           }
         else
             std::cout<<"drop packet!\n";
-    } else std::cout << "Null packet!\n";
+    } 
+    else 
+        std::cout << "Null packet!\n";
 }
 
 int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
@@ -249,7 +254,6 @@ P4NetDevice::P4NetDevice() :
     // Usage: SWITCH_NAME [options] <path to JSON config file>
     // --thrift-port arg        TCP port on which to run the Thrift runtime server
     char * args[2] = { NULL,a3};
-    //char * args[2] = { NULL, a3 };
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 }
@@ -486,54 +490,34 @@ P4Model::P4Model() :
     import_primitives();
 }
 
-/*int init_from_command_line_options(
-      int argc, char *argv[],
-      TargetParserIface *tp = nullptr,
-      std::shared_ptr<TransportIface> my_transport = nullptr,
-      std::unique_ptr<DevMgrIface> my_dev_mgr = nullptr);*/
 
 int P4Model::init(int argc, char *argv[]) {
+
     NS_LOG_FUNCTION(this);
-    //NS_LOG_LOGIC("argc: "<<argc);
-    //for(int i=0;i<argc;i++)
-        //std::cout<<argv[i]<<std::endl;
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
     NS_LOG_LOGIC("switchIndex: "<<switchIndex);
     std::string populate_flowtable_type;// runtime_CLI  local_call
     populate_flowtable_type="local_call";
     //populate_flowtable_type="runtime_CLI";
-    // ************************************************************
+    
     // use local call to populate flowtable
     if(populate_flowtable_type.compare("local_call")==0)
     {
         this->my_init_from_command_line_options(argc, argv, argParser);
+        
+        //**************READ TABLE ACTION MATCH_TYPE**************
+        read_table_action_match_type(tableaction_matchtype_path,tableaction_matchtype);
+        //********************************************************
 
-        //***************************To Remove****************************************
-        /*std::string flowtable_parentdir("/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/flowtable_dir/");
-        std::string childdir("router_flowtable");
-        std::string flowtable_name("/command1.txt");
-        populate_flow_table(flowtable_parentdir+childdir+flowtable_name);*/
-        //*********************************************************************
 
         populate_flow_table(flowtable_path);
-        //**********************************************
-        std::vector<bm::MatchTable::Entry> entries=mt_get_entries(0,std::string("arp_nhop"));
-        std::cout<<"arp_nhop entry num:"<<entries.size()<<std::endl;
-        for(size_t i=0;i<entries.size();i++);
-        //**********************************************
-         //**********************************************
-        std::vector<bm::MatchTable::Entry> entries1=mt_get_entries(0,std::string("forward_table"));
-        std::cout<<"forward_table entry num:"<<entries1.size()<<std::endl;
-        for(size_t i=0;i<entries1.size();i++);
-        //**********************************************
-         //**********************************************
-        std::vector<bm::MatchTable::Entry> entries2=mt_get_entries(0,std::string("send_frame"));
-        std::cout<<"send_frame entry num:"<<entries2.size()<<std::endl;
-        for(size_t i=0;i<entries2.size();i++);
-        //**********************************************
+
+        view_flowtable_entry_num("firewall_with_tcp");
+
+        view_flowtable_entry_num("forward_table");
+
     }
-    // **************************************************************
     else
     {
         // ******************************TO DO*************************************
@@ -555,47 +539,108 @@ int P4Model::init(int argc, char *argv[]) {
     return 0;
 }
 
+void P4Model::view_flowtable_entry_num(std::string flowtable_name)
+{
+    std::vector<bm::MatchTable::Entry> entries=mt_get_entries(0,flowtable_name);
+    std::cout<<flowtable_name<<" entry num:"<<entries.size()<<std::endl;
+}
+
+void P4Model::read_table_action_match_type(std::string file_path,std::map<std::string,bm::MatchKeyParam::Type>& tableaction_matchtype)
+{
+
+    std::ifstream topgen;
+    topgen.open(file_path);
+
+    if (!topgen.is_open())
+    {
+        std::cout <<file_path<< " can not open!"<< std::endl;
+        abort();
+    }
+
+    std::string table_action;
+    std::string match_type;
+
+    std::istringstream lineBuffer;
+    std::string line;
+
+    while (getline(topgen, line))
+    {
+        lineBuffer.clear();
+        lineBuffer.str(line);
+
+        lineBuffer >> table_action >> match_type;
+        if (match_type.compare("exact")==0)
+        {
+            tableaction_matchtype[table_action]=bm::MatchKeyParam::Type::EXACT;
+        }
+        else
+        {
+            if (match_type.compare("lpm")==0)
+            {
+                 tableaction_matchtype[table_action]=bm::MatchKeyParam::Type::LPM;
+            }
+            else
+            {
+                if (match_type.compare("ternary")==0)
+                {
+                     tableaction_matchtype[table_action]=bm::MatchKeyParam::Type::TERNARY;
+                }
+                else
+                {
+                    if (match_type.compare("valid")==0)
+                    {
+                         tableaction_matchtype[table_action]=bm::MatchKeyParam::Type::VALID;
+                    }
+                    else
+                    {
+                        if (match_type.compare("range")==0)
+                        {
+                             tableaction_matchtype[table_action]=bm::MatchKeyParam::Type::RANGE;
+                        }
+                        else
+                        {
+                            std::cout << "match type error." << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+        std::cout << table_action << " " << match_type << std::endl;
+    }
+}
+
 int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp)
 {
+
+    
     NS_LOG_FUNCTION(this);
     bm::OptionsParser parser;
     parser.parse(argc,argv,tp);
     std::shared_ptr<bm::TransportIface> transport=nullptr;
     int status = 0;
-    if (transport == nullptr) {
-#ifdef BMNANOMSG_ON
-    //notifications_addr = parser.notifications_addr;
-    transport = std::shared_ptr<bm::TransportIface>(
+    if (transport == nullptr) 
+    {
+    #ifdef BMNANOMSG_ON
+          //notifications_addr = parser.notifications_addr;
+        transport = std::shared_ptr<bm::TransportIface>(
         TransportIface::make_nanomsg(parser.notifications_addr));
-#else
-    //notifications_addr = "";
-    transport = std::shared_ptr<bm::TransportIface>(bm::TransportIface::make_dummy());
-#endif
-  }
- if (parser.no_p4)
-    status = init_objects_empty(parser.device_id, transport);
-  else
-    // load p4 json to switch
-    status = init_objects(parser.config_file_path, parser.device_id, transport);
-    return status;
+    #else
+       //notifications_addr = "";
+       transport = std::shared_ptr<bm::TransportIface>(bm::TransportIface::make_dummy());
+    #endif
+    }
+    if (parser.no_p4)
+       status = init_objects_empty(parser.device_id, transport);
+    else
+       // load p4 json to switch
+       status = init_objects(parser.config_file_path, parser.device_id, transport);
+       return status;
 }
 
-/*void P4Model::populate_flow_table(std::string command_path)
-{
-    std::fstream fp;
-    fp.open(command_path);
-    if(!fp)
-    {
-        std::cout<<command_path<<" can't open."<<std::endl;
-    }
-    else
-    {
-        bm::ActionData action_data;
-        mt_set_default_action(0,std::string("arp_nhop"),std::string("_drop"),action_data);
-    }
-}*/
+
 void P4Model::populate_flow_table(const std::string command_path)
 {
+
     //get switch all table name
     //get key field
     //according to table name get all action name
@@ -621,6 +666,7 @@ void P4Model::populate_flow_table(const std::string command_path)
 }
 void P4Model::parse_flowtable_command(const std::string command_row)
 {
+
     std::vector<std::string> parms;
     int last_p = 0, cur_p = 0;
     //int action_end = command_row.find("=>");
@@ -644,19 +690,13 @@ void P4Model::parse_flowtable_command(const std::string command_row)
     {
         if (parms[0].compare("table_set_default") == 0)
         {
-            //table_set_default ipv4_nhop _drop
-            //        table_name action_name action_data
-            //"Set default action for a match table: table_set_default <table name> <action name> <action parameters>"
+          
             bm::ActionData action_data;
             if (parms.size() > 3)
             {
                 for (size_t i = 3; i < parms.size(); i++)
                     //action_data.push_back_action_data(str_to_int(parms[i]));
                     action_data.push_back_action_data(bm::Data(parms[i]));
-
-                 //void push_back_action_data(const Data &data)
-                 ///usr/local/include/bm/bm_sim/actions.h 
-                //build action_data
             }
             mt_set_default_action(0, parms[1], parms[2], action_data);
         }
@@ -664,28 +704,20 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         {
             if (parms[0].compare("table_add") == 0)
             {
-                //table_add ipv4_nhop set_nhop 0x0a010104 => 0x0a0a0a0a
-                //table_name action_name match_key=>action_data
-                // need to match type
-                //"Add entry to a match table: table_add <table name> <action name> <match fields> => <action parameters> [priority]"
-                //NS_LOG_LOGIC("come to table_add");
+               
                 std::vector<bm::MatchKeyParam> match_key;
                 bm::ActionData action_data;
                 bm::entry_handle_t *handle=new bm::entry_handle_t(1);// table entry num
-                /*
-                 *enum class Type {
-                 *              RANGE,
-                 *              VALID,
-                 *              EXACT,
-                 *              LPM,
-                 *              TERNARY
-                 *             };
-                 */
+                
+                //enum class Type {RANGE,VALID,EXACT,LPM,TERNARY};
+
                 //*************************TO DO**********************************
                 // should accord to p4 json file to decide every table key match type
-                // now use EXACT temporarily 
-                bm::MatchKeyParam::Type match_type=bm::MatchKeyParam::Type::EXACT;
+                // now can handle every table match type same temporarily 
+                bm::MatchKeyParam::Type match_type=tableaction_matchtype[parms[1]];
+                std::cout<<parms[1]<<" ";
                 //****************************************************************
+                
                 unsigned int key_num=0;
                 unsigned int action_data_num=0;
                 size_t i;
@@ -694,7 +726,45 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                     if(parms[i].compare("=>")!=0)
                     {
                         key_num++;
-                        match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i])));
+                        if(match_type==bm::MatchKeyParam::Type::EXACT)
+                        {
+                            std::cout<<"exact"<<" ";
+                            match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i])));
+                        }
+                        else
+                        {
+                            // ******************TO DO****************************
+                            if(match_type==bm::MatchKeyParam::Type::LPM)
+                            {
+
+                                int pos=parms[i].find("/");
+                                std::string prefix=parms[i].substr(0,pos);
+                                std::string length=parms[i].substr(pos+1);
+                                unsigned int prefix_length=str_to_int(length);
+                                match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i],prefix_length),int(prefix_length)));
+                            }
+                            else
+                            {
+                                if(match_type==bm::MatchKeyParam::Type::TERNARY)
+                                {
+                                    std::cout<<"ternary"<<" ";
+                                    int pos=parms[i].find("&&&");
+                                    std::string key=hexstr_to_bytes(parms[i].substr(0,pos));
+                                    std::string mask=hexstr_to_bytes(parms[i].substr(pos+3));
+                                    //std::cout<<key<<" "<<mask<<std::endl;
+                                    if(key.size()!=mask.size())
+                                    {
+                                        std::cout<<"key and mask length unmatch!"<<std::endl;
+                                        abort();
+                                    }
+                                    else
+                                    {
+                                        match_key.push_back(bm::MatchKeyParam(match_type,key,mask));
+                                    }
+                                }
+                            }
+                            //*********************************************
+                        }
                         //NS_LOG_LOGIC("match_key:"<<" "<<parms[i]);
                     }
                     else
@@ -715,14 +785,6 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                     priority=0;
                     // judge action_data_num equal action need num
                      mt_add_entry(0, parms[1], match_key, parms[2], action_data, handle,priority);
-
-                     //******************************************************
-                      /*std::cout<<"table_name:"<<parms[1]<<std::endl;
-                      std::cout<<"match_key num:"<<match_key.size()<<std::endl;
-                      std::cout<<"action_name:"<<parms[2]<<std::endl;
-                      std::cout<<"action_data num:"<<action_data.size()<<std::endl;
-                      std::cout<<"entry_handle:"<<*handle<<std::endl;*/
-                     //******************************************************
                 }
                 else
                 {
@@ -742,6 +804,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
 }
 unsigned int P4Model::str_to_int(const std::string str)
 {
+
     unsigned int res = 0;
     if (str.find("0x") < str.size())//16
     {
@@ -759,7 +822,12 @@ unsigned int P4Model::str_to_int(const std::string str)
                 }
                 else
                 {
-                    std::cout << "in P4Model::str_to_int, action data error!" << std::endl;
+                    if(str[i]>='A'&&str[i]<='F')
+                        res=res*16+str[i]-'A'+10;
+                    else
+                    {
+                        std::cout << "in P4Model::str_to_int, action data error!" << std::endl;
+                    }
                 }
             }
         }
@@ -799,6 +867,7 @@ unsigned int P4Model::str_to_int(const std::string str)
 }
 int P4Model::hexchar_to_int(char c)
 {
+
     int temp=0;
     if (c >= '0'&&c <= '9')
         temp = c - '0';
@@ -808,13 +877,19 @@ int P4Model::hexchar_to_int(char c)
             temp = c - 'a' + 10;
         else
         {
-            std::cout << "str_to_bytes error" << std::endl;
+            if(c>='A'&&c<='F')
+                temp=c-'A'+10;
+            else
+            {
+                std::cout << "str_to_bytes error" << std::endl;
+            }
         }
     }
     return temp;
 }
 std::string P4Model::hexstr_to_bytes(const std::string str)
 {
+
     std::string hex_str;
     if (str.find("0x") < str.size())
     {
@@ -832,6 +907,77 @@ std::string P4Model::hexstr_to_bytes(const std::string str)
     }
     return res;
 }
+
+std::string P4Model::hexstr_to_bytes(const std::string str, unsigned int bit_width)
+{
+
+    std::string hex_str;
+    if (str.find("0x") < str.size())
+    {
+        hex_str = str.substr(2);
+    }
+    else
+    {
+        hex_str = str;
+    }
+    std::string res;
+    res.resize(ceil(double(bit_width) / 8));
+    std::cout<<res.size()<<std::endl;
+    for (size_t i = 0, j = 0, w = 0; i<hex_str.size(); i += 2, j++, w += 8)
+    {
+        if (w + 8<bit_width)
+        {
+            res[j] = hexchar_to_int(hex_str[i]) * 16 + hexchar_to_int(hex_str[i + 1]);
+        }
+        else
+        {
+            if (w + 4 >= bit_width)
+            {
+                std::string binary_str(4, '0');
+                size_t k = 3;
+                int value = hexchar_to_int(hex_str[i]);
+                while (value)
+                {
+                    binary_str[k--] = value % 2 + '0';
+                    value /= 2;
+                }
+                res[j] = 0;
+                unsigned int left_len = bit_width - w;
+                for (size_t t = 0; t<left_len; t++)
+                {
+                    res[j] = res[j] * 2 + binary_str[t] - '0';
+                }
+                for (size_t t = left_len; t < 4; t++)
+                    res[j] *= 2;
+                res[j] *= 16;
+            }
+            else
+            {
+                res[j] = hexchar_to_int(hex_str[i]) * 16;
+                std::string binary_str(4, '0');
+                size_t k = 3;
+                int value = hexchar_to_int(hex_str[i+1]);
+                while (value)
+                {
+                    binary_str[k--] = value % 2 + '0';
+                    value /= 2;
+                }
+                int temp = 0;
+                unsigned int left_len = bit_width - w - 4;
+                for (size_t t = 0; t<left_len; t++)
+                {
+                    temp = temp * 2 + binary_str[t] - '0';
+                }
+                for (size_t t = left_len; t < 4; t++)
+                    temp *= 2;
+                res[j] += temp;
+            }
+            break;
+        }
+    }
+    return res;
+}
+
 
 struct ns3PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {

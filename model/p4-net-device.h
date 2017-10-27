@@ -136,6 +136,20 @@ public:
      * is the half of input string size 
      */
     std::string hexstr_to_bytes(const std::string str);
+    /**
+     *\brief 
+     */
+    std::string hexstr_to_bytes(const std::string str,unsigned int bit_width);
+
+    /**
+     *\brief
+     */
+    void read_table_action_match_type(std::string file_path,std::map<std::string,bm::MatchKeyParam::Type>& tableaction_matchtype);
+
+    /**
+     *\brief
+     */
+    void view_flowtable_entry_num(std::string flowtable_name);
 
 private:
 

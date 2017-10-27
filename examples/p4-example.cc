@@ -67,6 +67,7 @@ unsigned long getTickCount(void)
 int switchIndex=0;
 std::string networkFunc;
 std::string flowtable_path;
+std::string tableaction_matchtype_path;
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
@@ -78,8 +79,20 @@ static void PingRtt (std::string context, Time rtt) {
     std::cout << "Rtt" << context << " " << rtt << std::endl;
 }
 
+/**
+ *\brief set switch network function, flowtable path and table action match type path
+ * nf: l2_switch firewall simple router
+ */
+void init_switch_config_info(std::string nf,std::string ft_path,std::string ta_mt_path)
+{
+    networkFunc=nf;
+    flowtable_path=ft_path;
+    tableaction_matchtype_path=ta_mt_path;
+}
+
 int main (int argc, char *argv[]) {
-     unsigned long start = getTickCount();
+    
+    unsigned long start = getTickCount();
     int p4 = 1;
 
     //
@@ -91,20 +104,11 @@ int main (int argc, char *argv[]) {
     LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
-    
-    // ******************TO DO *******************************************
-    // may be can consider networkFunc as a parm form command line load
-    // now implmented network function includes: simple firewall l2_switch router
-    //networkFunc="l2_switch";
-    //networkFunc="firewall";
-    //networkFunc="l2_switch";
-    networkFunc="router";
-    // *******************************************************************
-
     // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("Packet", LOG_LEVEL_LOGIC);
     // LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
-
+    
+    
     // Allow the user to override any of the defaults and the above Bind() at
     // run-time, via command-line arguments
     //
@@ -140,11 +144,17 @@ int main (int argc, char *argv[]) {
     // Create the p4 netdevice, which will do the packet switching
     Ptr<Node> switchNode = csmaSwitch.Get (0);
     //p4=0;
-    if (p4) {
+    if (p4) 
+    {
+        std::string ft_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/self_command.txt";
+        std::string ta_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/table_action.txt";
         P4Helper bridge;
+        init_switch_config_info("firewall",ft_path,ta_path);
         NS_LOG_INFO("P4 bridge established");
         bridge.Install (switchNode, switchDevices);
-    } else {
+    } 
+    else 
+    {
        BridgeHelper bridge;
        bridge.Install (switchNode, switchDevices);
     }
