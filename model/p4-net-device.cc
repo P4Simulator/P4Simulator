@@ -234,6 +234,13 @@ P4NetDevice::P4NetDevice() :
                     //a3=(char*) &" --thrift-port 9091 /home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
                     a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
                 }
+                else
+                {
+                    if(networkFunc.compare("simple_router")==0)
+                    {
+                         a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
+                    }
+                }
             }
         }
     }
@@ -513,7 +520,9 @@ int P4Model::init(int argc, char *argv[]) {
 
         populate_flow_table(flowtable_path);
 
-        view_flowtable_entry_num("firewall_with_tcp");
+        view_flowtable_entry_num("arp_nhop");
+
+        view_flowtable_entry_num("ipv4_nhop");
 
         view_flowtable_entry_num("forward_table");
 
@@ -683,9 +692,9 @@ void P4Model::parse_flowtable_command(const std::string command_row)
     {
         parms.push_back(command_row.substr(last_p, cur_p - last_p));
     }
-    for (size_t i = 0; i < parms.size(); i++)
+    /*for (size_t i = 0; i < parms.size(); i++)
         std::cout << parms[i] << " ";
-    std::cout<<std::endl;
+    std::cout<<std::endl;*/
     if (parms.size() > 0)
     {
         if (parms[0].compare("table_set_default") == 0)
@@ -715,7 +724,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                 // should accord to p4 json file to decide every table key match type
                 // now can handle every table match type same temporarily 
                 bm::MatchKeyParam::Type match_type=tableaction_matchtype[parms[1]];
-                std::cout<<parms[1]<<" ";
+                //std::cout<<parms[1]<<" ";
                 //****************************************************************
                 
                 unsigned int key_num=0;
@@ -728,7 +737,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                         key_num++;
                         if(match_type==bm::MatchKeyParam::Type::EXACT)
                         {
-                            std::cout<<"exact"<<" ";
+                            //std::cout<<"exact"<<" ";
                             match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i])));
                         }
                         else
@@ -747,7 +756,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                             {
                                 if(match_type==bm::MatchKeyParam::Type::TERNARY)
                                 {
-                                    std::cout<<"ternary"<<" ";
+                                    //std::cout<<"ternary"<<" ";
                                     int pos=parms[i].find("&&&");
                                     std::string key=hexstr_to_bytes(parms[i].substr(0,pos));
                                     std::string mask=hexstr_to_bytes(parms[i].substr(pos+3));

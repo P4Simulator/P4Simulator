@@ -26,7 +26,8 @@ def build(bld):
         'model/csma-topology-reader.cc',
         'model/p4-topology-reader.cc',
         'helper/p4-topology-reader-helper.cc',
-        'helper/tree-topo-helper.cc'
+        'helper/tree-topo-helper.cc',
+        'helper/build-flowtable-helper.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('ns4')
@@ -44,6 +45,7 @@ def build(bld):
         'model/csma-topology-reader.h',
         'model/p4-topology-reader.h',
         'helper/tree-topo-helper.h',
+        'helper/build-flowtable-helper.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

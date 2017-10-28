@@ -1,0 +1,27 @@
+table_set_default ipv4_nhop _drop
+table_set_default arp_nhop _drop
+table_set_default forward_table _drop
+table_add ipv4_nhop set_ipv4_nhop 0x0a010201 => 0x0a010201
+table_add arp_nhop set_arp_nhop 0x0a010201 => 0x0a010201
+table_add forward_table set_port 0x0a010201 => 0
+table_add ipv4_nhop set_ipv4_nhop 0x0a010202 => 0x0a010202
+table_add arp_nhop set_arp_nhop 0x0a010202 => 0x0a010202
+table_add forward_table set_port 0x0a010202 => 1
+table_add ipv4_nhop set_ipv4_nhop 0x0a010203 => 0x0a010203
+table_add arp_nhop set_arp_nhop 0x0a010203 => 0x0a010203
+table_add forward_table set_port 0x0a010203 => 2
+table_add ipv4_nhop set_ipv4_nhop 0x0a010101 => 0x0a010101
+table_add arp_nhop set_arp_nhop 0x0a010101 => 0x0a010101
+table_add forward_table set_port 0x0a010101 => 3
+table_add ipv4_nhop set_ipv4_nhop 0x0a010102 => 0x0a010102
+table_add arp_nhop set_arp_nhop 0x0a010102 => 0x0a010102
+table_add forward_table set_port 0x0a010102 => 3
+table_add ipv4_nhop set_ipv4_nhop 0x0a010301 => 0x0a010301
+table_add arp_nhop set_arp_nhop 0x0a010301 => 0x0a010301
+table_add forward_table set_port 0x0a010301 => 3
+table_add ipv4_nhop set_ipv4_nhop 0x0a010302 => 0x0a010302
+table_add arp_nhop set_arp_nhop 0x0a010302 => 0x0a010302
+table_add forward_table set_port 0x0a010302 => 3
+table_add ipv4_nhop set_ipv4_nhop 0x0a010303 => 0x0a010303
+table_add arp_nhop set_arp_nhop 0x0a010303 => 0x0a010303
+table_add forward_table set_port 0x0a010303 => 3
