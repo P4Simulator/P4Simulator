@@ -137,7 +137,7 @@ int main (int argc, char *argv[]) {
    // LogComponentEnable("CsmaTopologyReader",LOG_LEVEL_LOGIC);
    // LogComponentEnable("TreeTopoHelper",LOG_LEVEL_LOGIC);
    // LogComponentEnable("FattreeTopoHelper",LOG_LEVEL_LOGIC);
-   LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+//   LogComponentEnable("OnOffApplication", LOG_ALL);
 
     // Allow the user to override any of the defaults and the above Bind() at
     // run-time, via command-line arguments
@@ -380,32 +380,29 @@ int main (int argc, char *argv[]) {
     std::string applicationType="onoff_sink";
     if(applicationType.compare("onoff_sink")==0)
     {
-        InetSocketAddress dst = InetSocketAddress (serverAddr);
-
-         OnOffHelper onoff = OnOffHelper ("ns3::TcpSocketFactory", dst);
          //onoff.SetConstantRate (DataRate (15000));
          //onoff.SetAttribute ("PacketSize", UintegerValue (1200));
-	 onoff.SetAttribute("PacketSize", UintegerValue(1024));
-	 onoff.SetAttribute("DataRate", StringValue("1Mbps"));
-	 onoff.SetAttribute("MaxBytes", StringValue("0"));
-
         ApplicationContainer apps;
-        for(unsigned int j=0;j<terminalNum;j++)
+	unsigned int halfTmlNum=terminalNum/2;
+        for(unsigned int j=0;j<halfTmlNum;j++)
         {
-           if(j!=randomTerminalNumber)
-           {
-            std::cout<<"terminal "<<j<<" start"<<std::endl;
-            apps = onoff.Install (terminals.Get (j));
-            apps.Start (Seconds (1.0));
-            apps.Stop (Seconds (100.0));
-           }
+	   unsigned int server_j=terminalNum-j-1;
+      	   Ipv4Address server_addr=terminalIpv4s[terminalNodeLinkedSwitchIndex[server_j]].GetAddress (terminalNodeLinkedSwitchNumber[server_j]-1);
+	   InetSocketAddress dst = InetSocketAddress (server_addr);
+           OnOffHelper onoff = OnOffHelper ("ns3::TcpSocketFactory", dst);
+	    onoff.SetAttribute("PacketSize", UintegerValue(1024));
+            onoff.SetAttribute("DataRate", StringValue("1Mbps"));
+           onoff.SetAttribute("MaxBytes", StringValue("0"));
+
+           apps = onoff.Install (terminals.Get (j));
+           apps.Start (Seconds (1.0));
+           apps.Stop (Seconds (100.0));
+
+       	   PacketSinkHelper sink = PacketSinkHelper ("ns3::TcpSocketFactory", dst);
+           apps = sink.Install (terminals.Get(server_j));
+           apps.Start (Seconds (0.0));
+           apps.Stop (Seconds (101.0));
         }
-        // n2 responce n0
-        NS_LOG_INFO ("Create Sink.");
-        PacketSinkHelper sink = PacketSinkHelper ("ns3::TcpSocketFactory", dst);
-        apps = sink.Install (terminals.Get(randomTerminalNumber));
-        apps.Start (Seconds (0.0));
-        apps.Stop (Seconds (101.0));
     }
     if(applicationType.compare("client_server")==0)
     {

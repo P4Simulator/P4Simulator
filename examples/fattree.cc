@@ -133,11 +133,15 @@ int
 //	 LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
 	 //LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
 	   // LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-	 LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
+//	 LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
+        int pod=4;
+	 CommandLine cmd;
+         cmd.AddValue("pod","Numbers of pod",pod);
+        cmd.Parse (argc, argv);
 
 //=========== Define parameters based on value of k ===========//
 //
-	int k = 4;			// number of ports per switch
+	int k = pod;			// number of ports per switch
 	int num_pod = k;		// number of pod
 	int num_host = (k/2);		// number of hosts under a switch
 	int num_edge = (k/2);		// number of edge switch in a pod
@@ -146,7 +150,7 @@ int
 	int num_group = k/2;		// number of group of core switches
         int num_core = (k/2);		// number of core switch in a group
 	int total_host = k*k*k/4;	// number of hosts in the entire network	
-	char filename [] = "Fat-tree.xml";// filename for Flow Monitor xml output file
+	//char filename [] = "Fat-tree.xml";// filename for Flow Monitor xml output file
 
 // Define variables for On/Off Application
 // These values will be used to serve the purpose that addresses of server and client are selected randomly
@@ -269,14 +273,14 @@ int
 	}
 	std::cout << "Finished creating On/Off traffic"<<"\n";
 */
-char *add;
+/*char *add;
 add = toString(10, 0, 0, 2);
 for (int p = 0; p < num_pod; p++)
 {
 	for (int q = 0; q < num_edge; q++)
 	{
 		for (int t = 0; t < num_host; t++)
-		{
+		{	
 			OnOffHelper oo = OnOffHelper("ns3::UdpSocketFactory", Address(InetSocketAddress(Ipv4Address(add), port))); // ip address of server
 			oo.SetAttribute("PacketSize", UintegerValue(packetSize));
 			oo.SetAttribute("DataRate", StringValue(dataRate_OnOff));
@@ -289,7 +293,40 @@ for (int p = 0; p < num_pod; p++)
 			}
 		}
 	}
+}*/
+char *add;
+//add = toString(10, 0, 0, 2);
+int half_host_num = total_host / 2;
+for (int client_i = 0; client_i < half_host_num; client_i++)
+{
+	int server_i = total_host - client_i-1;
+	int s_p, s_q, s_t;
+	s_p = server_i / (num_edge*num_host);
+	s_q = (server_i - s_p*num_edge*num_host) / num_host;
+	s_t = server_i%num_host;
+        //std::cout<<client_i<<" "<<server_i<<std::endl;
+	//std::cout<<s_p<<" "<<s_q<<" "<<s_t<<std::endl;
+	int p, q, t;
+	p = client_i / (num_edge*num_host);
+	q = (client_i - p*num_edge*num_host) / num_host;
+	t = client_i%num_host;
+	//std::cout<<p<<" "<<q<<" "<<t<<std::endl;
+	add = toString(10, s_p, s_q, s_t + 2);
+	OnOffHelper oo = OnOffHelper("ns3::UdpSocketFactory", Address(InetSocketAddress(Ipv4Address(add), port))); // ip address of server
+	oo.SetAttribute("PacketSize", UintegerValue(packetSize));
+	oo.SetAttribute("DataRate", StringValue(dataRate_OnOff));
+	oo.SetAttribute("MaxBytes", StringValue(maxBytes));
+	NodeContainer onoff;
+	onoff.Add(host[p][q].Get(t));
+	app[client_i] = oo.Install(onoff);
+
+	PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", Ipv4Address(add));
+	ApplicationContainer sinkApp = sink.Install(host[s_p][s_q].Get(s_t));
+	sinkApp.Start(Seconds(0.0));
+	sinkApp.Stop(Seconds(101.0));
+
 }
+
 std::cout << "Finished creating On/Off traffic" << "\n";
 
 // Inintialize Address Helper
@@ -398,10 +435,10 @@ std::cout << "Finished creating On/Off traffic" << "\n";
 
 	std::cout << "Start Simulation.. "<<"\n";
         // start server sink
-        PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", Ipv4Address(add));
-	ApplicationContainer sinkApp = sink.Install(host[0][0].Get(0));
-	sinkApp.Start(Seconds(0.0));
-	sinkApp.Stop(Seconds(101.0));
+//        PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", Ipv4Address(add));
+//	ApplicationContainer sinkApp = sink.Install(host[0][0].Get(0));
+//	sinkApp.Start(Seconds(0.0));
+//	sinkApp.Stop(Seconds(101.0));
         // start client onoff
 	for (i=0;i<total_host;i++){
 		app[i].Start (Seconds (1.0));
@@ -410,8 +447,8 @@ std::cout << "Finished creating On/Off traffic" << "\n";
   	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 // Calculate Throughput using Flowmonitor
 //
-  	FlowMonitorHelper flowmon;
-	Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+  //	FlowMonitorHelper flowmon;
+//	Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 // Run simulation.
 //
 	unsigned long simulate_start = getTickCount(); 
@@ -422,8 +459,8 @@ std::cout << "Finished creating On/Off traffic" << "\n";
 
   	Simulator::Run ();
 
-  	monitor->CheckForLostPackets ();
-  	monitor->SerializeToXmlFile(filename, true, true);
+//  	monitor->CheckForLostPackets ();
+  //	monitor->SerializeToXmlFile(filename, true, true);
 
 	std::cout << "Simulation finished "<<"\n";
 
