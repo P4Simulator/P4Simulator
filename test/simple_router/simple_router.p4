@@ -97,7 +97,7 @@ table ipv4_nhop {
         set_ipv4_nhop;
         _drop;
     }
-    size: 1024;
+    size: 8192;
 }
 table arp_nhop{
     reads {
@@ -107,6 +107,7 @@ table arp_nhop{
         set_arp_nhop;
         _drop;
     }
+   size: 8192;
 }
 
 action set_port(port) {
@@ -121,7 +122,7 @@ table forward_table {
         set_port;
         _drop;
     }
-    size: 512;
+    size: 8192;
 }
 
 

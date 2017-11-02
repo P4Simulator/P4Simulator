@@ -34,6 +34,8 @@ int switchIndex; //define in p4-example.cc, to decide thrift_port
 std::string flowtable_path;//define in p4-example.cc
 std::map<std::string,bm::MatchKeyParam::Type> tableaction_matchtype;
 std::string tableaction_matchtype_path;
+unsigned long recPkgNum=0;
+
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -101,7 +103,7 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         Address const &source, Address const &destination,
         PacketType packetType) {
     NS_LOG_FUNCTION(this);
-    
+    recPkgNum++;    
     //  *************View received packet real content, can be removed*******************
     int pkgSize = packet_in->GetSize();
     NS_LOG_LOGIC("received packet_in size:"<<pkgSize);
@@ -238,7 +240,7 @@ P4NetDevice::P4NetDevice() :
                 {
                     if(networkFunc.compare("simple_router")==0)
                     {
-                         a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
+                         a3=(char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
                     }
                 }
             }

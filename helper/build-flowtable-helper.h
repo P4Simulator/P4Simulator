@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 #include <stack>
-
+#include <set>
 namespace ns3 {
 
 	struct TerminalNode
@@ -113,7 +113,7 @@ namespace ns3 {
 	{
 	public:
 
-		BuildFlowtableHelper();
+		BuildFlowtableHelper(std::string buildType="default",unsigned int podNum=2);
 		~BuildFlowtableHelper();
 		
 		virtual void write(std::string file_dir);
@@ -144,6 +144,8 @@ namespace ns3 {
 		}
 
 	private:
+                unsigned int m_podNum;
+		std::string m_buildType;
 
 		void setSwitchesFlowtableEntries();
 
@@ -157,12 +159,14 @@ namespace ns3 {
 		BuildFlowtableHelper operator=(const BuildFlowtableHelper&);
 
 		std::string uintToStr(unsigned int num);
+                
+                std::string uintToPortStr(unsigned int num);
 
-		void dfs(unsigned int terminal_index, unsigned int switch_index, unsigned int switch_in_port,std::stack<SaveNode>& pass_switch);
+                void dfs(unsigned int terminal_index, unsigned int switch_index, unsigned int switch_in_port,std::stack<SaveNode>& pass_switch,std::set<unsigned int> &record_pass_switch);
 
 		void addFlowtableEntry(unsigned int switch_index, unsigned int src_ip, unsigned int dst_ip, unsigned int out_port)
 		{
-			std::string port(1, out_port + '0');
+			std::string port=uintToPortStr(out_port);
 			m_switchNodes[switch_index].flowTableEntries.push_back(FlowTableEntry(m_terminalNodes[src_ip].ipAddr,m_terminalNodes[dst_ip].ipAddr,port));
 		}
 	};

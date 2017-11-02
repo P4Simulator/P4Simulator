@@ -335,16 +335,27 @@
             "id": 0,
             "order": [
                 "ethernet",
-                "ipv4",
-                "arp"
+                "arp",
+                "ipv4"
             ]
         }
     ],
     "meter_arrays": [],
     "actions": [
         {
-            "name": "set_ipv4_nhop",
+            "name": "_drop",
             "id": 0,
+            "runtime_data": [],
+            "primitives": [
+                {
+                    "op": "drop",
+                    "parameters": []
+                }
+            ]
+        },
+        {
+            "name": "set_ipv4_nhop",
+            "id": 1,
             "runtime_data": [
                 {
                     "name": "nhop_ipv4",
@@ -387,47 +398,8 @@
             ]
         },
         {
-            "name": "_drop",
-            "id": 1,
-            "runtime_data": [],
-            "primitives": [
-                {
-                    "op": "drop",
-                    "parameters": []
-                }
-            ]
-        },
-        {
-            "name": "set_arp_nhop",
-            "id": 2,
-            "runtime_data": [
-                {
-                    "name": "nhop_ipv4",
-                    "bitwidth": 32
-                }
-            ],
-            "primitives": [
-                {
-                    "op": "modify_field",
-                    "parameters": [
-                        {
-                            "type": "field",
-                            "value": [
-                                "routing_metadata",
-                                "nhop_ipv4"
-                            ]
-                        },
-                        {
-                            "type": "runtime_data",
-                            "value": 0
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "name": "set_port",
-            "id": 3,
+            "id": 2,
             "runtime_data": [
                 {
                     "name": "port",
@@ -452,6 +424,34 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "set_arp_nhop",
+            "id": 3,
+            "runtime_data": [
+                {
+                    "name": "nhop_ipv4",
+                    "bitwidth": 32
+                }
+            ],
+            "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "routing_metadata",
+                                "nhop_ipv4"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "pipelines": [
@@ -465,7 +465,7 @@
                     "id": 0,
                     "match_type": "exact",
                     "type": "simple",
-                    "max_size": 1024,
+                    "max_size": 4096,
                     "with_counters": false,
                     "direct_meters": null,
                     "support_timeout": false,
@@ -494,7 +494,7 @@
                     "id": 1,
                     "match_type": "exact",
                     "type": "simple",
-                    "max_size": 16384,
+                    "max_size": 4096,
                     "with_counters": false,
                     "direct_meters": null,
                     "support_timeout": false,
@@ -523,7 +523,7 @@
                     "id": 2,
                     "match_type": "exact",
                     "type": "simple",
-                    "max_size": 512,
+                    "max_size": 4096,
                     "with_counters": false,
                     "direct_meters": null,
                     "support_timeout": false,

@@ -22,7 +22,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <sstream>
-
+#include <set>
 #include "ns3/log.h"
 
 #include "csma-topology-reader.h"
@@ -54,6 +54,29 @@ CsmaTopologyReader::~CsmaTopologyReader ()
   NS_LOG_FUNCTION (this);
 }
 
+struct NameNode{
+	std::string name;
+	Ptr<Node> node;
+	NameNode(const std::string& n,const Ptr<Node>& no)
+	{
+	 name=n;
+	 node=no;
+	}
+        unsigned int str_to_uint(std::string str)const
+	{
+		unsigned int res = 0;
+		for (size_t i = 0; i < str.size(); i++)
+			res = res * 10 + str[i] - '0';
+		return res;
+	}
+	bool operator<(const NameNode& r)const
+	{
+		if (str_to_uint(name) < str_to_uint(r.name))
+			return true;
+		else
+			return false;
+	}
+};
 void
 CsmaTopologyReader::Read (void)
 {
@@ -77,6 +100,8 @@ CsmaTopologyReader::Read (void)
   unsigned int toLinkedSwitchIndex;
 
   std::string linkAttr;
+  std::set<NameNode> terminalSet;
+  std::set<NameNode> switchSet;
 
   int linksNumber = 0;
   int nodesNumber = 0;
@@ -121,13 +146,16 @@ CsmaTopologyReader::Read (void)
               //nodes.Add (tmpNode);
               if(fromType.compare("terminal")==0)
               {
-                terminals.Add(tmpNode);
+                //terminals.Add(tmpNode);
+		terminalSet.insert(NameNode(from,tmpNode));
               }
               else
               {
                 if(fromType.compare("switch")==0)
                 {
-                  switches.Add(tmpNode);
+                 // switches.Add(tmpNode);
+		   switchSet.insert(NameNode(from,tmpNode));
+
                 }
                 else
                 {
@@ -146,13 +174,17 @@ CsmaTopologyReader::Read (void)
               //nodes.Add (tmpNode);
               if(toType.compare("terminal")==0)
               {
-                terminals.Add(tmpNode);
+                //terminals.Add(tmpNode);
+		terminalSet.insert(NameNode(to,tmpNode));
+
               }
               else
               {
                 if(toType.compare("switch")==0)
                 {
-                  switches.Add(tmpNode);
+                 // switches.Add(tmpNode);
+		 switchSet.insert(NameNode(to,tmpNode));
+
                 }
                 else
                 {
@@ -174,6 +206,16 @@ CsmaTopologyReader::Read (void)
           linksNumber++;
         }
     }
+  for (std::set<NameNode>::iterator iter = terminalSet.begin(); iter != terminalSet.end(); iter++)
+      {
+        std::cout<<"t"<<iter->name<<" ";
+        terminals.Add(iter->node);
+      }
+  for (std::set<NameNode>::iterator iter = switchSet.begin(); iter != switchSet.end(); iter++)
+      {
+        std::cout<<"s"<<iter->name<<" ";
+        switches.Add(iter->node);
+      }
 
   NS_LOG_INFO ("Csma topology created with " << nodesNumber << " nodes and " << linksNumber << " links");
   topgen.close ();
