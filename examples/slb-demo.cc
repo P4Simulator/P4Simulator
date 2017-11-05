@@ -9,8 +9,8 @@
 #include "ns3/flow-monitor-module.h"
 #include "ns3/bridge-helper.h"
 #include "ns3/bridge-net-device.h"
-//#include "ns3/slb-helper.h"
-//#include "ns3/slb-net-device.h"
+#include "ns3/slb-helper.h"
+#include "ns3/slb-net-device.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -30,11 +30,12 @@ static void SinkRx (Ptr<const Packet> p, const Address &ad) {
 
 int main() {
     LogComponentEnable("SLBExample",LOG_LEVEL_LOGIC);
-//    LogComponentEnable("SLBNetDevice",LOG_LEVEL_LOGIC);
-    LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
+    LogComponentEnable("SLBNetDevice",LOG_LEVEL_LOGIC);
+//    LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
     LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
     LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
-
+    LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
+    LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
     NS_LOG_INFO ("Create nodes.");
     NodeContainer hosts;
     NodeContainer switchs;
@@ -72,6 +73,7 @@ int main() {
 
     s1.Add(link0.Get(1));
     s1.Add(link4.Get(0));
+
     s2.Add(link2.Get(1));
 
     h0.Add(link3.Get(1));
@@ -80,23 +82,23 @@ int main() {
     BridgeHelper bridge;
     bridge.Install(switchs.Get(0), s0);
     bridge.Install(switchs.Get(1), s1);
-  //  SLBHelper slbHelper;
+    SLBHelper slbHelper;
+    slbHelper.Install(switchs.Get(2), s2);
     bridge.Install(switchs.Get(2), s2);
-
     NS_LOG_INFO ("Assign IP Addresses.");
     Ipv4AddressHelper ipv4;
     ipv4.SetBase ("10.0.1.0", "255.255.255.0");
     ipv4.Assign(s0);
     ipv4.SetBase ("10.0.1.0", "255.255.255.0", "0.0.0.20");
     Ipv4InterfaceContainer addr0 = ipv4.Assign(h0);
-
+    std::cout<<addr0.GetAddress(0)<<std::endl;
     ipv4.SetBase ("10.0.1.0", "255.255.255.0", "0.0.0.30");
     ipv4.Assign (s1);
     ipv4.SetBase ("10.0.1.0", "255.255.255.0", "0.0.0.60");
     Ipv4InterfaceContainer addr1 = ipv4.Assign (h1);
 
     ipv4.SetBase ("10.0.1.0", "255.255.255.0", "0.0.0.50");
-    ipv4.Assign (s2);
+    Ipv4InterfaceContainer addr2=ipv4.Assign (s2);
 
     // std::cout << std::hex << tempadd.GetAddress(0) << '\n';
 
@@ -109,7 +111,23 @@ int main() {
     NS_LOG_INFO ("Run Simulation.");
 
     NS_LOG_INFO ("Create Source");
-    InetSocketAddress slb = InetSocketAddress(Ipv4Address("10.0.1.60"), 11);
+    UdpEchoServerHelper echoServer (9);
+
+    ApplicationContainer serverApps = echoServer.Install (hosts.Get (1));
+    serverApps.Start (Seconds (1.0));
+    serverApps.Stop (Seconds (100.0));
+    Ipv4Address serverAddr=addr1.GetAddress(0);
+    serverAddr.Set("10.0.1.61");
+    UdpEchoClientHelper echoClient (serverAddr, 9);
+    echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
+    echoClient.SetAttribute ("Interval", TimeValue (MilliSeconds (1)));//1ms
+    echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+
+    ApplicationContainer clientApps;
+    clientApps=echoClient.Install (hosts.Get (0));
+    clientApps.Start (Seconds (2.0));
+    clientApps.Stop (Seconds (100.0));
+    /*InetSocketAddress slb = InetSocketAddress(Ipv4Address("10.0.1.60"), 11);
     OnOffHelper oo = OnOffHelper("ns3::TcpSocketFactory", slb);
     int packetSize = 1024;      // 1024 bytes
     char dataRate_OnOff [] = "1Mbps";
@@ -119,18 +137,18 @@ int main() {
     oo.SetAttribute("MaxBytes", StringValue(maxBytes));
     ApplicationContainer onOffApp = oo.Install(hosts.Get(0));
     onOffApp.Start(Seconds(2.0));
-    onOffApp.Stop(Seconds(10.0));
+    onOffApp.Stop(Seconds(10.0));*/
 
-    NS_LOG_INFO ("Create Sink.");
-    InetSocketAddress dst = InetSocketAddress(Ipv4Address("10.0.1.60"));
-    PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", dst);
-    ApplicationContainer sinkApp = sink.Install(hosts.Get(1));
-    sinkApp.Start(Seconds(1.0));
-    sinkApp.Stop(Seconds(11.0));
+//    NS_LOG_INFO ("Create Sink.");
+  //  InetSocketAddress dst = InetSocketAddress(Ipv4Address("10.0.1.60"));
+    //PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", dst);
+    //ApplicationContainer sinkApp = sink.Install(hosts.Get(1));
+    //sinkApp.Start(Seconds(1.0));
+    //sinkApp.Stop(Seconds(11.0));
 
     Packet::EnablePrinting ();
 
-    Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
+    Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/Rx",
         MakeCallback (&SinkRx));
 
     Simulator::Run ();

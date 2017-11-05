@@ -49,3 +49,6 @@ table_add forward_table set_port 0x0a01000f => 0x0003
 table_add ipv4_nhop set_ipv4_nhop 0x0a010010 => 0x0a010010
 table_add arp_nhop set_arp_nhop 0x0a010010 => 0x0a010010
 table_add forward_table set_port 0x0a010010 => 0x0003
+table_add ipv4_nhop set_ipv4_nhop 0x0a010013 => 0x0a010013
+table_add arp_nhop set_arp_nhop 0x0a010013 => 0x0a010013
+table_add forward_table set_port 0x0a010013 => 0x0004

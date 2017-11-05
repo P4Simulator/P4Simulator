@@ -1,0 +1,19 @@
+## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+def build(bld):
+    obj = bld.create_ns3_module('slb', ['network'])
+    obj.source = [
+        'model/slb-net-device.cc',
+        'helper/slb-helper.cc',
+        ]
+    headers = bld(features='ns3header')
+    headers.module = 'slb'
+    headers.source = [
+        'model/slb-net-device.h',
+        'helper/slb-helper.h',
+        ]
+
+    if bld.env['ENABLE_EXAMPLES']:
+        bld.recurse('examples')
+
+    bld.ns3_python_bindings()

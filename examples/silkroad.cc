@@ -86,7 +86,26 @@ std::string int_to_str(unsigned int num)
 	}
 	return res;
 }
-
+unsigned int hex_to_uint32ip(std::string str)
+{
+	unsigned int res=0;
+	unsigned int start=str.find("0x");
+	std::string ip;
+	if(start!=str.size())
+		ip=str.substr(start);
+	else
+		ip=str;
+	for(size_t i=0;i<ip.size();i++)
+	{
+		if(ip[i]>='0'&&ip[i]<='9')
+			res=res*16+ip[i]-'0';
+		else{
+			if(ip[i]>='a'&&ip[i]<='f')
+				res=res*16+ip[i]-'a'+10;
+			}	
+	}
+	return res;
+}
 std::string uint32ip_to_hex(unsigned int ip)
 {
 	if (ip != 0)
@@ -138,6 +157,8 @@ int main(int argc, char *argv[]) {
 	// LogComponentEnable("TreeTopoHelper",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("FattreeTopoHelper",LOG_LEVEL_LOGIC);
 	//   LogComponentEnable("OnOffApplication", LOG_ALL);
+	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+        //LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 
 	// Allow the user to override any of the defaults and the above Bind() at
 	// run-time, via command-line arguments
@@ -328,7 +349,7 @@ int main(int argc, char *argv[]) {
 	for (unsigned int p = 0; p < coreNum; p++)
 	{
 		terminalIpv4s[p]=ipv4.Assign(terminalDevices[p]);
-		//std::cout<<terminalIpv4s[p].GetAddress(0).Get()<<std::endl;
+		std::cout<<terminalIpv4s[p].GetAddress(0)<<std::endl;
 		terminalNodeIp.push_back(uint32ip_to_hex(terminalIpv4s[p].GetAddress(0).Get()));
         //        std::cout<<terminalNodeIp[p+hostNum]<<std::endl;
 	}
@@ -340,7 +361,8 @@ int main(int argc, char *argv[]) {
 	bool buildAlready = false;
 	if (buildAlready == false && p4)
 	{
-		BuildFlowtableHelper flowtableHelper("fattree", treeLevel);
+		//BuildFlowtableHelper flowtableHelper("fattree", treeLevel);
+		BuildFlowtableHelper flowtableHelper("silkroad", treeLevel);
 		//BuildFlowtableHelper flowtableHelper;
 		flowtableHelper.build(terminalNodeLinkedSwitchIndex, terminalNodeLinkedSwitchPort, terminalNodeIp, switchPortInfo);
 		flowtableHelper.write("/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_entires");
@@ -398,7 +420,7 @@ int main(int argc, char *argv[]) {
 	//Ipv4Address serverAddr=terminalIpv4s[3].GetAddress(0);
 	NS_LOG_LOGIC("server addr: " << serverAddr);
 
-	std::string applicationType = "onoff_sink";
+	std::string applicationType = "client_server";
 	if (applicationType.compare("onoff_sink") == 0)
 	{
 		//onoff.SetConstantRate (DataRate (15000));
@@ -427,30 +449,31 @@ int main(int argc, char *argv[]) {
 	}
 	if (applicationType.compare("client_server") == 0)
 	{
-		UdpEchoServerHelper echoServer(9);
-
-		ApplicationContainer serverApps = echoServer.Install(terminals.Get(randomTerminalNumber));
-		serverApps.Start(Seconds(1.0));
-		serverApps.Stop(Seconds(100.0));
-
-		UdpEchoClientHelper echoClient(serverAddr, 9);
-		echoClient.SetAttribute("MaxPackets", UintegerValue(1));
-		echoClient.SetAttribute("Interval", TimeValue(MilliSeconds(1)));//1ms
-																		//echoClient.SetAttribute ("MaxPackets", UintegerValue (2000));
-																		//echoClient.SetAttribute ("Interval", TimeValue (MicroSeconds (500)));//1us
-																		//echoClient.SetAttribute ("Interval", TimeValue (NanoSeconds (100)));//100ns
-		echoClient.SetAttribute("PacketSize", UintegerValue(1024));
-
-		ApplicationContainer clientApps;
-		for (unsigned int j = 0; j<terminalNum; j++)
+		unsigned int coreHostNum = (unsigned int)(treeLevel*treeLevel / 4);
+		unsigned int terminalNum = (unsigned int)(treeLevel*treeLevel*treeLevel / 4);
+		std::cout<<coreHostNum<<" "<<terminalNum<<std::endl;
+		for (unsigned int i = 0; i < coreHostNum; i++)
 		{
-			if (j != randomTerminalNumber)
-			{
-				std::cout << "terminal " << j << " start" << std::endl;
-				clientApps = echoClient.Install(terminals.Get(j));
-				clientApps.Start(Seconds(2.0));
-				clientApps.Stop(Seconds(100.0));
-			}
+			UdpEchoServerHelper echoServer(9);
+			unsigned int serverIndex = i*treeLevel + rand() % treeLevel;//random select a server
+			std::cout<<"server index: "<<serverIndex<<std::endl;
+			ApplicationContainer serverApps = echoServer.Install(terminals.Get(serverIndex));
+			serverApps.Start(Seconds(1.0));
+			serverApps.Stop(Seconds(100.0));
+			Ipv4Address serverAddr;
+			serverAddr.Set(hex_to_uint32ip(terminalNodeIp[serverIndex]));
+			std::cout<<"server addr:"<<serverAddr<<std::endl;
+			UdpEchoClientHelper echoClient(serverAddr, 9);
+			echoClient.SetAttribute("MaxPackets", UintegerValue(1));
+			echoClient.SetAttribute("Interval", TimeValue(MilliSeconds(1)));//1ms
+			//echoClient.SetAttribute ("MaxPackets", UintegerValue (2000));
+		    //echoClient.SetAttribute ("Interval", TimeValue (MicroSeconds (500)));//1us
+		    //echoClient.SetAttribute ("Interval", TimeValue (NanoSeconds (100)));//100ns
+			echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+			ApplicationContainer clientApps;
+			clientApps = echoClient.Install(terminals.Get(terminalNum+i));
+			clientApps.Start(Seconds(2.0));
+			clientApps.Stop(Seconds(100.0));
 		}
 	}
 	if (applicationType.compare("pinger") == 0)

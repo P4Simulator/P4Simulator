@@ -1,0 +1,4 @@
+table_set_default test0 modify_arp_ip
+table_add test0 modify_arp_ip 0x0806 =>
+table_add test0 modify_ipv4_ip 0x0800 =>
+table_set_default test _drop

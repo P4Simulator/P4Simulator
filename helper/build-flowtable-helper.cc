@@ -24,6 +24,281 @@ namespace ns3 {
 		NS_LOG_FUNCTION (this);
 	}
 
+	void BuildFlowtableHelper::buildFattreeFlowTable()
+	{
+		unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum / 2);
+		unsigned int terminalNum = coreSwitchNum*m_podNum;
+		unsigned int switchNum = 5 * coreSwitchNum;
+		unsigned int halfPodNum = m_podNum / 2;
+		unsigned int aggrStartIndex = coreSwitchNum;
+		unsigned int edgeStartIndex = 3 * coreSwitchNum;
+		//unsigned int tmlStartIndex = 5 * coreSwitchNum;
+		unsigned int curAggrSwitchIndex;
+		unsigned int curEdgeSwitchIndex;
+
+		std::vector<std::vector<unsigned int>> switchReachTerminalIndexMap(switchNum);
+
+		// add edge switch flowtable
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curEdgeSwitchIndex = edgeStartIndex + i*halfPodNum + j;
+				std::unordered_set<unsigned int> curEdgeSwitchLinkTerminalIndex;
+				std::vector<unsigned int> otherPortIndex;
+				//add flowtable entry for these packet which send to linked terminal
+				for (size_t p = 0; p < m_switchNodes[curEdgeSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 0)//represent terminal
+					{
+						//attain terminal ipAddr
+						curEdgeSwitchLinkTerminalIndex.insert(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						switchReachTerminalIndexMap[curEdgeSwitchIndex].push_back(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						std::string dstIp = m_terminalNodes[m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex].ipAddr;
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+					}
+					else
+						otherPortIndex.push_back(p);
+				}
+				//add flowtable entry for other packet
+				for (unsigned int p = 0; p < terminalNum; p++)
+				{
+					if (curEdgeSwitchLinkTerminalIndex.count(p) == 0)
+					{
+						std::string dstIp = m_terminalNodes[p].ipAddr;
+						//random select a out port
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
+					}
+				}
+			}
+		}
+
+		// add aggrate switch flowtable
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curAggrSwitchIndex = aggrStartIndex + i*halfPodNum + j;
+				std::unordered_set<unsigned int> curAggrSwitchLinkTerminalIndex;
+				std::vector<unsigned int> otherPortIndex;
+				//add flowtable entry for these packet which send to linked terminal
+				for (size_t p = 0; p < m_switchNodes[curAggrSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex > curAggrSwitchIndex)//mean link edge switch
+					{
+						unsigned int linkSIndex = m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex;
+						for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
+						{
+							unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+							curAggrSwitchLinkTerminalIndex.insert(linkTIndex);
+							switchReachTerminalIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
+							m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+
+						}
+					}
+					else
+						otherPortIndex.push_back(p);
+				}
+
+				//add flowtable entry for other packet
+				for (unsigned int p = 0; p < terminalNum; p++)
+				{
+					if (curAggrSwitchLinkTerminalIndex.count(p) == 0)
+					{
+						std::string dstIp = m_terminalNodes[p].ipAddr;
+						//random select a out port
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
+					}
+				}
+			}
+		}
+
+		//add core switch flowtable
+		for (unsigned int i = 0; i < coreSwitchNum; i++)
+		{
+			for (size_t p = 0; p < m_switchNodes[i].portNode.size(); p++)
+			{
+				if (m_switchNodes[i].portNode[p].flag == 1)//represent switch
+				{
+					unsigned int linkSIndex = m_switchNodes[i].portNode[p].nodeIndex;
+					for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
+					{
+						unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+						std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+						m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+					}
+				}
+			}
+		}
+	}
+
+	void BuildFlowtableHelper::buildSilkroadFlowTable()
+	{
+		unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum / 2);
+		unsigned int terminalNum = coreSwitchNum*m_podNum;
+		unsigned int switchNum = 5 * coreSwitchNum;
+		unsigned int halfPodNum = m_podNum / 2;
+		unsigned int aggrStartIndex = coreSwitchNum;
+		unsigned int edgeStartIndex = 3 * coreSwitchNum;
+		//unsigned int tmlStartIndex = 5 * coreSwitchNum;
+		unsigned int curAggrSwitchIndex;
+		unsigned int curEdgeSwitchIndex;
+
+		std::vector<std::vector<unsigned int>> switchReachTerminalIndexMap(switchNum);
+		std::vector<std::vector<unsigned int>> switchReachOutTerminalIndexMap(switchNum);
+
+		// add edge switch flowtable
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curEdgeSwitchIndex = edgeStartIndex + i*halfPodNum + j;
+				std::unordered_set<unsigned int> curEdgeSwitchLinkTerminalIndex;
+				std::vector<unsigned int> otherPortIndex;
+				//add flowtable entry for these packet which send to linked terminal
+				for (size_t p = 0; p < m_switchNodes[curEdgeSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 0)//represent terminal
+					{
+						//attain terminal ipAddr
+						curEdgeSwitchLinkTerminalIndex.insert(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						switchReachTerminalIndexMap[curEdgeSwitchIndex].push_back(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						std::string dstIp = m_terminalNodes[m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex].ipAddr;
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+					}
+					else
+						otherPortIndex.push_back(p);
+				}
+				//add flowtable entry for other packet
+				for (unsigned int p = 0; p < terminalNum; p++)
+				{
+					if (curEdgeSwitchLinkTerminalIndex.count(p) == 0)
+					{
+						std::string dstIp = m_terminalNodes[p].ipAddr;
+						//random select a out port
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
+					}
+				}
+			}
+		}
+
+		// add aggrate switch flowtable
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curAggrSwitchIndex = aggrStartIndex + i*halfPodNum + j;
+				std::unordered_set<unsigned int> curAggrSwitchLinkTerminalIndex;
+				std::vector<unsigned int> otherPortIndex;
+				//add flowtable entry for these packet which send to linked terminal
+				for (size_t p = 0; p < m_switchNodes[curAggrSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex > curAggrSwitchIndex)//mean link edge switch
+					{
+						unsigned int linkSIndex = m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex;
+						for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
+						{
+							unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+							curAggrSwitchLinkTerminalIndex.insert(linkTIndex);
+							switchReachTerminalIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
+							m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+
+						}
+					}
+					else
+						otherPortIndex.push_back(p);
+				}
+
+				//add flowtable entry for other packet
+				for (unsigned int p = 0; p < terminalNum; p++)
+				{
+					if (curAggrSwitchLinkTerminalIndex.count(p) == 0)
+					{
+						std::string dstIp = m_terminalNodes[p].ipAddr;
+						//random select a out port
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
+					}
+				}
+			}
+		}
+
+		//add core switch flowtable
+		for (unsigned int i = 0; i < coreSwitchNum; i++)
+		{
+			for (size_t p = 0; p < m_switchNodes[i].portNode.size(); p++)
+			{
+				if (m_switchNodes[i].portNode[p].flag == 1)//represent switch
+				{
+					unsigned int linkSIndex = m_switchNodes[i].portNode[p].nodeIndex;
+					for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
+					{
+						unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+						std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+						m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+					}
+				}
+				else //represent out terminal
+				{
+					unsigned int linkTIndex = m_switchNodes[i].portNode[p].nodeIndex;
+					std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+					m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+					switchReachOutTerminalIndexMap[i].push_back(linkTIndex);//core switch reach out terminal index
+				}
+			}
+		}
+
+		// add aggrate switch flowtable to out terminal
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curAggrSwitchIndex = aggrStartIndex + i*halfPodNum + j;
+				for (size_t p = 0; p < m_switchNodes[curAggrSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex < curAggrSwitchIndex)//mean link core switch
+					{
+						unsigned int linkCIndex = m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex;
+						for (size_t q = 0; q < switchReachOutTerminalIndexMap[linkCIndex].size(); q++)
+						{
+							unsigned int linkTIndex = switchReachOutTerminalIndexMap[linkCIndex][q];
+							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+							switchReachOutTerminalIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
+							m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+						}
+					}
+				}
+			}
+		}
+
+		// add edge switch flowtable to out terminal
+		for (unsigned int i = 0; i < m_podNum; i++)// number pod
+		{
+			for (unsigned int j = 0; j < halfPodNum; j++)
+			{
+				curEdgeSwitchIndex = edgeStartIndex + i*halfPodNum + j;
+				for (size_t p = 0; p < m_switchNodes[curEdgeSwitchIndex].portNode.size(); p++)
+				{
+					if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 1)//mean link aggr switch
+					{
+						unsigned int linkAIndex = m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex;
+						for (size_t q = 0; q < switchReachOutTerminalIndexMap[linkAIndex].size(); q++)
+						{
+							unsigned int linkTIndex = switchReachOutTerminalIndexMap[linkAIndex][q];
+							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+							switchReachOutTerminalIndexMap[curEdgeSwitchIndex].push_back(linkTIndex);
+							m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
+						}
+					}
+				}
+			}
+		}
+	}
 
 	void BuildFlowtableHelper::setSwitchesFlowtableEntries()
 	{
@@ -36,114 +311,17 @@ namespace ns3 {
 		{
 			if (m_buildType == "fattree")
 			{
-				unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum/2);
-				unsigned int terminalNum = coreSwitchNum*m_podNum;
-				unsigned int switchNum = 5 * coreSwitchNum;
-				unsigned int halfPodNum = m_podNum / 2;
-				unsigned int aggrStartIndex = coreSwitchNum;
-				unsigned int edgeStartIndex = 3 * coreSwitchNum;
-				//unsigned int tmlStartIndex = 5 * coreSwitchNum;
-				unsigned int curAggrSwitchIndex;
-				unsigned int curEdgeSwitchIndex;
-
-				std::vector<std::vector<unsigned int>> switchReachTerminalIndexMap(switchNum);
-				
-				// add edge switch flowtable
-				for (unsigned int i = 0; i < m_podNum; i++)// number pod
+				buildFattreeFlowTable();
+			}
+			else
+			{
+				if (m_buildType == "silkroad")
 				{
-					for (unsigned int j = 0; j < halfPodNum; j++)
-					{
-						curEdgeSwitchIndex = edgeStartIndex + i*halfPodNum + j;
-						std::unordered_set<unsigned int> curEdgeSwitchLinkTerminalIndex;
-						std::vector<unsigned int> otherPortIndex;
-						//add flowtable entry for these packet which send to linked terminal
-						for (size_t p = 0; p < m_switchNodes[curEdgeSwitchIndex].portNode.size(); p++)
-						{
-							if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 0)//represent terminal
-							{
-								//attain terminal ipAddr
-								curEdgeSwitchLinkTerminalIndex.insert(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
-								switchReachTerminalIndexMap[curEdgeSwitchIndex].push_back(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
-								std::string dstIp = m_terminalNodes[m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex].ipAddr;
-								m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
-							}
-							else
-								otherPortIndex.push_back(p);
-						}
-						//add flowtable entry for other packet
-						for (unsigned int p = 0; p < terminalNum; p++)
-						{
-							if (curEdgeSwitchLinkTerminalIndex.count(p) == 0)
-							{
-								std::string dstIp = m_terminalNodes[p].ipAddr;
-								//random select a out port
-								unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
-								m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
-							}
-						}
-					}
-				}
-
-				// add aggrate switch flowtable
-				for (unsigned int i = 0; i < m_podNum; i++)// number pod
-				{
-					for (unsigned int j = 0; j < halfPodNum; j++)
-					{
-						curAggrSwitchIndex=aggrStartIndex+ i*halfPodNum + j;
-						std::unordered_set<unsigned int> curAggrSwitchLinkTerminalIndex;
-						std::vector<unsigned int> otherPortIndex;
-						//add flowtable entry for these packet which send to linked terminal
-						for (size_t p = 0; p < m_switchNodes[curAggrSwitchIndex].portNode.size(); p++)
-						{
-							if (m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex > curAggrSwitchIndex)//mean link edge switch
-							{
-								unsigned int linkSIndex = m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex;
-								for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
-								{
-									unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
-									std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
-									curAggrSwitchLinkTerminalIndex.insert(linkTIndex);
-									switchReachTerminalIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
-									m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
-
-								}
-							}
-							else
-								otherPortIndex.push_back(p);
-						}
-
-						//add flowtable entry for other packet
-						for (unsigned int p = 0; p < terminalNum; p++)
-						{
-							if (curAggrSwitchLinkTerminalIndex.count(p) == 0)
-							{
-								std::string dstIp = m_terminalNodes[p].ipAddr;
-								//random select a out port
-								unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
-								m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
-							}
-						}
-					}
-				}
-
-				//add core switch flowtable
-				for (unsigned int i = 0; i < coreSwitchNum; i++)
-				{
-					for (size_t p = 0; p < m_switchNodes[i].portNode.size(); p++)
-					{
-						unsigned int linkSIndex = m_switchNodes[i].portNode[p].nodeIndex;
-						for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
-						{
-							unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
-							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
-							m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
-						}
-					}
+					buildSilkroadFlowTable();
 				}
 			}
 		}
 	}
-
 
 	void BuildFlowtableHelper::dfsFromTerminalIndex(unsigned int terminal_index)
 	{

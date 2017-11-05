@@ -169,6 +169,22 @@ namespace ns3 {
 			std::string port=uintToPortStr(out_port);
 			m_switchNodes[switch_index].flowTableEntries.push_back(FlowTableEntry(m_terminalNodes[src_ip].ipAddr,m_terminalNodes[dst_ip].ipAddr,port));
 		}
+			void buildFattreeFlowTable();
+
+		void buildSilkroadFlowTable();
+
+		void showSwitchReachTmlIndex(const std::vector<std::vector<unsigned int>>&switchMap)
+		{
+			for (size_t i = 0; i < switchMap.size(); i++)
+			{
+				std::cout << "switch " << i << ":" << std::endl;
+				for (size_t j = 0; j < switchMap[i].size(); j++)
+				{
+					std::cout << switchMap[i][j] << " ";
+				}
+				std::cout << std::endl;
+			}
+		}
 	};
 
 }
