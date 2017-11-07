@@ -4,8 +4,8 @@ def build(bld):
     obj0 = bld.create_ns3_program('p4-example', ['ns4', 'csma', 'internet', 'applications', 'internet-apps'])
     #obj0.source = ['router.cc']
     #obj0.source = ['p4-example.cc']
-    #obj0.source = ['network-topo.cc']
-    obj0.source = ['silkroad.cc']
+    obj0.source = ['network-topo.cc']
+    #obj0.source = ['silkroad.cc']
     #obj0.source = ['fattree.cc']
     #obj0.source = ['circle.cc']
     #obj0.source = ['slb-demo.cc']
