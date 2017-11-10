@@ -46,53 +46,27 @@
 
 
 using namespace ns3;
-unsigned long getTickCount(void)
-{
-        unsigned long currentTime=0;
-#ifdef WIN32
-        currentTime = GetTickCount();
-#endif
-        struct timeval current;
-        gettimeofday(&current, NULL);
-        currentTime = current.tv_sec * 1000 + current.tv_usec / 1000;
-#ifdef OS_VXWORKS
-        ULONGA timeSecond = tickGet() / sysClkRateGet();
-        ULONGA timeMilsec = tickGet() % sysClkRateGet() * 1000 / sysClkRateGet();
-        currentTime = timeSecond * 1000 + timeMilsec;
-#endif
-        return currentTime;
-}
 
-
-int switchIndex=0;
-std::string networkFunc;
+//switch configure information  
+std::string network_func;
 std::string flowtable_path;
-std::string tableaction_matchtype_path;
+std::string flowtable_matchtype_path;
+std::string populate_flowtable_type;// local_call runtime_CLI
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
-static void SinkRx (Ptr<const Packet> p, const Address &ad) {
-    std::cout << "Rx" << "Received from  "<< ad << std::endl;
-}
 
-static void PingRtt (std::string context, Time rtt) {
-    std::cout << "Rtt" << context << " " << rtt << std::endl;
-}
-
-/**
- *\brief set switch network function, flowtable path and table action match type path
- * nf: l2_switch firewall simple router
- */
+// set switch network function, flowtable path and flowtable match type path
+// firewall router silkroad
 void init_switch_config_info(std::string nf,std::string ft_path,std::string ta_mt_path)
 {
-    networkFunc=nf;
+    network_func=nf;
     flowtable_path=ft_path;
-    tableaction_matchtype_path=ta_mt_path;
+    flowtable_matchtype_path=ta_mt_path;
 }
 
 int main (int argc, char *argv[]) {
     
-    unsigned long start = getTickCount();
     int p4 = 1;
 
     //
@@ -101,12 +75,7 @@ int main (int argc, char *argv[]) {
     //
 
     LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
-    LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
     LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
-    // LogComponentEnable ("Buffer", LOG_LEVEL_LOGIC);
-    // LogComponentEnable ("Packet", LOG_LEVEL_LOGIC);
-    // LogComponentEnable ("CsmaNetDevice", LOG_LEVEL_FUNCTION);
     
     
     // Allow the user to override any of the defaults and the above Bind() at
@@ -146,10 +115,11 @@ int main (int argc, char *argv[]) {
     //p4=0;
     if (p4) 
     {
+	populate_flowtable_type="local_call";
         std::string ft_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/self_command.txt";
-        std::string ta_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/table_action.txt";
+        std::string mt_path="/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/table_action.txt";
         P4Helper bridge;
-        init_switch_config_info("firewall",ft_path,ta_path);
+        init_switch_config_info("firewall",ft_path,mt_path);
         NS_LOG_INFO("P4 bridge established");
         bridge.Install (switchNode, switchDevices);
     } 
@@ -193,52 +163,14 @@ int main (int argc, char *argv[]) {
     clientApps.Start (Seconds (2.0));
     clientApps.Stop (Seconds (10.0));
 
-    /*InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));
-    OnOffHelper onoff = OnOffHelper ("ns3::TcpSocketFactory", dst);
-    onoff.SetConstantRate (DataRate (15000));
-    onoff.SetAttribute ("PacketSize", UintegerValue (1200));
-
-    ApplicationContainer apps = onoff.Install (terminals.Get (0));
-    apps.Start (Seconds (1.0));
-    apps.Stop (Seconds (10.0));
-
-    NS_LOG_INFO ("Create Sink.");
-    PacketSinkHelper sink = PacketSinkHelper ("ns3::TcpSocketFactory", dst);
-    apps = sink.Install (terminals.Get (3));
-    apps.Start (Seconds (0.0));
-    apps.Stop (Seconds (11.0));*/
-
-    if(networkFunc.compare("simple")==0){
-
-      /*NS_LOG_INFO ("Create pinger");
-      V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
-      NodeContainer pingers;
-      pingers.Add (terminals.Get (0));
-      pingers.Add (terminals.Get (1));
-      pingers.Add (terminals.Get (2));
-      apps = ping.Install (pingers);
-      apps.Start (Seconds (2.0));
-      apps.Stop (Seconds (5.0));*/
-
-    }
-
     NS_LOG_INFO ("Configure Tracing.");
 
     // first, pcap tracing in non-promiscuous mode
     csma.EnablePcapAll ("p4-example", false);
-    // then, print what the packet sink receives.
-    Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
-        MakeCallback (&SinkRx));
-    // finally, print the ping rtts.
-    Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt",
-        MakeCallback (&PingRtt));
     Packet::EnablePrinting ();
 
     NS_LOG_INFO ("Run Simulation.");
     Simulator::Run ();
     Simulator::Destroy ();
     NS_LOG_INFO ("Done.");
-    unsigned long end = getTickCount();
-    NS_LOG_INFO("Running time: "<<end-start);
-
 }
