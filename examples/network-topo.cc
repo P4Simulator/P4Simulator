@@ -41,11 +41,10 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 // some global variable to used in other files
-std::string networkFunc;
-int switchIndex=0;
+std::string network_func;
 std::string flowtable_path;
-std::string tableaction_matchtype_path;
-unsigned long recPkgNum=0;
+std::string flowtable_matchtype_path;
+std::string populate_flowtable_type;
 
 // count simulate time
 unsigned long getTickCount(void)
@@ -113,9 +112,9 @@ std::string uint32ip_to_hex(unsigned int ip)
 // initialize switch configuration information
 void init_switch_config_info(std::string nf,std::string ft_path,std::string ta_mt_path)
 {
-    networkFunc=nf;
+    network_func=nf;
     flowtable_path=ft_path;
-    tableaction_matchtype_path=ta_mt_path;
+    flowtable_matchtype_path=ta_mt_path;
 }
 
 
@@ -123,7 +122,7 @@ int main (int argc, char *argv[]) {
 
     unsigned long start = getTickCount();
     int p4 = 1;
-    int treeLevel=2;
+    int podnum=2;
     //
     // Users may find it convenient to turn on explicit debugging
     // for selected modules; the below lines suggest how to do this
@@ -150,13 +149,13 @@ int main (int argc, char *argv[]) {
     cmd.AddValue ("format", "Format to use for data input [Orbis|Inet|Rocketfuel|CsmaNetTopo].",
                 format);
     cmd.AddValue("p4","Select P4Model or traditional bridge model",p4);
-    cmd.AddValue("treeLevel","Numbers of built tree topo levels",treeLevel);
+    cmd.AddValue("podnum","Numbers of built tree topo levels",podnum);
     cmd.Parse (argc, argv);
     
     //build tree topo
-    std::cout<<treeLevel<<std::endl;
-    FattreeTopoHelper treeTopo(treeLevel,topo_path);
-    //TreeTopoHelper treeTopo(treeLevel,topo_path);
+    std::cout<<podnum<<std::endl;
+    FattreeTopoHelper treeTopo(podnum,topo_path);
+    //TreeTopoHelper treeTopo(podnum,topo_path);
     treeTopo.Write();
 
 
@@ -178,9 +177,6 @@ int main (int argc, char *argv[]) {
         return -1;
       }
 
-    //
-    // Explicitly create the nodes required by the topology (shown above).
-    //
     NS_LOG_INFO ("Create nodes.");
     NodeContainer terminals=inFile->GetTerminalNodeContainer();
     NodeContainer csmaSwitch=inFile->GetSwitchNodeContainer();
@@ -195,15 +191,6 @@ int main (int argc, char *argv[]) {
     csma.SetChannelAttribute ("DataRate", StringValue("1000Mbps"));
     csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0.01)));
 
-    //csma.SetChannelAttribute ("DataRate", DataRateValue (10000000000));//10Gps
-    //csma.SetChannelAttribute ("DataRate", DataRateValue (100000000000));//100Gps
-   // csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
-    //csma.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (2)));
-    //csma.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (1)));
-
-
-    // Create the csma links, from each terminal to the switch
-
 
     std::vector<NetDeviceContainer> terminalDevices(switchNum);
     std::vector<Ipv4InterfaceContainer> terminalIpv4s(switchNum);
@@ -214,21 +201,12 @@ int main (int argc, char *argv[]) {
     std::vector<unsigned int> terminalNodeLinkedSwitchPort(terminalNum);
     std::vector<unsigned int> terminalNodeLinkedSwitchNumber(terminalNum);
     std::vector<std::string> terminalNodeIp(terminalNum);
-
-
-
    
     P4TopologyReader::ConstLinksIterator iter;
     int i = 0;
     int curTerminalIndex=0;
     for ( iter = inFile->LinksBegin (); iter != inFile->LinksEnd (); iter++, i++ )
     {
-         //************************* TO DO ***********************************
-         // may accord every switch level set dataRate and delay
-         // csma.SetChannelAttribute ("DataRate", DataRateValue (5000000));
-         // csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
-         //*******************************************************************
-
          NetDeviceContainer link = csma.Install(NodeContainer (iter->GetFromNode (), iter->GetToNode ()));
 
          if(iter->GetFromType().compare("terminal")==0&&iter->GetToType().compare("switch")==0)
@@ -320,10 +298,10 @@ int main (int argc, char *argv[]) {
     bool buildAlready=false;
     if(buildAlready==false&&p4)
     {
-        BuildFlowtableHelper flowtableHelper("fattree",treeLevel);
+        BuildFlowtableHelper flowtableHelper("fattree",podnum);
         //BuildFlowtableHelper flowtableHelper;
         flowtableHelper.build(terminalNodeLinkedSwitchIndex,terminalNodeLinkedSwitchPort,terminalNodeIp,switchPortInfo);
-        flowtableHelper.write("/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_entires");
+        flowtableHelper.write("/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_entries");
        // flowtableHelper.show();
     }
 
@@ -332,13 +310,14 @@ int main (int argc, char *argv[]) {
     // Create the p4 netdevice, which will do the packet switching
     //p4=0;
     if (p4) {
-        std::string flowtable_parentdir("/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_entires/");
+	populate_flowtable_type="local_call";
+        std::string flowtable_parentdir("/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_entries/");
         std::string flowtable_name;
         for(unsigned int k=0;k<switchNum;k++)
         {
             flowtable_name=int_to_str(k);
-            networkFunc="simple_router";
-            tableaction_matchtype_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/table_action.txt";
+            network_func="simple_router";
+            flowtable_matchtype_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/match_type.txt";
             P4Helper bridge;
             NS_LOG_INFO("P4 bridge established");
             flowtable_path=flowtable_parentdir+flowtable_name; 
@@ -464,14 +443,12 @@ int main (int argc, char *argv[]) {
         MakeCallback (&PingRtt));
     Packet::EnablePrinting ();
     NS_LOG_INFO ("Run Simulation.");
-    unsigned long simulate_start = getTickCount();
+    //unsigned long simulate_start = getTickCount();
     Simulator::Run ();
     Simulator::Destroy ();
     NS_LOG_INFO ("Done.");
 
     unsigned long end = getTickCount();
     std::cout<<"Running time: "<<end-start<<std::endl;
-    std::cout<<"Simulate Running time: "<<end-simulate_start<<std::endl;
-    std::cout<<"Received packet num: "<<recPkgNum<<std::endl;
     std::cout<<"terminal num: "<<terminalNum<<" switch num: "<<switchNum<<std::endl;
 }
