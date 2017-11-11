@@ -181,6 +181,8 @@ P4NetDevice::P4NetDevice() :
        a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/silkroad.json"[0u];
     if(network_func.compare("router")==0)
        a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
+    if(network_func.compare("simple_router")==0)
+       a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
