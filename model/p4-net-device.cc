@@ -109,9 +109,6 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
 
-    NS_LOG_LOGIC("src mac: "<<std::hex<<src48);
-    NS_LOG_LOGIC("dst mac: "<<std::hex<<dst48);
-
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;

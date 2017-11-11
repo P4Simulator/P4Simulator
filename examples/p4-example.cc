@@ -101,6 +101,7 @@ int main (int argc, char *argv[]) {
 	// configure switch network function and flowtable information, and select polulate flowtable ways
 	std::string ft_path,mt_path;
 	populate_flowtable_type="local_call";
+	// select network function(firewall router silkroad)
 	network_func="silkroad";
 
 	if(network_func.compare("firewall")==0)	

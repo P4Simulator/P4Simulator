@@ -51,17 +51,17 @@ unsigned long recPkgNum = 0;
 unsigned long getTickCount(void)
 {
 	unsigned long currentTime = 0;
-#ifdef WIN32
+	#ifdef WIN32
 	currentTime = GetTickCount();
-#endif
+	#endif
 	struct timeval current;
 	gettimeofday(&current, NULL);
 	currentTime = current.tv_sec * 1000 + current.tv_usec / 1000;
-#ifdef OS_VXWORKS
+	#ifdef OS_VXWORKS
 	ULONGA timeSecond = tickGet() / sysClkRateGet();
 	ULONGA timeMilsec = tickGet() % sysClkRateGet() * 1000 / sysClkRateGet();
 	currentTime = timeSecond * 1000 + timeMilsec;
-#endif
+	#endif
 	return currentTime;
 }
 
