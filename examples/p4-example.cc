@@ -101,7 +101,7 @@ int main (int argc, char *argv[]) {
 	// configure switch network function and flowtable information, and select polulate flowtable ways
 	std::string ft_path,mt_path;
 	populate_flowtable_type="local_call";
-	network_func="router";
+	network_func="silkroad";
 
 	if(network_func.compare("firewall")==0)	
         {
@@ -149,9 +149,12 @@ int main (int argc, char *argv[]) {
     ApplicationContainer serverApps = echoServer.Install (terminals.Get (0));
     serverApps.Start (Seconds (1.0));
     serverApps.Stop (Seconds (10.0));
-    //Ipv4Address vip("10.1.1.10");
-    //UdpEchoClientHelper echoClient (vip, 9);
-    UdpEchoClientHelper echoClient (addresses.GetAddress (0), 9);
+    Ipv4Address dstIp;
+    if(network_func.compare("silkroad")==0)
+       dstIp=Ipv4Address("10.1.1.10");
+    else
+       dstIp=addresses.GetAddress (0);
+    UdpEchoClientHelper echoClient (dstIp, 9);
     echoClient.SetAttribute ("MaxPackets", UintegerValue (20));
     echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
     echoClient.SetAttribute ("PacketSize", UintegerValue (1024));

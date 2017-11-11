@@ -33,7 +33,7 @@ std::string network_func; // define in p4-example.cc,to select nf
 std::string flowtable_path;//define in p4-example.cc
 std::map<std::string,bm::MatchKeyParam::Type> flowtable_matchtype;
 std::string flowtable_matchtype_path;
-
+std::string populate_flowtable_type;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -67,8 +67,6 @@ std::string exec(const char* cmd) {
 }
 
 void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
-    //NS_LOG_FUNCTION_NOARGS ();
-    // NS_ASSERT (bridgePort != this);
     if (!Mac48Address::IsMatchingType(bridgePort->GetAddress())) {
         NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
     }
@@ -79,7 +77,6 @@ void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
         m_address = Mac48Address::ConvertFrom(bridgePort->GetAddress());
     }
 
-    // NS_LOG_DEBUG ("RegisterProtocolHandler for " << bridgePort->GetInstanceTypeId ().GetName ());
     m_node->RegisterProtocolHandler(
             MakeCallback(&P4NetDevice::ReceiveFromDevice, this), 0, bridgePort,
             true);
@@ -101,20 +98,12 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         Address const &source, Address const &destination,
         PacketType packetType) {
     NS_LOG_FUNCTION(this);
-    //  *************View received packet real content, can be removed*******************
+    //view received packet real content
     int pkgSize = packet_in->GetSize();
     NS_LOG_LOGIC("received packet_in size:"<<pkgSize);
     packet_in->EnablePrinting();
     packet_in->Print(std::cout);
     std::cout<<std::endl;
-    //  ******************************************************************
-    // output packet real content to debug
-    /*int buSize = packet_in->GetSize();
-    uint8_t* bu = new uint8_t [buSize];
-    packet_in->CopyData(bu, buSize);
-    for (int i = 0; i < buSize; i ++) 
-        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
-    std::cout << '\n';*/
 
     Mac48Address src48 = Mac48Address::ConvertFrom (source);
     Mac48Address dst48 = Mac48Address::ConvertFrom (destination);
@@ -125,35 +114,13 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
     int port_num = GetPortNumber(device);
     struct ns3PacketAndPort *ns3packet = new (struct ns3PacketAndPort);
     ns3packet->port_num = port_num;
-    //  *****************************TO DO********************************
-    // there exists some problems in using packet_in->Copy().operator ->() 
-    //ns3packet->packet = packet_in->Copy().operator ->();
-    /**using the following methods realizing copy function temporarily, may find
-     * some better ways latter.
-     */  
-
     ns3packet->packet=(ns3::Packet*)packet_in.operator ->();
-    //NS_LOG_LOGIC("after copy");
-    //  *******************************************************************
     EthernetHeader eeh;
     eeh.SetDestination(dst48);
     eeh.SetSource(src48);
     eeh.SetLengthType(protocol);
-    // ouput added ethernetHeader info to debug
-    /*NS_LOG_LOGIC("EthernetHeader size: "<<eeh.GetHeaderSize());
-    eeh.Print(std::cout);
-    std::cout<<std::endl;*/
 
     ns3packet->packet->AddHeader(eeh);
-    // output packet content after CopyDaTa and AddHeader to debug
-    /*int bS = ns3packet->packet->GetSize();
-    uint8_t* b = new uint8_t [bS];
-    ns3packet->packet->CopyData(b, bS);
-    //for (int i = 34; i < 38&&i<bS; i ++) 
-    for (int i = 0; i < bS; i ++)
-        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)b[i] << ' ';
-    std::cout << '\n';
-    NS_LOG_LOGIC("add Headers");*/
     
     struct ns3PacketAndPort* egress_packetandport = p4Model->receivePacket(ns3packet);
 
@@ -162,9 +129,7 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
         int egress_port_num = egress_packetandport->port_num;
         // judge whether packet drop
         if(egress_port_num!=511){
-          // ***********View egress port num, can be removed ***************************
           NS_LOG_LOGIC("egress_port_num: "<<egress_port_num);
-          // ***************************************************************************
           Ptr<NetDevice> outNetDevice = GetBridgePort(egress_port_num);
           outNetDevice->Send(egress_packetandport->packet->Copy(), destination, protocol);
           }
@@ -219,22 +184,6 @@ P4NetDevice::P4NetDevice() :
        a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/silkroad.json"[0u];
     if(network_func.compare("router")==0)
        a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
-    // TO modify thrift_port
-
-    /*char parms[200]="--thrift-port ";
-    //char parms[200]="pcap";
-    int thrift_port_num=9090+switchIndex;
-    char* thrift_port_str;
-    //itoa(thrift_port_num,thrift_port_str,10);
-    thrift_port_str=int_to_str(thrift_port_num);
-    //strcpy(parms,a3);
-    strcat(parms,thrift_port_str);
-    //NS_LOG_LOGIC("parms: "<<parms);
-    strcat(parms," ");
-    strcat(parms,a3);
-    NS_LOG_LOGIC("parms: "<<parms);*/
-    // Usage: SWITCH_NAME [options] <path to JSON config file>
-    // --thrift-port arg        TCP port on which to run the Thrift runtime server
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
@@ -478,7 +427,6 @@ int P4Model::init(int argc, char *argv[]) {
     NS_LOG_FUNCTION(this);
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
-    std::string populate_flowtable_type;// runtime_CLI  local_call
     populate_flowtable_type="local_call";
     //populate_flowtable_type="runtime_CLI";
     
