@@ -1,1 +1,0 @@
-$CLI_PATH --json $1.json < commands.txt
