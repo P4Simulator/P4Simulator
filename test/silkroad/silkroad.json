@@ -493,8 +493,8 @@
                 "ethernet",
                 "arp",
                 "ipv4",
-                "tcp",
-                "udp"
+                "udp",
+                "tcp"
             ]
         }
     ],
@@ -589,24 +589,58 @@
             ]
         },
         {
-            "name": "_drop",
+            "name": "modify_ipv4_vip",
             "id": 2,
-            "runtime_data": [],
+            "runtime_data": [
+                {
+                    "name": "vip",
+                    "bitwidth": 32
+                }
+            ],
             "primitives": [
                 {
-                    "op": "drop",
-                    "parameters": []
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "ipv4",
+                                "srcAddr"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
                 }
             ]
         },
         {
-            "name": "noop",
+            "name": "modify_arp_vip",
             "id": 3,
-            "runtime_data": [],
+            "runtime_data": [
+                {
+                    "name": "vip",
+                    "bitwidth": 32
+                }
+            ],
             "primitives": [
                 {
-                    "op": "no_op",
-                    "parameters": []
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "arp",
+                                "srcIp"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
                 }
             ]
         },
@@ -615,11 +649,27 @@
             "id": 4,
             "runtime_data": [
                 {
-                    "name": "nhop_ipv4",
+                    "name": "dip",
                     "bitwidth": 32
                 }
             ],
             "primitives": [
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "arp",
+                                "dstIp"
+                            ]
+                        },
+                        {
+                            "type": "runtime_data",
+                            "value": 0
+                        }
+                    ]
+                },
                 {
                     "op": "modify_field",
                     "parameters": [
@@ -635,6 +685,28 @@
                             "value": 0
                         }
                     ]
+                }
+            ]
+        },
+        {
+            "name": "noop",
+            "id": 5,
+            "runtime_data": [],
+            "primitives": [
+                {
+                    "op": "no_op",
+                    "parameters": []
+                }
+            ]
+        },
+        {
+            "name": "_drop",
+            "id": 6,
+            "runtime_data": [],
+            "primitives": [
+                {
+                    "op": "drop",
+                    "parameters": []
                 }
             ]
         }
@@ -685,10 +757,10 @@
                         "noop"
                     ],
                     "next_tables": {
-                        "modify_dip": "forward_table",
-                        "noop": "forward_table"
+                        "modify_dip": "set_ipv4_srcip",
+                        "noop": "set_ipv4_srcip"
                     },
-                    "base_default_next": "forward_table"
+                    "base_default_next": "set_ipv4_srcip"
                 },
                 {
                     "name": "vipt_with_udp",
@@ -730,10 +802,10 @@
                         "noop"
                     ],
                     "next_tables": {
-                        "modify_dip": "forward_table",
-                        "noop": "forward_table"
+                        "modify_dip": "set_ipv4_srcip",
+                        "noop": "set_ipv4_srcip"
                     },
-                    "base_default_next": "forward_table"
+                    "base_default_next": "set_ipv4_srcip"
                 },
                 {
                     "name": "arp_nhop",
@@ -759,10 +831,10 @@
                         "_drop"
                     ],
                     "next_tables": {
-                        "set_arp_nhop": "forward_table",
-                        "_drop": "forward_table"
+                        "set_arp_nhop": "set_arp_srcip",
+                        "_drop": "set_arp_srcip"
                     },
-                    "base_default_next": "forward_table"
+                    "base_default_next": "set_arp_srcip"
                 },
                 {
                     "name": "forward_table",
@@ -792,6 +864,64 @@
                         "_drop": null
                     },
                     "base_default_next": null
+                },
+                {
+                    "name": "set_ipv4_srcip",
+                    "id": 4,
+                    "match_type": "exact",
+                    "type": "simple",
+                    "max_size": 16384,
+                    "with_counters": false,
+                    "direct_meters": null,
+                    "support_timeout": false,
+                    "key": [
+                        {
+                            "match_type": "exact",
+                            "target": [
+                                "ipv4",
+                                "srcAddr"
+                            ],
+                            "mask": null
+                        }
+                    ],
+                    "actions": [
+                        "modify_ipv4_vip",
+                        "noop"
+                    ],
+                    "next_tables": {
+                        "modify_ipv4_vip": "forward_table",
+                        "noop": "forward_table"
+                    },
+                    "base_default_next": "forward_table"
+                },
+                {
+                    "name": "set_arp_srcip",
+                    "id": 5,
+                    "match_type": "exact",
+                    "type": "simple",
+                    "max_size": 16384,
+                    "with_counters": false,
+                    "direct_meters": null,
+                    "support_timeout": false,
+                    "key": [
+                        {
+                            "match_type": "exact",
+                            "target": [
+                                "arp",
+                                "srcIp"
+                            ],
+                            "mask": null
+                        }
+                    ],
+                    "actions": [
+                        "modify_arp_vip",
+                        "noop"
+                    ],
+                    "next_tables": {
+                        "modify_arp_vip": "forward_table",
+                        "noop": "forward_table"
+                    },
+                    "base_default_next": "forward_table"
                 }
             ],
             "action_profiles": [],
@@ -845,7 +975,7 @@
                         }
                     },
                     "true_next": "vipt_with_udp",
-                    "false_next": null
+                    "false_next": "set_ipv4_srcip"
                 },
                 {
                     "name": "_condition_3",
@@ -862,7 +992,7 @@
                         }
                     },
                     "true_next": "arp_nhop",
-                    "false_next": null
+                    "false_next": "forward_table"
                 }
             ]
         },

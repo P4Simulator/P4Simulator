@@ -1,9 +1,0 @@
-table_set_default ipv4_nhop _drop
-table_set_default forward_table _drop
-table_set_default send_frame _drop
-table_add ipv4_nhop set_nhoop 0x0a010103 => 0x0a0a0a0a
-table_add forward_table set_dmac 0x0a0a0a0a => n2dstmac 1
-table_add send_frame set_smac 1=> n0srcmac
-table_add ipv4_nhop set_nhoop 0x0a010101 => 0x0b0b0b0b
-table_add forward_table set_dmac 0x0b0b0b0b => n0dstmac 0
-table_add send_frame set_smac 0=> n2srcmac

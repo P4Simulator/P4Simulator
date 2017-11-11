@@ -1,0 +1,13 @@
+table_set_default vipt_with_udp noop
+table_set_default arp_nhop _drop
+table_set_default forward_table _drop
+table_set_default vipt_with_tcp noop
+table_add arp_nhop set_arp_nhop 0x0a010101 => 0x0a010101
+table_add arp_nhop set_arp_nhop 0x0a01010a => 0x0a010101
+table_add arp_nhop set_arp_nhop 0x0a010104 => 0x0a010104
+table_add forward_table set_port 0x0a010101 => 0x0000
+table_add forward_table set_port 0x0a010104 => 0x0003
+table_add vipt_with_udp modify_dip 0x0a010104 0x11 0xc001 => 0x0a010104
+table_add vipt_with_udp modify_dip 0x0a01010a 0x11 0x0009 => 0x0a010101
+table_add set_ipv4_srcip modify_ipv4_vip 0x0a010101 => 0x0a01010a
+table_add set_arp_srcip modify_arp_vip 0x0a010101 => 0x0a01010a

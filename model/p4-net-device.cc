@@ -29,14 +29,11 @@
 using namespace ns3;
 
 #define MAXSIZE 512
-
-std::string network_func;//router firewall silkroad 
-std::string flowtable_path;
+std::string network_func; // define in p4-example.cc,to select nf
+std::string flowtable_path;//define in p4-example.cc
+std::map<std::string,bm::MatchKeyParam::Type> flowtable_matchtype;
 std::string flowtable_matchtype_path;
-std::string populate_flowtable_type;//local_call runtime_CLI
 
-typedef  std::map<std::string,bm::MatchKeyParam::Type> StrTypeMap;
-StrTypeMap flowtable_matchtype;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -70,7 +67,8 @@ std::string exec(const char* cmd) {
 }
 
 void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort) {
-    NS_LOG_FUNCTION_NOARGS ();
+    //NS_LOG_FUNCTION_NOARGS ();
+    // NS_ASSERT (bridgePort != this);
     if (!Mac48Address::IsMatchingType(bridgePort->GetAddress())) {
         NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
     }
@@ -216,35 +214,27 @@ P4NetDevice::P4NetDevice() :
     // nf interface
     char * a3;
     if(network_func.compare("firewall")==0) 
-       a3= (char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
-    else{
-        if(network_func.compare("simple")==0)
-        {
-            a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/simple/simple.json"[0u];
-        }
-        else
-        {
-            if(network_func.compare("l2_switch")==0)
-            {
-                a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/l2_switch/l2_switch.json"[0u];
-            }
-            else
-            {
-                if(network_func.compare("router")==0)
-                {
-                    //a3=(char*) &" --thrift-port 9091 /home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
-                    a3=(char*) &"/home/kp/user/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
-                }
-                else
-                {
-                    if(network_func.compare("simple_router")==0)
-                    {
-                         a3=(char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
-                    }
-                }
-            }
-        }
-    }
+       a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
+    if(network_func.compare("silkroad")==0)
+       a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/silkroad.json"[0u];
+    if(network_func.compare("router")==0)
+       a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
+    // TO modify thrift_port
+
+    /*char parms[200]="--thrift-port ";
+    //char parms[200]="pcap";
+    int thrift_port_num=9090+switchIndex;
+    char* thrift_port_str;
+    //itoa(thrift_port_num,thrift_port_str,10);
+    thrift_port_str=int_to_str(thrift_port_num);
+    //strcpy(parms,a3);
+    strcat(parms,thrift_port_str);
+    //NS_LOG_LOGIC("parms: "<<parms);
+    strcat(parms," ");
+    strcat(parms,a3);
+    NS_LOG_LOGIC("parms: "<<parms);*/
+    // Usage: SWITCH_NAME [options] <path to JSON config file>
+    // --thrift-port arg        TCP port on which to run the Thrift runtime server
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
@@ -488,31 +478,30 @@ int P4Model::init(int argc, char *argv[]) {
     NS_LOG_FUNCTION(this);
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
+    std::string populate_flowtable_type;// runtime_CLI  local_call
     populate_flowtable_type="local_call";
+    //populate_flowtable_type="runtime_CLI";
     
     // use local call to populate flowtable
     if(populate_flowtable_type.compare("local_call")==0)
     {
         this->my_init_from_command_line_options(argc, argv, argParser);
         
+        //**************READ TABLE ACTION MATCH_TYPE**************
         read_table_action_match_type(flowtable_matchtype_path,flowtable_matchtype);
+        //********************************************************
 
 
         populate_flow_table(flowtable_path);
-	for(StrTypeMap::iterator iter=flowtable_matchtype.begin();iter!=flowtable_matchtype.end();iter++)
-	{
-		view_flowtable_entry_num(iter->first);
-	}
-	
 
-        //view_flowtable_entry_num("arp_nhop");
+        view_flowtable_entry_num("arp_nhop");
 
-        //view_flowtable_entry_num("ipv4_nhop");
+        view_flowtable_entry_num("ipv4_nhop");
 
-        //view_flowtable_entry_num("forward_table");
+        view_flowtable_entry_num("forward_table");
 
     }
-    else //use runtime_CLI populate flowtable
+    else
     {
         // ******************************TO DO*************************************
         // start thrift server , use runtime_CLI populate flowtable
@@ -528,7 +517,7 @@ int P4Model::init(int argc, char *argv[]) {
             std::this_thread::sleep_for(std::chrono::seconds(5));
             //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
         }
-        //*********************************************************************
+       //*********************************************************************
     }
     return 0;
 }

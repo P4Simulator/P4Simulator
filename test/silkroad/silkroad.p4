@@ -124,9 +124,16 @@ action modify_dip(dip){
 	modify_field(routing_metadata.nhop_ipv4, dip);
 	add_to_field(ipv4.ttl, -1);
 }
+action modify_ipv4_vip(vip){
+	modify_field(ipv4.srcAddr,vip);
+}
+action modify_arp_vip(vip){
+	modify_field(arp.srcIp,vip);
+}
 
-action set_arp_nhop(nhop_ipv4) {
-    modify_field(routing_metadata.nhop_ipv4, nhop_ipv4);
+action set_arp_nhop(dip) {
+    modify_field(arp.dstIp,dip);
+    modify_field(routing_metadata.nhop_ipv4, dip);
 }
 
 action noop() {
@@ -182,6 +189,24 @@ table forward_table {
         _drop;
     }
 }
+table set_ipv4_srcip{
+	reads{
+	ipv4.srcAddr: exact;
+	}
+	actions{
+		modify_ipv4_vip;
+		noop;
+	}
+}
+table set_arp_srcip{
+        reads{
+        arp.srcIp: exact;
+        }
+        actions{
+                modify_arp_vip;
+                noop;
+        }
+}
 
 control ingress{
 	if(valid(ipv4))
@@ -189,17 +214,17 @@ control ingress{
 		if(valid(tcp))
 		{
 			apply(vipt_with_tcp);
-			apply(forward_table);
 		}
 		else if(valid(udp))
 		{
 			apply(vipt_with_udp);
-			apply(forward_table);
 		}
+                apply(set_ipv4_srcip);
 	}
 	else if(valid(arp))
 	{
 		apply(arp_nhop);
-		apply(forward_table);
+		apply(set_arp_srcip);
 	}
+	apply(forward_table);
 }
