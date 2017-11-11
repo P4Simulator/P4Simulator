@@ -29,6 +29,7 @@
 using namespace ns3;
 
 #define MAXSIZE 512
+typedef std::map<std::string,bm::MatchKeyParam::Type> StrMatchType;
 std::string network_func; // define in p4-example.cc,to select nf
 std::string flowtable_path;//define in p4-example.cc
 std::map<std::string,bm::MatchKeyParam::Type> flowtable_matchtype;
@@ -176,7 +177,6 @@ P4NetDevice::P4NetDevice() :
     NS_LOG_FUNCTION_NOARGS ();
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
-    // nf interface
     char * a3;
     if(network_func.compare("firewall")==0) 
        a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
@@ -427,45 +427,28 @@ int P4Model::init(int argc, char *argv[]) {
     NS_LOG_FUNCTION(this);
     using ::sswitch_runtime::SimpleSwitchIf;
     using ::sswitch_runtime::SimpleSwitchProcessor;
-    populate_flowtable_type="local_call";
-    //populate_flowtable_type="runtime_CLI";
     
     // use local call to populate flowtable
     if(populate_flowtable_type.compare("local_call")==0)
     {
         this->my_init_from_command_line_options(argc, argv, argParser);
-        
-        //**************READ TABLE ACTION MATCH_TYPE**************
         read_table_action_match_type(flowtable_matchtype_path,flowtable_matchtype);
-        //********************************************************
-
-
         populate_flow_table(flowtable_path);
-
-        view_flowtable_entry_num("arp_nhop");
-
-        view_flowtable_entry_num("ipv4_nhop");
-
-        view_flowtable_entry_num("forward_table");
-
+        for(StrMatchType::iterator iter=flowtable_matchtype.begin();iter!=flowtable_matchtype.end();iter++)
+	{  view_flowtable_entry_num(iter->first); }
     }
     else
     {
-        // ******************************TO DO*************************************
         // start thrift server , use runtime_CLI populate flowtable
-        // have problem in modify default thrift port
         if(populate_flowtable_type.compare("runtime_CLI")==0)
         {
             this->init_from_command_line_options(argc, argv, argParser);
             int thrift_port = this->get_runtime_port();
-            //NS_LOG_LOGIC("thrift_port: "<<thrift_port);
             bm_runtime::start_server(this, thrift_port);
-            //exec("python ");
             std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
             std::this_thread::sleep_for(std::chrono::seconds(5));
             //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
         }
-       //*********************************************************************
     }
     return 0;
 }
@@ -536,7 +519,7 @@ void P4Model::read_table_action_match_type(std::string file_path,std::map<std::s
                 }
             }
         }
-        std::cout << table_action << " " << match_type << std::endl;
+    //    std::cout << table_action << " " << match_type << std::endl;
     }
 }
 
@@ -572,12 +555,6 @@ int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::Target
 void P4Model::populate_flow_table(const std::string command_path)
 {
 
-    //get switch all table name
-    //get key field
-    //according to table name get all action name
-    //according to action name get parm num and type
-    //without test parms error
-
     std::fstream fp;
     fp.open(command_path);
     if (!fp)
@@ -590,7 +567,6 @@ void P4Model::populate_flow_table(const std::string command_path)
         char row[max_size];
         while (fp.getline(row, max_size))
         {
-            //std::cout << row << std::endl;
             parse_flowtable_command(std::string(row));
         }
     }
@@ -600,8 +576,6 @@ void P4Model::parse_flowtable_command(const std::string command_row)
 
     std::vector<std::string> parms;
     int last_p = 0, cur_p = 0;
-    //int action_end = command_row.find("=>");
-    //if(action_end<command_row.size)
     for (size_t i = 0; i < command_row.size(); i++,cur_p++)
     {
         if (command_row[i] == ' ')
@@ -614,9 +588,6 @@ void P4Model::parse_flowtable_command(const std::string command_row)
     {
         parms.push_back(command_row.substr(last_p, cur_p - last_p));
     }
-    /*for (size_t i = 0; i < parms.size(); i++)
-        std::cout << parms[i] << " ";
-    std::cout<<std::endl;*/
     if (parms.size() > 0)
     {
         if (parms[0].compare("table_set_default") == 0)
@@ -626,7 +597,6 @@ void P4Model::parse_flowtable_command(const std::string command_row)
             if (parms.size() > 3)
             {
                 for (size_t i = 3; i < parms.size(); i++)
-                    //action_data.push_back_action_data(str_to_int(parms[i]));
                     action_data.push_back_action_data(bm::Data(parms[i]));
             }
             mt_set_default_action(0, parms[1], parms[2], action_data);
@@ -639,15 +609,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                 std::vector<bm::MatchKeyParam> match_key;
                 bm::ActionData action_data;
                 bm::entry_handle_t *handle=new bm::entry_handle_t(1);// table entry num
-                
-                //enum class Type {RANGE,VALID,EXACT,LPM,TERNARY};
-
-                //*************************TO DO**********************************
-                // should accord to p4 json file to decide every table key match type
-                // now can handle every table match type same temporarily 
                 bm::MatchKeyParam::Type match_type=flowtable_matchtype[parms[1]];
-                //std::cout<<parms[1]<<" ";
-                //****************************************************************
                 
                 unsigned int key_num=0;
                 unsigned int action_data_num=0;
@@ -659,15 +621,12 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                         key_num++;
                         if(match_type==bm::MatchKeyParam::Type::EXACT)
                         {
-                            //std::cout<<"exact"<<" ";
                             match_key.push_back(bm::MatchKeyParam(match_type,hexstr_to_bytes(parms[i])));
                         }
                         else
                         {
-                            // ******************TO DO****************************
                             if(match_type==bm::MatchKeyParam::Type::LPM)
                             {
-
                                 int pos=parms[i].find("/");
                                 std::string prefix=parms[i].substr(0,pos);
                                 std::string length=parms[i].substr(pos+1);
@@ -678,11 +637,9 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                             {
                                 if(match_type==bm::MatchKeyParam::Type::TERNARY)
                                 {
-                                    //std::cout<<"ternary"<<" ";
                                     int pos=parms[i].find("&&&");
                                     std::string key=hexstr_to_bytes(parms[i].substr(0,pos));
                                     std::string mask=hexstr_to_bytes(parms[i].substr(pos+3));
-                                    //std::cout<<key<<" "<<mask<<std::endl;
                                     if(key.size()!=mask.size())
                                     {
                                         std::cout<<"key and mask length unmatch!"<<std::endl;
@@ -694,9 +651,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                                     }
                                 }
                             }
-                            //*********************************************
                         }
-                        //NS_LOG_LOGIC("match_key:"<<" "<<parms[i]);
                     }
                     else
                         break;
@@ -709,9 +664,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                     for(;i<parms.size();i++)
                     {
                         action_data_num++;
-                        //action_data.push_back_action_data(str_to_int(parms[i]));
                         action_data.push_back_action_data(bm::Data(parms[i]));
-                        //NS_LOG_LOGIC("action_data:"<<parms[i]);
                     }
                     priority=0;
                     // judge action_data_num equal action need num
@@ -722,7 +675,6 @@ void P4Model::parse_flowtable_command(const std::string command_row)
                     for(;i<parms.size()-1;i++)
                     {
                         action_data_num++;
-                        //action_data.push_back_action_data(str_to_int(parms[i]));
                         action_data.push_back_action_data(bm::Data(parms[i]));
                     }
                     // judge action_data_num equal action need num
@@ -914,34 +866,27 @@ struct ns3PacketAndPort * P4Model::receivePacket(
         struct ns3PacketAndPort *ns3packet) {
     NS_LOG_FUNCTION(this);
     struct bm2PacketAndPort * bm2packet = ns3tobmv2(ns3packet);
-    NS_LOG_LOGIC("ns3tobmv2");
     std::unique_ptr<bm::Packet> packet = std::move(bm2packet->packet);
 
     if (packet) {
-        //NS_LOG_LOGIC("packet");
         int port_num = bm2packet->port_num;
         int len = packet.get()->get_data_size();
         packet.get()->set_ingress_port(port_num);
         bm::PHV *phv = packet.get()->get_phv();
         phv->reset_metadata();
-        //NS_LOG_LOGIC("reset_metadata");
         phv->get_field("standard_metadata.ingress_port").set(port_num);
         phv->get_field("standard_metadata.packet_length").set(len);
-        //Field &f_instance_type = phv->get_field("standard_metadata.instance_type");
 
         if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
             phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(0);
         }
-        //NS_LOG_LOGIC("come to ingress");
 
         // Ingress
         bm::Parser *parser = this->get_parser("parser");
         bm::Pipeline *ingress_mau = this->get_pipeline("ingress");
         phv = packet.get()->get_phv();
-        //NS_LOG_LOGIC("come to parse");
 
         parser->parse(packet.get());
-        //NS_LOG_LOGIC("come to apply");
 
         ingress_mau->apply(packet.get());
 
@@ -969,45 +914,26 @@ struct ns3PacketAndPort * P4Model::receivePacket(
 
 struct ns3PacketAndPort * P4Model::bmv2tons3(
         struct bm2PacketAndPort *bm2packet) {
-    //NS_LOG_FUNCTION(this);
     struct ns3PacketAndPort * ret = new struct ns3PacketAndPort;
-    // Extract and set buffer
     void *buffer = bm2packet->packet.get()->data();
     size_t length = bm2packet->packet.get()->get_data_size();
-    //NS_LOG_LOGIC("get buffer and length");
     ret->packet = new ns3::Packet((uint8_t*)buffer, length);
-    // Extract and set port number
     ret->port_num = bm2packet->port_num;
-    // Set packet size
     return ret;
 }
 
 struct bm2PacketAndPort * P4Model::ns3tobmv2(
         struct ns3PacketAndPort *ns3packet) {
-    //NS_LOG_FUNCTION(this);
     int length = ns3packet->packet->GetSize();
     uint8_t* buffer = new uint8_t[length];
-    // view ns3packet
-    // ****************************************
-    /*int buSize = ns3packet->packet->GetSize();
-    uint8_t* bu = new uint8_t [buSize];
-    ns3packet->packet->CopyData(bu, buSize);
-    for (int i = 0; i < buSize; i ++) 
-        std::cout << std::setfill('0') << std::setw(2) << std::hex << (int)bu[i] << ' ';
-    std::cout << '\n';*/
-    // *************************************
-
     struct bm2PacketAndPort* ret = new struct bm2PacketAndPort;
 
     int port_num = ns3packet->port_num;
-    //NS_LOG_LOGIC("port set");
     if (ns3packet->packet->CopyData(buffer, length)) {
-        //NS_LOG_LOGIC("CopyData"<<port_num);
         std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(port_num, pktID++,
             length, bm::PacketBuffer(2048, (char*)buffer, length));
         ret->packet = std::move(packet_);
     }
-    //NS_LOG_LOGIC("copy_data");
     ret->port_num = port_num;
     return ret;
 }
