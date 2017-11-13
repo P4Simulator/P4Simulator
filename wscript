@@ -29,8 +29,6 @@ def build(bld):
         'helper/tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
         'helper/build-flowtable-helper.cc',
-	'helper/slb-helper.cc',
-	'model/slb-net-device.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('ns4')
@@ -50,8 +48,6 @@ def build(bld):
         'helper/tree-topo-helper.h',
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
-	'helper/slb-helper.h',
-	'model/slb-net-device.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:
