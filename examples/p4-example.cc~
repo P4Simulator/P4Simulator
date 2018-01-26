@@ -39,7 +39,7 @@ std::string flowtable_path;
 std::string flowtable_matchtype_path;
 std::string populate_flowtable_type;//the way of populating flowtable(local_call or runtime_CLI)
 int p4 = 1;// whether select use p4(ns3 or ns4)
-std::string home_path="/home/kp/";
+std::string home_path="/home/kphf1995cm/";
 std::string ns3_root_name="ns-allinone-3.26/";
 std::string ns3_src_name="ns-3.26/";
 

@@ -22,7 +22,6 @@ def build(bld):
     module.source = [
         'model/p4-net-device.cc',
         'helper/p4-helper.cc',
-		'model/helper.cc',
         'model/primitives.cpp',
         'model/csma-topology-reader.cc',
         'model/p4-topology-reader.cc',
@@ -42,7 +41,6 @@ def build(bld):
     headers.source = [
         'model/p4-net-device.h',
         'model/p4.h',
-		'model/helper.h',
         'helper/p4-helper.h',
         'helper/p4-topology-reader-helper.h',
         'model/csma-topology-reader.h',

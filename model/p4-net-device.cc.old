@@ -1,5 +1,4 @@
 #include "p4-net-device.h"
-#include "helper.h"
 #include "ns3/log.h"
 #include "ns3/node.h"
 #include "ns3/ethernet-header.h"
@@ -36,9 +35,6 @@ std::string flowtable_path;//define in p4-example.cc
 std::map<std::string,bm::MatchKeyParam::Type> flowtable_matchtype;
 std::string flowtable_matchtype_path;
 std::string populate_flowtable_type;
-std::string home_path;
-std::string ns3_root_name;
-std::string ns3_src_name;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -150,7 +146,28 @@ int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
     }
     return -1;
 }
+char * int_to_str(int num)
+{
+    char *ss=new char[10];
+    int pos = 0;
 
+    if (num == 0)
+        ss[0] = '0';
+    while (num)
+    {
+        ss[pos++] = num % 10 + '0';
+        num = num / 10;
+    }
+    char temp;
+    for (int i = 0; i < pos / 2; i++)
+    {
+        temp = ss[i];
+        ss[i] = ss[pos - 1 - i];
+        ss[pos - 1 - i] = temp;
+    }
+    ss[pos] = '\0';
+    return ss;
+}
 
 P4NetDevice::P4NetDevice() :
     m_node(0), m_ifIndex(0) {
@@ -158,32 +175,14 @@ P4NetDevice::P4NetDevice() :
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
     char * a3;
-    std::string json_path;
     if(network_func.compare("firewall")==0) 
-       {
-	//a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
-         json_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/firewall/firewall.json";
-         a3=(char*)json_path.data();
-
-	}
+       a3= (char*) &"/home/kp/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/firewall.json"[0u];
     if(network_func.compare("silkroad")==0)
-       {//a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/silkroad.json"[0u];
-	json_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/silkroad/silkroad.json";
-        a3=(char*)json_path.data();
-	}
+       a3= (char*) &"/home/kp/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/silkroad.json"[0u];
     if(network_func.compare("router")==0)
-       {//a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
-	NS_LOG_LOGIC("router json_path");
-	json_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/router/router.json";
-	a3=(char*)json_path.data();
-	}
+       a3= (char*) &"/home/kp/ns-allinone-3.26/ns-3.26/src/ns4/test/router/router.json"[0u];
     if(network_func.compare("simple_router")==0)
-       {
-	//a3= (char*) &"/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
-	json_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/simple_router/simple_router.json";
-        a3=(char*)json_path.data();
-
-	}
+       a3= (char*) &"/home/kp/ns-allinone-3.26/ns-3.26/src/ns4/test/simple_router/simple_router.json"[0u];
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");
@@ -435,7 +434,7 @@ int P4Model::init(int argc, char *argv[]) {
         read_table_action_match_type(flowtable_matchtype_path,flowtable_matchtype);
         populate_flow_table(flowtable_path);
         for(StrMatchType::iterator iter=flowtable_matchtype.begin();iter!=flowtable_matchtype.end();iter++)
-	{  view_flowtable_entry_num(iter->first); }
+	       view_flowtable_entry_num(iter->first);
     }
     else
     {
@@ -530,7 +529,6 @@ int P4Model::my_init_from_command_line_options(int argc, char *argv[],bm::Target
     NS_LOG_FUNCTION(this);
     bm::OptionsParser parser;
     parser.parse(argc,argv,tp);
-    //NS_LOG_LOGIC("parse pass");
     std::shared_ptr<bm::TransportIface> transport=nullptr;
     int status = 0;
     if (transport == nullptr) 
@@ -686,7 +684,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         }
     }
 }
-/*unsigned int P4Model::str_to_int(const std::string str)
+unsigned int P4Model::str_to_int(const std::string str)
 {
 
     unsigned int res = 0;
@@ -748,8 +746,8 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         }
     }
     return res;
-}*/
-/*int P4Model::hexchar_to_int(char c)
+}
+int P4Model::hexchar_to_int(char c)
 {
 
     int temp=0;
@@ -770,8 +768,8 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         }
     }
     return temp;
-}*/
-/*std::string P4Model::hexstr_to_bytes(const std::string str)
+}
+std::string P4Model::hexstr_to_bytes(const std::string str)
 {
 
     std::string hex_str;
@@ -790,9 +788,9 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         res[j] = hexchar_to_int(hex_str[i]) * 16 + hexchar_to_int(hex_str[i + 1]);
     }
     return res;
-}*/
+}
 
-/*std::string P4Model::hexstr_to_bytes(const std::string str, unsigned int bit_width)
+std::string P4Model::hexstr_to_bytes(const std::string str, unsigned int bit_width)
 {
 
     std::string hex_str;
@@ -860,7 +858,7 @@ void P4Model::parse_flowtable_command(const std::string command_row)
         }
     }
     return res;
-}*/
+}
 
 
 struct ns3PacketAndPort * P4Model::receivePacket(
