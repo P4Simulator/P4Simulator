@@ -91,7 +91,7 @@ int main (int argc, char *argv[]) {
 	std::string ft_path,mt_path;
 	populate_flowtable_type="local_call";//local_call runtime_CLI
 	// select network function(firewall router silkroad)
-	network_func="silkroad";
+	network_func="firewall";
 
 	if(network_func.compare("firewall")==0)	
     {

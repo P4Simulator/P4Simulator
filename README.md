@@ -1,7 +1,5 @@
 ## NS4 : A P4-driven Network Simulator
 
-**This is not a stable version you can currently work with. Please stay tuned, we are currently working on it and will release one very soon.**
-
 NS4 is a P4-driven network simulator and the first research effort on applying P4 to network simulation. For key features, follow [our paper abstract](https://github.com/ns-4/NS4/blob/master/final-version-poster.pdf).
 
 We also provided beginners' guide to help you get started.
