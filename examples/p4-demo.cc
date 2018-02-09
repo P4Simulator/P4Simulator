@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
   if (g_nsType==NS4) //ns4 mode
     {
       g_populateFlowtableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      g_networkFunc=ROUTER;
+      g_networkFunc=SIMPLE_ROUTER;
       InitSwitchConfig();
 
       P4Helper bridge;
@@ -160,6 +160,11 @@ void InitSwitchConfig()
     case SILKROAD:
       {
         SetSwitchConfigInfo(g_nfDir+"silkroad/command.txt",g_nfDir+"silkroad/mtype.txt");
+        break;
+      }
+    case SIMPLE_ROUTER:
+      {
+        SetSwitchConfigInfo(g_nfDir+"simple_router/command.txt",g_nfDir+"simple_router/mtype.txt");
         break;
       }
     default:
