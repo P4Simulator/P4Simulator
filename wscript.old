@@ -50,7 +50,6 @@ def build(bld):
         'helper/tree-topo-helper.h',
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
-	'model/global.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

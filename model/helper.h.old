@@ -1,0 +1,16 @@
+#ifndef __HELPER_H__
+#define __HELPER_H__
+
+#include <string>
+
+char * int_to_str(int num);
+
+unsigned int str_to_int(const std::string str);
+
+int hexchar_to_int(char c);
+
+std::string hexstr_to_bytes(const std::string str);
+
+std::string hexstr_to_bytes(const std::string str, unsigned int bit_width);
+
+#endif

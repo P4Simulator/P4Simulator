@@ -53,7 +53,9 @@ std::string flowtable_path;
 std::string flowtable_matchtype_path;
 std::string populate_flowtable_type;//the way of populating flowtable(local_call or runtime_CLI)
 int p4 = 1;// whether select use p4(ns3 or ns4)
-
+std::string home_path="/home/kphf1995cm/";
+std::string ns3_root_name="ns-allinone-3.26/";
+std::string ns3_src_name="ns-3.26/"; 
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
@@ -102,24 +104,28 @@ int main (int argc, char *argv[]) {
 	std::string ft_path,mt_path;
 	populate_flowtable_type="local_call";
 	// select network function(firewall router silkroad)
-	network_func="silkroad";
+	network_func="router";
 
 	if(network_func.compare("firewall")==0)	
         {
-		ft_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/command.txt";
-        	mt_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/firewall/match_type.txt";
+		ft_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/firewall/command.txt";
+        	mt_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/firewall/match_type.txt";
         	init_switch_config_info("firewall",ft_path,mt_path);
 	}
 	if(network_func.compare("router")==0)
         {
-                ft_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/command.txt";
-                mt_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/match_type.txt";
+                ft_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/router/command.txt";
+                mt_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/router/match_type.txt";
+		//ft_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/command.txt";
+                //mt_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/router/match_type.txt";
+		std::cout<<ft_path<<std::endl;
+		std::cout<<mt_path<<std::endl;
                 init_switch_config_info("router",ft_path,mt_path);
         }
 	if(network_func.compare("silkroad")==0)
         {
-                ft_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/command.txt";
-                mt_path="/home/kphf1995cm/ns-allinone-3.26/ns-3.26/src/ns4/test/silkroad/match_type.txt";
+                ft_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/silkroad/command.txt";
+                mt_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/silkroad/match_type.txt";
                 init_switch_config_info("silkroad",ft_path,mt_path);
         }
 
