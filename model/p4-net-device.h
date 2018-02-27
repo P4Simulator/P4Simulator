@@ -1,5 +1,25 @@
-#ifndef NS4_NS4_MODEL_H_H
-#define NS4_NS4_MODEL_H_H
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) YEAR COPYRIGHTHOLDER
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Author: 
+ */
+
+#ifndef P4_NET_DEVICE_H
+#define P4_NET_DEVICE_H
 #include <ns3/bridge-net-device.h>
 #include <ns3/net-device.h>
 #include <ns3/ptr.h>
@@ -29,7 +49,7 @@
 #include <vector>
 #include <chrono>
 
-using namespace ns3;
+namespace ns3 {
 //
 
 /**
@@ -52,6 +72,8 @@ using namespace ns3;
  * loss of metadata. We are currently working on reserving the metadata.
  *
  */
+typedef std::map<std::string,bm::MatchKeyParam::Type> MatchKeyValue_t;
+
 class P4Model: public bm::Switch {
 public:
     /**
@@ -88,7 +110,7 @@ public:
      * \return Processed ns-3 packet to be put back to P4 Device for
      * transmission.
      */
-    struct ns3PacketAndPort * receivePacket(struct ns3PacketAndPort *ns3packet);
+    struct Ns3PacketAndPort * ReceivePacket(struct Ns3PacketAndPort *ns3Packet);
 
     /**
      * \brief Initialize the P4 Model
@@ -112,44 +134,27 @@ public:
     /**
      * \brief configure switch with json file
      */
-    int my_init_from_command_line_options(int argc, char *argv[],bm::TargetParserBasic *tp = nullptr);
+    int InitFromCommandLineOptionsLocal(int argc, char *argv[],bm::TargetParserBasic *tp = nullptr);
     /**
      * \brief populate flow table 
-     * @parm command_path is command's path
+     * @parm commandPath is command's path
      */
-    void populate_flow_table(const std::string command_path);
+    void PopulateFlowTable(const std::string commandPath);
     /**
      *\brief handle every command
-     *@parm command_row is a concrete command, such as table_set_default, table_add and so on
+     *@parm commandRow is a concrete command, such as table_set_default, table_add and so on
      */
-    void parse_flowtable_command(const std::string command_row);
+    void ParseFlowtableCommand(const std::string commandRow);
+    
     /**
-     *\brief change string to unsigned int, can handle hexadecimal,binary and decimal
+     *\brief
      */
-    unsigned int str_to_int(const std::string str);
-    /**
-     *\brief change hexadecimal char to int
-     */
-    int hexchar_to_int(char c);
-    /**
-     *\brief compress two hexadecimal chars to one ascll char, so return string size
-     * is the half of input string size 
-     */
-    std::string hexstr_to_bytes(const std::string str);
-    /**
-     *\brief 
-     */
-    std::string hexstr_to_bytes(const std::string str,unsigned int bit_width);
+    void ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tableActionMatchType);
 
     /**
      *\brief
      */
-    void read_table_action_match_type(std::string file_path,std::map<std::string,bm::MatchKeyParam::Type>& tableaction_matchtype);
-
-    /**
-     *\brief
-     */
-    void view_flowtable_entry_num(std::string flowtable_name);
+    void ViewFlowtableEntryNum(std::string flowtableName);
 
 private:
 
@@ -165,32 +170,32 @@ private:
      * \param ns3packet A `ns::Packet` instance
      * \return A `bm::Packet` instance transformed from a ns::Packet instance.
      */
-    struct bm2PacketAndPort * ns3tobmv2(struct ns3PacketAndPort * ns3packet);
+    struct Bm2PacketAndPort * Ns3ToBmv2(struct Ns3PacketAndPort * ns3Packet);
 
     /**
      * \brief Transform a bm::packet and a ns::packet
      *
      * Called when putting a packet back to the P4 Device.
      */
-    struct ns3PacketAndPort * bmv2tons3(struct bm2PacketAndPort *);
+    struct Ns3PacketAndPort * Bmv2ToNs3(struct Bm2PacketAndPort *);
 
     /**
      * \brief Packet ID
      */
-    int pktID = 0;
+    int m_pktID = 0;
 
     using clock = std::chrono::high_resolution_clock;
 
     /**
      * \brief Structure of parsers
      */
-    bm::TargetParserBasic * argParser;
+    bm::TargetParserBasic * m_argParser;
 
     /**
      * A simple, 2-level, packet replication engine,
      * configurable by the control plane.
      */
-    std::shared_ptr<bm::McSimplePre> pre;
+    std::shared_ptr<bm::McSimplePre> m_pre;
 };
 
 /**
@@ -199,8 +204,8 @@ private:
  *
  * \TODO Find a better way.
  */
-struct ns3PacketAndPort {
-    int port_num;
+struct Ns3PacketAndPort {
+    int portNum;
     Packet * packet;
 };
 
@@ -210,8 +215,8 @@ struct ns3PacketAndPort {
  *
  * \TODO Find a better way.
  */
-struct bm2PacketAndPort {
-    int port_num;
+struct Bm2PacketAndPort {
+    int portNum;
     std::unique_ptr<bm::Packet> packet;
 };
 
@@ -354,3 +359,5 @@ private:
 }; //namespace ns3
 
 #endif/* NS4_NS4_MODEL_H_H */
+
+}

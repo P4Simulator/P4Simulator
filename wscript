@@ -25,6 +25,7 @@ def build(bld):
         'model/primitives.cpp',
         'model/csma-topology-reader.cc',
         'model/p4-topology-reader.cc',
+	'model/helper.cc',
         'helper/p4-topology-reader-helper.cc',
         'helper/tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
@@ -41,6 +42,7 @@ def build(bld):
     headers.source = [
         'model/p4-net-device.h',
         'model/p4.h',
+	'model/helper.h',
         'helper/p4-helper.h',
         'helper/p4-topology-reader-helper.h',
         'model/csma-topology-reader.h',
@@ -48,6 +50,7 @@ def build(bld):
         'helper/tree-topo-helper.h',
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
+	'model/global.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:
