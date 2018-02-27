@@ -14,20 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Network topology
-//
-//        n0     n1
-//        |      |
-//       ----------
-//       | Switch |
-//       ----------
-//        |      |
-//        n2     n3
-//
-//
-// - CBR/UDP flows from n0 to n1 and from n3 to n0
-// - DropTail queues
-//
 
 #include <iostream>
 #include <fstream>
@@ -53,6 +39,7 @@ std::string flowtable_path;
 std::string flowtable_matchtype_path;
 std::string populate_flowtable_type;//the way of populating flowtable(local_call or runtime_CLI)
 int p4 = 1;// whether select use p4(ns3 or ns4)
+
 std::string home_path="/home/kphf1995cm/";
 std::string ns3_root_name="ns-allinone-3.26/";
 std::string ns3_src_name="ns-3.26/"; 
@@ -102,11 +89,12 @@ int main (int argc, char *argv[]) {
     {
 	// configure switch network function and flowtable information, and select polulate flowtable ways
 	std::string ft_path,mt_path;
-	populate_flowtable_type="local_call";
+	populate_flowtable_type="local_call";//local_call runtime_CLI
 	// select network function(firewall router silkroad)
 	network_func="firewall";
 
 	if(network_func.compare("firewall")==0)	
+
         {
 		ft_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/firewall/command.txt";
         	mt_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/firewall/match_type.txt";
@@ -128,7 +116,6 @@ int main (int argc, char *argv[]) {
                 mt_path=home_path+ns3_root_name+ns3_src_name+"src/ns4/test/silkroad/match_type.txt";
                 init_switch_config_info("silkroad",ft_path,mt_path);
         }
-
 	P4Helper bridge;
         bridge.Install (switchNode, switchDevices);
     } 
@@ -151,7 +138,7 @@ int main (int argc, char *argv[]) {
     NS_LOG_INFO ("Create Applications.");
     NS_LOG_INFO ("Create Source");
     Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
-
+    
     UdpEchoServerHelper echoServer (9);
     ApplicationContainer serverApps = echoServer.Install (terminals.Get (0));
     serverApps.Start (Seconds (1.0));
@@ -169,7 +156,7 @@ int main (int argc, char *argv[]) {
     clientApps.Start (Seconds (2.0));
     clientApps.Stop (Seconds (10.0));
 
-    NS_LOG_INFO ("Configure Tracing.");
+    //NS_LOG_INFO ("Configure Tracing.");
     csma.EnablePcapAll ("p4-example", false);
     Packet::EnablePrinting ();
 
