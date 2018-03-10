@@ -17,7 +17,7 @@
  *
  * Author: 
  */
-#include "p4-helper.h"
+#include "ns3/p4-helper.h"
 #include "ns3/log.h"
 #include "ns3/p4-net-device.h"
 // #include "ns3/p4-module.h"

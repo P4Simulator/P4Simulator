@@ -58,13 +58,44 @@ void SetSwitchConfigInfo(std::string ftPath,std::string mtPath)
   g_p4MatchTypePath=mtPath;
 }
 
+void InitSwitchConfig()
+{
+  switch(g_networkFunc)
+    {
+    case FIREWALL:
+      {
+        SetSwitchConfigInfo(g_nfDir+"firewall/command.txt",g_nfDir+"firewall/mtype.txt");
+        break;
+      }
+    case ROUTER:
+      {
+        SetSwitchConfigInfo(g_nfDir+"router/command.txt",g_nfDir+"router/mtype.txt");
+        break;
+      }
+    case SILKROAD:
+      {
+        SetSwitchConfigInfo(g_nfDir+"silkroad/command.txt",g_nfDir+"silkroad/mtype.txt");
+        break;
+      }
+    case SIMPLE_ROUTER:
+      {
+        SetSwitchConfigInfo(g_nfDir+"simple_router/command.txt",g_nfDir+"simple_router/mtype.txt");
+        break;
+      }
+    default:
+      {
+        break;
+      }
+    }
+}
+
 int main (int argc, char *argv[]) 
 {
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
   CommandLine cmd;
   cmd.Parse (argc, argv);
-  void InitSwitchConfig();
+  //void InitSwitchConfig();
   NS_LOG_INFO ("Create nodes.");
   NodeContainer terminals;
   terminals.Create (4);
@@ -143,7 +174,7 @@ int main (int argc, char *argv[])
 }
 
 
-void InitSwitchConfig()
+/*void InitSwitchConfig()
 {
   switch(g_networkFunc)
     {
@@ -172,4 +203,4 @@ void InitSwitchConfig()
         break;
       }
     }
-}
+}*/

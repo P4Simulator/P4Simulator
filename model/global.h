@@ -57,6 +57,9 @@ unsigned const int TERNARY=2;
 unsigned const int VALID=3;
 unsigned const int RANGE=4;
 
+//void SetSwitchConfigInfo(std::string ftPath,std::string mtPath);
+
+//void InitSwitchConfig();
 
 }
 #endif /*GLOBAL_H*/
