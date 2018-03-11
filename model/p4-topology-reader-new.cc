@@ -69,7 +69,7 @@ namespace ns3 {
 		return m_linksList.begin();
 	}
 
-	P4TopologyReader::ConstLinksIterator
+	P4TopologyReader::ConstLinksIterator_t
 		P4TopologyReader::LinksEnd(void) const
 	{
 		return m_linksList.end();

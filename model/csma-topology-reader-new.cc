@@ -23,6 +23,7 @@
 #include <sstream>
 #include <set>
 #include "ns3/log.h"
+#include <vector>
 
 #include "csma-topology-reader-new.h"
 
@@ -59,7 +60,7 @@ namespace ns3 {
 		std::ifstream topgen;
 		topgen.open(GetFileName().c_str());
 
-		(Ptr<Node>)* nodes;
+		std::vector<Ptr<Node>> nodes;
 		//NodeContainer nodes;
 
 		if (!topgen.is_open())
@@ -68,7 +69,6 @@ namespace ns3 {
 			//return nodes;
 			abort();
 		}
-
 		unsigned int fromIndex;
 		char fromType;
 		unsigned int toIndex;
@@ -95,9 +95,9 @@ namespace ns3 {
 		NS_LOG_INFO("Csma topology should have " << switchNum << " switches and " << hostNum << " hosts and "<< linkNum <<" links");
 
 		nodeNum = switchNum + hostNum;
-		nodes = new (Ptr<Node>)[nodeNum];
+		nodes.resize(nodeNum);
 
-		for (int i = 0; i < nodes[i]; i++)
+		for (int i = 0; i < nodeNum; i++)
 			nodes[i] = 0;
 
 		for (int i = 0; i < linkNum && !topgen.eof(); i++)

@@ -150,7 +150,7 @@ namespace ns3 {
 		//virtual NodeContainer Read (void) = 0;
 		virtual void Read(void) = 0;
 
-		NodeContainer GetTerminalNodeContainer(void) const
+		NodeContainer GetHostNodeContainer(void) const
 		{
 			return m_hosts;
 		}
@@ -176,13 +176,13 @@ namespace ns3 {
 		* \brief Returns an iterator to the the first link in this block.
 		* \return A const iterator to the first link in this block.
 		*/
-		ConstLinksIterator LinksBegin(void) const;
+		ConstLinksIterator_t LinksBegin(void) const;
 
 		/**
 		* \brief Returns an iterator to the the last link in this block.
 		* \return A const iterator to the last link in this block.
 		*/
-		ConstLinksIterator LinksEnd(void) const;
+		ConstLinksIterator_t LinksEnd(void) const;
 
 		/**
 		* \brief Returns the number of links in this block.

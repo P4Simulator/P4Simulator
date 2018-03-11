@@ -17,5 +17,8 @@ std::string HexstrToBytes(const std::string str);
 
 std::string HexstrToBytes(const std::string str, unsigned int bitWidth);
 
+std::string UintToString(unsigned int num);
+
+std::string Uint32ipToHex(unsigned int ip);
 }
 #endif /* HELPER_H */

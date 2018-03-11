@@ -1,45 +1,39 @@
-
-#include "ns3/global.h"
+# include "ns3/log.h"
+# include "ns3/global.h"
 
 namespace ns3 {
 
-std::string g_flowTablePath;
-std::string g_p4MatchTypePath;
-std::string g_nfDir;
-unsigned int g_networkFunc;
+  NS_LOG_COMPONENT_DEFINE("P4GlobalVar");
+  NS_OBJECT_ENSURE_REGISTERED(P4GlobalVar);
 
-// set switch network function, flowtable path and flowtable match type path
-// firewall router silkroad
-void SetSwitchConfigInfo(std::string ftPath,std::string mtPath)
-{
-  g_flowTablePath=ftPath;
-  g_p4MatchTypePath=mtPath;
-}
+  // init default static global variable
+  unsigned int P4GlobalVar::g_networkFunc=ROUTER;
+  std::string P4GlobalVar::g_flowTablePath="";
+  std::string P4GlobalVar::g_p4MatchTypePath="";
+  unsigned int P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;
 
-void InitSwitchConfig()
-{
-  switch(g_networkFunc)
-    {
-    case FIREWALL:
-      {
-        SetSwitchConfigInfo(g_nfDir+"firewall/command.txt",g_nfDir+"firewall/mtype.txt");
-        break;
-      }
-    case ROUTER:
-      {
-        SetSwitchConfigInfo(g_nfDir+"router/command.txt",g_nfDir+"router/mtype.txt");
-        break;
-      }
-    case SILKROAD:
-      {
-        SetSwitchConfigInfo(g_nfDir+"silkroad/command.txt",g_nfDir+"silkroad/mtype.txt");
-        break;
-      }
-    default:
-      {
-        break;
-      }
-    }
-}
+  std::string P4GlobalVar::g_homePath="/home/kphf1995cm/";
+  std::string P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
+  std::string P4GlobalVar::g_ns3SrcName="ns-3.26/";
+  std::string P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
 
+  unsigned int P4GlobalVar::g_nsType=NS4;
+
+  TypeId P4GlobalVar::GetTypeId(void)
+  {
+	  static TypeId tid = TypeId("ns3::P4GlobalVar")
+		  .SetParent<Object>()
+		  .SetGroupName("P4GlobalVar")
+		  ;
+	  return tid;
+  }
+  P4GlobalVar::P4GlobalVar()
+  {
+	  NS_LOG_FUNCTION(this);
+  }
+
+  P4GlobalVar::~P4GlobalVar()
+  {
+	  NS_LOG_FUNCTION(this);
+  }
 }

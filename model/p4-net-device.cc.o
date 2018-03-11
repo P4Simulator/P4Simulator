@@ -42,7 +42,7 @@
 #include <array>
 #include <chrono>
 #include <thread>
-#include <cstring>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -51,7 +51,6 @@
 
 using namespace ns3;
 
-/*
 // siwtch info
 unsigned int g_networkFunc;
 std::string g_p4MatchTypePath;
@@ -65,7 +64,6 @@ std::string g_ns3RootName;
 std::string g_ns3SrcName;
 unsigned int g_nsType;
 std::string g_nfDir;
-*/
 
 #define MAXSIZE 512
 MatchKeyValue_t flowtableMatchType;
@@ -194,25 +192,25 @@ P4NetDevice::P4NetDevice() :
     p4Model = new P4Model;
     char * a3;
     std::string jsonPath;
-    if(P4GlobalVar::g_networkFunc==FIREWALL) 
+    if(g_networkFunc==FIREWALL) 
        {
-	     jsonPath=P4GlobalVar::g_nfDir+"firewall/firewall.json";
+	     jsonPath=g_nfDir+"firewall/firewall.json";
          a3=(char*)jsonPath.data();
 
 	   }
-    if(P4GlobalVar::g_networkFunc==SILKROAD)
+    if(g_networkFunc==SILKROAD)
        {
-	    jsonPath=P4GlobalVar::g_nfDir+"silkroad/silkroad.json";
+	    jsonPath=g_nfDir+"silkroad/silkroad.json";
         a3=(char*)jsonPath.data();
 	}
-    if(P4GlobalVar::g_networkFunc==ROUTER)
+    if(g_networkFunc==ROUTER)
        {
-	    jsonPath=P4GlobalVar::g_nfDir+"router/router.json";
+	    jsonPath=g_nfDir+"router/router.json";
         a3=(char*)jsonPath.data();
 	}
-    if(P4GlobalVar::g_networkFunc==SIMPLE_ROUTER)
+    if(g_networkFunc==SIMPLE_ROUTER)
        {
-        jsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
+        jsonPath=g_nfDir+"simple_router/simple_router.json";
 		a3=(char*)jsonPath.data();
 	}
     char * args[2] = { NULL,a3};
@@ -460,18 +458,18 @@ int P4Model::init(int argc, char *argv[]) {
     using ::sswitch_runtime::SimpleSwitchProcessor;
     
     // use local call to populate flowtable
-    if(P4GlobalVar::g_populateFlowTableWay==LOCAL_CALL)
+    if(g_populateFlowtableWay==LOCAL_CALL)
     {
         this->InitFromCommandLineOptionsLocal(argc, argv, m_argParser);
-        ReadTableActionMatchType(P4GlobalVar::g_p4MatchTypePath,flowtableMatchType);
-        PopulateFlowTable(P4GlobalVar::g_flowTablePath);
+        ReadTableActionMatchType(g_p4MatchTypePath,flowtableMatchType);
+        PopulateFlowTable(g_flowtablePath);
         for(MatchKeyValue_t::iterator iter=flowtableMatchType.begin();iter!=flowtableMatchType.end();iter++)
 	      ViewFlowtableEntryNum(iter->first); 
     }
     else
     {
         // start thrift server , use runtime_CLI populate flowtable
-        if(P4GlobalVar::g_populateFlowTableWay==RUNTIME_CLI)
+        if(g_populateFlowtableWay==RUNTIME_CLI)
         {
             this->init_from_command_line_options(argc, argv, m_argParser);
             int thriftPort = this->get_runtime_port();

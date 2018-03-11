@@ -203,4 +203,41 @@ std::string HexstrToBytes(const std::string str, unsigned int bitWidth)
     }
     return res;
 }
+
+std::string UintToString(unsigned int num)
+{
+   std::string res;
+    if (num == 0)
+        res = "0";
+    while (num)
+    {
+        res.insert(res.begin(),num%10+'0');
+        num /= 10;
+    }
+    return res;
+}
+std::string Uint32ipToHex(unsigned int ip)
+{
+  if (ip != 0)
+    {
+        std::string res("0x00000000");
+        int k = 9;
+        int tmp;
+        while (ip)
+        {
+            tmp = ip % 16;
+            if (tmp < 10)
+                res[k] = tmp + '0';
+            else
+                res[k] = tmp - 10 + 'a';
+            k--;
+            ip /= 16;
+        }
+        return res;
+    }
+    else
+        return std::string("0x00000000");
+}
+
+
 }

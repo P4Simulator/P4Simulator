@@ -19,7 +19,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <cstring>
+#include <string>
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -35,12 +35,17 @@
 
 using namespace ns3;
 
-/*P4GlobalVar::g_homePath="/home/kphf1995cm/";
-P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
-P4GlobalVar::g_ns3SrcName="ns-3.26/";
-P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
+unsigned int g_networkFunc;
+std::string g_flowtablePath;
+std::string g_p4MatchTypePath; 
+unsigned int g_populateFlowtableWay;
 
-P4GlobalVar::g_nsType=NS4;*/
+std::string g_homePath="/home/kphf1995cm/";
+std::string g_ns3RootName="ns-allinone-3.26/";
+std::string g_ns3SrcName="ns-3.26/";
+std::string g_nfDir=g_homePath+g_ns3RootName+g_ns3SrcName+"src/ns4/test/";
+
+unsigned int g_nsType=NS4;
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
@@ -49,32 +54,32 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 // firewall router silkroad
 void SetSwitchConfigInfo(std::string ftPath,std::string mtPath)
 {
-  P4GlobalVar::g_flowTablePath=ftPath;
-  P4GlobalVar::g_p4MatchTypePath=mtPath;
+  g_flowtablePath=ftPath;
+  g_p4MatchTypePath=mtPath;
 }
 
 void InitSwitchConfig()
 {
-  switch(P4GlobalVar::g_networkFunc)
+  switch(g_networkFunc)
     {
     case FIREWALL:
       {
-        SetSwitchConfigInfo(P4GlobalVar::g_nfDir+"firewall/command.txt",P4GlobalVar::g_nfDir+"firewall/mtype.txt");
+        SetSwitchConfigInfo(g_nfDir+"firewall/command.txt",g_nfDir+"firewall/mtype.txt");
         break;
       }
     case ROUTER:
       {
-        SetSwitchConfigInfo(P4GlobalVar::g_nfDir+"router/command.txt",P4GlobalVar::g_nfDir+"router/mtype.txt");
+        SetSwitchConfigInfo(g_nfDir+"router/command.txt",g_nfDir+"router/mtype.txt");
         break;
       }
     case SILKROAD:
       {
-        SetSwitchConfigInfo(P4GlobalVar::g_nfDir+"silkroad/command.txt",P4GlobalVar::g_nfDir+"silkroad/mtype.txt");
+        SetSwitchConfigInfo(g_nfDir+"silkroad/command.txt",g_nfDir+"silkroad/mtype.txt");
         break;
       }
     case SIMPLE_ROUTER:
       {
-        SetSwitchConfigInfo(P4GlobalVar::g_nfDir+"simple_router/command.txt",P4GlobalVar::g_nfDir+"simple_router/mtype.txt");
+        SetSwitchConfigInfo(g_nfDir+"simple_router/command.txt",g_nfDir+"simple_router/mtype.txt");
         break;
       }
     default:
@@ -88,15 +93,9 @@ int main (int argc, char *argv[])
 {
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-
-  P4GlobalVar::g_homePath="/home/kphf1995cm/";
-  P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
-  P4GlobalVar::g_ns3SrcName="ns-3.26/";
-  P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
-  P4GlobalVar::g_nsType=NS4;
-
   CommandLine cmd;
   cmd.Parse (argc, argv);
+  //void InitSwitchConfig();
   NS_LOG_INFO ("Create nodes.");
   NodeContainer terminals;
   terminals.Create (4);
@@ -119,10 +118,10 @@ int main (int argc, char *argv[])
       switchDevices.Add (link.Get (1));
     }
   Ptr<Node> switchNode = csmaSwitch.Get (0);
-  if (P4GlobalVar::g_nsType==NS4) //ns4 mode
+  if (g_nsType==NS4) //ns4 mode
     {
-      P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=SILKROAD;
+      g_populateFlowtableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
+      g_networkFunc=SIMPLE_ROUTER;
       InitSwitchConfig();
 
       P4Helper bridge;
@@ -152,7 +151,7 @@ int main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
   Ipv4Address dstIp;
-  if(P4GlobalVar::g_networkFunc==SILKROAD)
+  if(g_networkFunc==SILKROAD)
     dstIp=Ipv4Address("10.1.1.10");
   else
     dstIp=addresses.GetAddress (0);
@@ -175,3 +174,33 @@ int main (int argc, char *argv[])
 }
 
 
+/*void InitSwitchConfig()
+{
+  switch(g_networkFunc)
+    {
+    case FIREWALL:
+      {
+        SetSwitchConfigInfo(g_nfDir+"firewall/command.txt",g_nfDir+"firewall/mtype.txt");
+        break;
+      }
+    case ROUTER:
+      {
+        SetSwitchConfigInfo(g_nfDir+"router/command.txt",g_nfDir+"router/mtype.txt");
+        break;
+      }
+    case SILKROAD:
+      {
+        SetSwitchConfigInfo(g_nfDir+"silkroad/command.txt",g_nfDir+"silkroad/mtype.txt");
+        break;
+      }
+    case SIMPLE_ROUTER:
+      {
+        SetSwitchConfigInfo(g_nfDir+"simple_router/command.txt",g_nfDir+"simple_router/mtype.txt");
+        break;
+      }
+    default:
+      {
+        break;
+      }
+    }
+}*/

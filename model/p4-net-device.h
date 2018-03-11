@@ -358,6 +358,7 @@ private:
     int GetPortNumber(Ptr<NetDevice>);
 }; //namespace ns3
 
+}
 #endif/* NS4_NS4_MODEL_H_H */
 
-}
+
