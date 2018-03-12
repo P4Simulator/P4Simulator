@@ -11,13 +11,46 @@ namespace ns3 {
   std::string P4GlobalVar::g_flowTablePath="";
   std::string P4GlobalVar::g_p4MatchTypePath="";
   unsigned int P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;
+  std::string P4GlobalVar::g_p4JsonPath="";
 
   std::string P4GlobalVar::g_homePath="/home/kphf1995cm/";
   std::string P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
   std::string P4GlobalVar::g_ns3SrcName="ns-3.26/";
   std::string P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
-
+  std::string P4GlobalVar::g_topoDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/topo/";
+  std::string P4GlobalVar::g_flowTableDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/flowtable/";
   unsigned int P4GlobalVar::g_nsType=NS4;
+  std::map<std::string,unsigned int> P4GlobalVar::g_nfStrUintMap;
+  void P4GlobalVar::SetP4MatchTypeJsonPath()
+  {
+    if(P4GlobalVar::g_networkFunc==FIREWALL)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"firewall/firewall.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "firewall/mtype.txt";
+       }
+    if(P4GlobalVar::g_networkFunc==SILKROAD)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"silkroad/silkroad.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "silkroad/mtype.txt";
+       }
+    if(P4GlobalVar::g_networkFunc==ROUTER)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"router/router.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "router/mtype.txt";
+       }
+    if(P4GlobalVar::g_networkFunc==SIMPLE_ROUTER)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "simple_router/mtype.txt";
+       }
+  }
+  void P4GlobalVar::InitNfStrUintMap()
+  {
+    P4GlobalVar::g_nfStrUintMap["ROUTER"]=ROUTER;
+    P4GlobalVar::g_nfStrUintMap["SIMPLE_ROUTER"]=SIMPLE_ROUTER;
+    P4GlobalVar::g_nfStrUintMap["FIREWALL"]=FIREWALL;
+    P4GlobalVar::g_nfStrUintMap["SILKROAD"]=SILKROAD;
+  }
 
   TypeId P4GlobalVar::GetTypeId(void)
   {

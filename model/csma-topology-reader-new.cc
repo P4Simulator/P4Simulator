@@ -74,7 +74,9 @@ namespace ns3 {
 		unsigned int toIndex;
 		char toType;
 
-		std::string linkAttrValue;
+		std::string DataRate;// eg:"1000Mbps", using StringValue
+		std::string Delay;// eg:"2ms",using StringValue
+		
 
 		int switchNum = 0;
 		int hostNum = 0;
@@ -100,13 +102,14 @@ namespace ns3 {
 		for (int i = 0; i < nodeNum; i++)
 			nodes[i] = 0;
 
+		// read link info
 		for (int i = 0; i < linkNum && !topgen.eof(); i++)
 		{
 			getline(topgen, line);
 			lineBuffer.clear();
 			lineBuffer.str(line);
 
-			lineBuffer >> fromIndex >> fromType >> toIndex >> toType >> linkAttrValue;
+			lineBuffer >> fromIndex >> fromType >> toIndex >> toType >> DataRate >> Delay;
 
 			NS_LOG_INFO("Link " << curLinkNumber << " from: " << fromIndex << " " << fromType << " to: " << toIndex << " " << toType);
 
@@ -128,15 +131,34 @@ namespace ns3 {
 
 			Link link(nodes[fromIndex], fromIndex, fromType, nodes[toIndex], toIndex, toType);
 
-			if (!linkAttrValue.empty())
+			if (!DataRate.empty())
 			{
-				NS_LOG_INFO("Link " << curLinkNumber << " weight: " << linkAttrValue);
-				link.SetAttribute("weight", linkAttrValue);
+				NS_LOG_INFO("Link " << curLinkNumber << " DataRate: " << DataRate);
+				link.SetAttribute("DataRate", DataRate);
+			}
+			if(!Delay.empty())
+			{
+				NS_LOG_INFO("Link "<< curLinkNumber <<" Delay: "<< Delay);
+				link.SetAttribute("Delay",Delay);
 			}
 
 			AddLink(link);
 
 			curLinkNumber++;
+		}
+		// read switch network function info
+		m_switchNetFunc.resize(switchNum);
+		int switchIndex;
+		std::string networkFunction;
+		for (int i = 0; i < switchNum && !topgen.eof(); i++)
+		{
+			getline(topgen, line);
+			lineBuffer.clear();
+			lineBuffer.str(line);
+
+			lineBuffer >> switchIndex >> networkFunction;
+			m_switchNetFunc[switchIndex] = networkFunction;
+			NS_LOG_INFO("switchIndex "<<switchIndex<<" networkFunction "<<networkFunction);
 		}
 
 		for (int i = 0; i < switchNum; i++)

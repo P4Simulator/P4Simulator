@@ -47,7 +47,7 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 // set switch network function, flowtable path and flowtable match type path
 // firewall router silkroad
-void SetSwitchConfigInfo(std::string ftPath,std::string mtPath)
+/*void SetSwitchConfigInfo(std::string ftPath,std::string mtPath)
 {
   P4GlobalVar::g_flowTablePath=ftPath;
   P4GlobalVar::g_p4MatchTypePath=mtPath;
@@ -83,7 +83,7 @@ void InitSwitchConfig()
       }
     }
 }
-
+*/
 int main (int argc, char *argv[]) 
 {
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
@@ -122,8 +122,10 @@ int main (int argc, char *argv[])
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=SILKROAD;
-      InitSwitchConfig();
+      P4GlobalVar::g_networkFunc=ROUTER;
+      //InitSwitchConfig();
+      P4GlobalVar::SetP4MatchTypeJsonPath();
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"router/command.txt";
 
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);

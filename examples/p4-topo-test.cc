@@ -37,26 +37,12 @@
 #include "ns3/helper.h"
 using namespace ns3;
 
-unsigned int P4GlobalVar::g_networkFunc=ROUTER;
-std::string  P4GlobalVar::g_flowTablePath="";
-std::string  P4GlobalVar::g_p4MatchTypePath="";
-unsigned int P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;
-
-std::string P4GlobalVar::g_homePath="/home/kphf1995cm/";
-
-std::string P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
-std::string P4GlobalVar::g_ns3SrcName = "ns-3.26/";
-std::string P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
-std::string P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
-
-unsigned int P4GlobalVar::g_nsType = NS4;
-
 NS_LOG_COMPONENT_DEFINE("P4Example");
 
 // set switch network function, flowtable path and flowtable match type path
 // firewall router silkroad
 
-void SetSwitchConfigInfo(std::string ftPath, std::string mtPath)
+/*void SetSwitchConfigInfo(std::string ftPath, std::string mtPath)
 {
 	P4GlobalVar::g_flowTablePath = ftPath;
 	P4GlobalVar::g_p4MatchTypePath = mtPath;
@@ -86,7 +72,7 @@ void InitSwitchConfig()
 		break;
 	}
 	}
-}
+}*/
 
 struct SwitchNode_t
 {
@@ -105,6 +91,14 @@ struct HostNode_t
 
 int main(int argc, char *argv[])
 {
+	
+	P4GlobalVar::g_homePath="/home/kphf1995cm/";
+	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
+	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
+	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
+	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
+	P4GlobalVar::g_nsType = NS4;
+
 	int podNum = 2;
 	// start debug module
 	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
@@ -150,6 +144,10 @@ int main(int argc, char *argv[])
 	NodeContainer csmaSwitch = topoReader->GetSwitchNodeContainer();
 	const unsigned int hostNum = hosts.GetN();
 	const unsigned int switchNum = csmaSwitch.GetN();
+
+	// get switch network function
+	std::vector<std::string> switchNetFunc=topoReader->GetSwitchNetFunc();
+
 	NS_LOG_LOGIC("switchNum:" << switchNum<< "hostNum:" << hostNum);
 
 	// set default network link parameter
@@ -162,8 +160,14 @@ int main(int argc, char *argv[])
 	SwitchNode_t switchNodes[switchNum];
 	HostNode_t hostNodes[hostNum];
 	unsigned int fromIndex, toIndex;
+	std::string dataRate,delay;
 	for (iter = topoReader->LinksBegin(); iter != topoReader->LinksEnd(); iter++)
 	{
+		if(iter->GetAttributeFailSafe("DataRate",dataRate))
+			csma.SetChannelAttribute("DataRate", StringValue(dataRate));
+		if(iter->GetAttributeFailSafe("Delay",delay))
+                        csma.SetChannelAttribute("Delay", StringValue(delay));
+
 		NetDeviceContainer link = csma.Install(NodeContainer(iter->GetFromNode(), iter->GetToNode()));
 		fromIndex = iter->GetFromIndex();
 		toIndex = iter->GetToIndex();
@@ -222,6 +226,54 @@ int main(int argc, char *argv[])
 			std::cout << switchNodes[i].switchPortInfos[k] << " ";
 		std::cout << std::endl;
 	}
+
+	// add internet stack to the hosts
+	InternetStackHelper internet;
+	internet.Install(hosts);
+
+	//assign ip address
+	NS_LOG_LOGIC("assign ip address");
+	Ipv4AddressHelper ipv4;
+	ipv4.SetBase("10.1.0.0", "255.255.0.0");
+	for (unsigned int i = 0; i < hostNum; i++)
+	{
+		hostNodes[i].hostIpv4 = ipv4.Assign(hostNodes[i].hostDevice);
+		//ipv4.NewNetwork();
+		hostNodes[i].hostIpv4Str = Uint32ipToHex(hostNodes[i].hostIpv4.GetAddress(0).Get());
+		std::cout<<i<<" "<<hostNodes[i].hostIpv4Str<<std::endl;
+	}
+
+	//build flow table entries by program
+	/*
+	*/
+
+	//bridge siwtch and switch devices
+	P4GlobalVar::InitNfStrUintMap();
+	if (P4GlobalVar::g_nsType == NS4)
+	{
+		P4GlobalVar::g_populateFlowTableWay = LOCAL_CALL;
+		std::string flowTableName;
+		P4Helper bridge;
+		for (unsigned int i = 0; i < switchNum; i++)
+		{
+			flowTableName = UintToString(i);
+			//P4GlobalVar::g_networkFunc = SIMPLE_ROUTER;
+			P4GlobalVar::g_networkFunc = P4GlobalVar::g_nfStrUintMap[switchNetFunc[i]];
+			P4GlobalVar::SetP4MatchTypeJsonPath();
+			P4GlobalVar::g_flowTablePath = P4GlobalVar::g_flowTableDir + flowTableName;
+			bridge.Install(csmaSwitch.Get(i),switchNodes[i].switchDevices);// do what?
+		}
+	}
+	else
+	{
+		BridgeHelper bridge;
+		for (unsigned int i = 0; i < switchNum; i++)
+		{
+			bridge.Install(csmaSwitch.Get(i), switchNodes[i].switchDevices);
+		}
+	}
+
+	//build application
         
 	Simulator::Run ();
   	Simulator::Destroy ();

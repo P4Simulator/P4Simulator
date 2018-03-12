@@ -21,6 +21,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 #include <cstring>
+#include <map>
 #include "ns3/object.h"
 
 namespace ns3 {
@@ -52,7 +53,7 @@ public:
 	static unsigned int g_networkFunc;
 	static std::string g_p4MatchTypePath;
 	static std::string g_flowTablePath;
-
+	static std::string g_p4JsonPath;
 	static unsigned int g_populateFlowTableWay;
 
 	// path info
@@ -61,7 +62,14 @@ public:
 	static std::string g_ns3SrcName;
 	static unsigned int g_nsType;
 	static std::string g_nfDir;
-	static std::string g_topoDir;	
+	static std::string g_topoDir;
+	static std::string g_flowTableDir;
+
+	static std::map<std::string,unsigned int> g_nfStrUintMap;	
+	//set g_p4MatchTypePath,g_p4JsonPath according to g_networkFunc
+	static void SetP4MatchTypeJsonPath();
+	static void InitNfStrUintMap();
+
 private:
 	P4GlobalVar();
 	~P4GlobalVar();

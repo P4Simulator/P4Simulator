@@ -24,7 +24,7 @@
 #include <string>
 #include <map>
 #include <list>
-
+#include <vector>
 #include "ns3/object.h"
 #include "ns3/node-container.h"
 
@@ -159,6 +159,10 @@ namespace ns3 {
 		{
 			return m_switches;
 		}
+		std::vector<std::string> GetSwitchNetFunc(void) const
+		{
+			return m_switchNetFunc;
+		}
 
 		/**
 		* \brief Sets the input file name.
@@ -233,7 +237,8 @@ namespace ns3 {
 		NodeContainer m_hosts;
 
 		NodeContainer m_switches;
-
+		
+		std::vector<std::string> m_switchNetFunc;
 		// end class TopologyReader
 	};
 

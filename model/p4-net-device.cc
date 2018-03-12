@@ -193,7 +193,7 @@ P4NetDevice::P4NetDevice() :
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
     char * a3;
-    std::string jsonPath;
+    /*std::string jsonPath;
     if(P4GlobalVar::g_networkFunc==FIREWALL) 
        {
 	     jsonPath=P4GlobalVar::g_nfDir+"firewall/firewall.json";
@@ -214,7 +214,8 @@ P4NetDevice::P4NetDevice() :
        {
         jsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
 		a3=(char*)jsonPath.data();
-	}
+	}*/
+    a3=(char*)P4GlobalVar::g_p4JsonPath.data();
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
     NS_LOG_LOGIC("A P4 Netdevice was initialized.");

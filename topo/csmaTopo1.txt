@@ -1,7 +1,11 @@
 4 2 6
-0 s 2 s
-1 s 2 s
-0 s 3 s
-1 s 3 s
-2 s 4 h
+0 s 2 s 1000Mbps 0.01ms
+1 s 2 s 1000Mbps 0.01ms
+0 s 3 s 1000Mbps 0.01ms
+1 s 3 s 1000Mbps 0.01ms
+2 s 4 h 1000Mbps 0.01ms
 3 s 5 h
+0 ROUTER
+1 SIMPLE_ROUTER
+2 SILKROAD
+3 FIREWALL
