@@ -2,18 +2,18 @@
 # include <fstream>
 # include <sstream>
 # include <unordered_set>
-# include "ns3/log.h"
+#include "ns3/log.h"
 # include <time.h>
 # include <vector>
 # include <unordered_map>
 
 namespace ns3 {
 
-	NS_LOG_COMPONENT_DEFINE("BuildFlowtableHelper");
+	NS_LOG_COMPONENT_DEFINE ("BuildFlowtableHelper");
 
 	BuildFlowtableHelper::BuildFlowtableHelper(std::string buildType, unsigned int podNum)
 	{
-		NS_LOG_FUNCTION(this);
+		NS_LOG_FUNCTION (this);
 		m_buildType = buildType;
 		m_podNum = podNum;
 	}
@@ -21,13 +21,13 @@ namespace ns3 {
 
 	BuildFlowtableHelper::~BuildFlowtableHelper()
 	{
-		NS_LOG_FUNCTION(this);
+		NS_LOG_FUNCTION (this);
 	}
 
-	void BuildFlowtableHelper::BuildFattreeFlowTable()
+	void BuildFlowtableHelper::buildFattreeFlowTable()
 	{
 		unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum / 2);
-		unsigned int hostNum = coreSwitchNum*m_podNum;
+		unsigned int terminalNum = coreSwitchNum*m_podNum;
 		unsigned int switchNum = 5 * coreSwitchNum;
 		unsigned int halfPodNum = m_podNum / 2;
 		unsigned int aggrStartIndex = coreSwitchNum;
@@ -36,7 +36,7 @@ namespace ns3 {
 		unsigned int curAggrSwitchIndex;
 		unsigned int curEdgeSwitchIndex;
 
-		std::vector<std::vector<unsigned int>> switchReachHostIndexMap(switchNum);
+		std::vector<std::vector<unsigned int>> switchReachTerminalIndexMap(switchNum);
 
 		// add edge switch flowtable
 		for (unsigned int i = 0; i < m_podNum; i++)// number pod
@@ -44,31 +44,31 @@ namespace ns3 {
 			for (unsigned int j = 0; j < halfPodNum; j++)
 			{
 				curEdgeSwitchIndex = edgeStartIndex + i*halfPodNum + j;
-				std::unordered_set<unsigned int> curEdgeSwitchLinkHostIndex;
+				std::unordered_set<unsigned int> curEdgeSwitchLinkTerminalIndex;
 				std::vector<unsigned int> otherPortIndex;
-				//add flowtable entry for these packet which send to linked host
+				//add flowtable entry for these packet which send to linked terminal
 				for (size_t p = 0; p < m_switchNodes[curEdgeSwitchIndex].portNode.size(); p++)
 				{
-					if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 0)//represent host
+					if (m_switchNodes[curEdgeSwitchIndex].portNode[p].flag == 0)//represent terminal
 					{
-						//attain host ipAddr
-						curEdgeSwitchLinkHostIndex.insert(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
-						switchReachHostIndexMap[curEdgeSwitchIndex].push_back(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
-						std::string dstIp = m_hostNodes[m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex].ipAddr;
-						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, UintToPortStr(p)));
+						//attain terminal ipAddr
+						curEdgeSwitchLinkTerminalIndex.insert(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						switchReachTerminalIndexMap[curEdgeSwitchIndex].push_back(m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex);
+						std::string dstIp = m_terminalNodes[m_switchNodes[curEdgeSwitchIndex].portNode[p].nodeIndex].ipAddr;
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
 					}
 					else
 						otherPortIndex.push_back(p);
 				}
 				//add flowtable entry for other packet
-				for (unsigned int p = 0; p < hostNum; p++)
+				for (unsigned int p = 0; p < terminalNum; p++)
 				{
-					if (curEdgeSwitchLinkHostIndex.count(p) == 0)
+					if (curEdgeSwitchLinkTerminalIndex.count(p) == 0)
 					{
-						std::string dstIp = m_hostNodes[p].ipAddr;
+						std::string dstIp = m_terminalNodes[p].ipAddr;
 						//random select a out port
-						unsigned int transferPort = otherPortIndex[rand() % otherPortIndex.size()];
-						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, UintToPortStr(transferPort)));
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
 					}
 				}
 			}
@@ -80,7 +80,7 @@ namespace ns3 {
 			for (unsigned int j = 0; j < halfPodNum; j++)
 			{
 				curAggrSwitchIndex = aggrStartIndex + i*halfPodNum + j;
-				std::unordered_set<unsigned int> curAggrSwitchLinkHostIndex;
+				std::unordered_set<unsigned int> curAggrSwitchLinkTerminalIndex;
 				std::vector<unsigned int> otherPortIndex;
 				//add flowtable entry for these packet which send to linked terminal
 				for (size_t p = 0; p < m_switchNodes[curAggrSwitchIndex].portNode.size(); p++)
@@ -88,13 +88,13 @@ namespace ns3 {
 					if (m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex > curAggrSwitchIndex)//mean link edge switch
 					{
 						unsigned int linkSIndex = m_switchNodes[curAggrSwitchIndex].portNode[p].nodeIndex;
-						for (size_t q = 0; q < switchReachHostIndexMap[linkSIndex].size(); q++)
+						for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
 						{
-							unsigned int linkTIndex = switchReachHostIndexMap[linkSIndex][q];
-							std::string dstIp = m_hostNodes[linkTIndex].ipAddr;
-							curAggrSwitchLinkHostIndex.insert(linkTIndex);
-							switchReachHostIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
-							m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, UintToPortStr(p)));
+							unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+							std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+							curAggrSwitchLinkTerminalIndex.insert(linkTIndex);
+							switchReachTerminalIndexMap[curAggrSwitchIndex].push_back(linkTIndex);
+							m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
 
 						}
 					}
@@ -103,14 +103,14 @@ namespace ns3 {
 				}
 
 				//add flowtable entry for other packet
-				for (unsigned int p = 0; p < hostNum; p++)
+				for (unsigned int p = 0; p < terminalNum; p++)
 				{
-					if (curAggrSwitchLinkHostIndex.count(p) == 0)
+					if (curAggrSwitchLinkTerminalIndex.count(p) == 0)
 					{
-						std::string dstIp = m_hostNodes[p].ipAddr;
+						std::string dstIp = m_terminalNodes[p].ipAddr;
 						//random select a out port
-						unsigned int transferPort = otherPortIndex[rand() % otherPortIndex.size()];
-						m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, UintToPortStr(transferPort)));
+						unsigned int transfer_port = otherPortIndex[rand() % otherPortIndex.size()];
+						m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(transfer_port)));
 					}
 				}
 			}
@@ -124,18 +124,18 @@ namespace ns3 {
 				if (m_switchNodes[i].portNode[p].flag == 1)//represent switch
 				{
 					unsigned int linkSIndex = m_switchNodes[i].portNode[p].nodeIndex;
-					for (size_t q = 0; q < switchReachHostIndexMap[linkSIndex].size(); q++)
+					for (size_t q = 0; q < switchReachTerminalIndexMap[linkSIndex].size(); q++)
 					{
-						unsigned int linkTIndex = switchReachHostIndexMap[linkSIndex][q];
-						std::string dstIp = m_hostNodes[linkTIndex].ipAddr;
-						m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, UintToPortStr(p)));
+						unsigned int linkTIndex = switchReachTerminalIndexMap[linkSIndex][q];
+						std::string dstIp = m_terminalNodes[linkTIndex].ipAddr;
+						m_switchNodes[i].flowTableEntries.push_back(FlowTableEntry("", dstIp, uintToPortStr(p)));
 					}
 				}
 			}
 		}
 	}
 
-	/*void BuildFlowtableHelper::BuildSilkroadFlowTable()
+	void BuildFlowtableHelper::buildSilkroadFlowTable()
 	{
 		unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum / 2);
 		unsigned int terminalNum = coreSwitchNum*m_podNum;
@@ -298,73 +298,74 @@ namespace ns3 {
 				}
 			}
 		}
-	}*/
+	}
 
-	void BuildFlowtableHelper::SetSwitchesFlowtableEntries()
+	void BuildFlowtableHelper::setSwitchesFlowtableEntries()
 	{
 		if (m_buildType == "default")
 		{
-			for (size_t i = 0; i < m_hostNodes.size(); i++)
-				DfsFromHostIndex(i);
+			for (size_t i = 0; i < m_terminalNodes.size(); i++)
+				dfsFromTerminalIndex(i);
 		}
 		else
 		{
 			if (m_buildType == "fattree")
 			{
-				BuildFattreeFlowTable();
+				buildFattreeFlowTable();
 			}
 			else
 			{
 				if (m_buildType == "silkroad")
 				{
-					BuildSilkroadFlowTable();
+					buildSilkroadFlowTable();
 				}
 			}
 		}
 	}
 
-	void BuildFlowtableHelper::DfsFromHostIndex(unsigned int hostIndex)
+	void BuildFlowtableHelper::dfsFromTerminalIndex(unsigned int terminal_index)
 	{
-		std::stack<SaveNode_t> passSwitch;
-		std::set<unsigned int> recordPassSwitch;
-		Dfs(hostIndex, m_hostNodes[hostIndex].linkSwitchIndex, m_hostNodes[hostIndex].portIndex, passSwitch, recordPassSwitch);
+		std::stack<SaveNode> pass_switch;
+                std::set<unsigned int> record_pass_switch;
+		dfs(terminal_index, m_terminalNodes[terminal_index].linkSwitchIndex, m_terminalNodes[terminal_index].portIndex, pass_switch,record_pass_switch);
+	
 	}
-	void BuildFlowtableHelper::Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch, std::set<unsigned int> &recordPassSwitch)
+        void BuildFlowtableHelper::dfs(unsigned int terminal_index, unsigned int switch_index, unsigned int switch_in_port, std::stack<SaveNode>& pass_switch, std::set<unsigned int> &record_pass_switch)
 	{
-		unsigned int curPassSwitchNum = passSwitch.size();
-		for (size_t t = 0; t < m_switchNodes[switchIndex].portNode.size(); t++)//traver port number
+		unsigned int cur_pass_switch_num = pass_switch.size();
+		for (size_t t = 0; t < m_switchNodes[switch_index].portNode.size(); t++)//traver port number
 		{
-			if (t == switchInPort) continue;
-			if (m_switchNodes[switchIndex].portNode[t].flag == 0)// represent host
+			if (t == switch_in_port) continue;
+			if (m_switchNodes[switch_index].portNode[t].flag == 0)// represent terminal
 			{
-				std::stack<SaveNode_t> s = passSwitch;
+				std::stack<SaveNode> s = pass_switch;
 				// add passed switch entry
 				while (s.empty() == false)
 				{
-					AddFlowtableEntry(s.top().switchIndex, hostIndex, m_switchNodes[switchIndex].portNode[t].nodeIndex, s.top().outPortIndex);
+					addFlowtableEntry(s.top().switch_index, terminal_index, m_switchNodes[switch_index].portNode[t].nodeIndex, s.top().out_port_index);
 					s.pop();
 				}
 				// add cur switch entry
-				AddFlowtableEntry(switchIndex, hostIndex, m_switchNodes[switchIndex].portNode[t].nodeIndex, t);
+				addFlowtableEntry(switch_index, terminal_index, m_switchNodes[switch_index].portNode[t].nodeIndex, t);
 			}
 			else //represent switch
 			{
-				unsigned nextSwitchIndex = m_switchNodes[switchIndex].portNode[t].nodeIndex;
-				unsigned nextSwitchPort = m_switchNodes[switchIndex].portNode[t].nodePort;
-				if (recordPassSwitch.count(nextSwitchIndex) == 0)
+				unsigned next_switch_index = m_switchNodes[switch_index].portNode[t].nodeIndex;
+				unsigned next_switch_port = m_switchNodes[switch_index].portNode[t].nodePort;
+				if (record_pass_switch.count(next_switch_index)==0)
 				{// make sure stay in init switch num
-					while (passSwitch.size() > curPassSwitchNum)
-						passSwitch.pop();
-					passSwitch.push(SaveNode_t(switchIndex, t));
-					recordPassSwitch.insert(switchIndex);
-					Dfs(hostIndex, nextSwitchIndex, nextSwitchPort, passSwitch, recordPassSwitch);
+					while (pass_switch.size() > cur_pass_switch_num)
+						pass_switch.pop();
+					pass_switch.push(SaveNode(switch_index, t));
+					record_pass_switch.insert(switch_index);
+					dfs(terminal_index, next_switch_index, next_switch_port, pass_switch,record_pass_switch);
 				}
 			}
 		}
 	}
 
 
-	std::string BuildFlowtableHelper::UintToStr(unsigned int num)
+	std::string BuildFlowtableHelper::uintToStr(unsigned int num)
 	{
 		if (num != 0)
 		{
@@ -379,8 +380,8 @@ namespace ns3 {
 		else
 			return std::string("0");
 	}
-
-	std::string BuildFlowtableHelper::UintToPortStr(unsigned int num)
+        
+        std::string BuildFlowtableHelper::uintToPortStr(unsigned int num)
 	{
 		if (num != 0)
 		{
@@ -407,26 +408,26 @@ namespace ns3 {
 
 
 
-	void BuildFlowtableHelper::Write(std::string fileDir)
+	void BuildFlowtableHelper::write(std::string file_dir)
 	{
 		std::ofstream fp;
 
-		std::ostringstream lineBuffer;
+		std::ostringstream line_buffer;
 
 		std::unordered_set <std::string> handledDstIpSet;
 
 		for (size_t i = 0; i < m_switchNodes.size(); i++)
 		{
-			std::string fileName = UintToStr(i);
-			fp.open(fileDir + "/" + fileName);
+			std::string file_name = uintToStr(i);
+			fp.open(file_dir + "/" + file_name);
 			//set default action
-			std::string defaultAction[] = { "table_set_default ipv4_nhop _drop","table_set_default arp_nhop _drop","table_set_default forward_table _drop" };
+			std::string default_action[] = { "table_set_default ipv4_nhop _drop","table_set_default arp_nhop _drop","table_set_default forward_table _drop" };
 			for (int k = 0; k < 3; k++)
 			{
-				lineBuffer.clear();
-				lineBuffer.str("");
-				lineBuffer << defaultAction[k] << std::endl;
-				fp << lineBuffer.str();
+				line_buffer.clear();
+				line_buffer.str("");
+				line_buffer << default_action[k]<<std::endl;
+				fp << line_buffer.str();
 			}
 
 			//add flowtable entry
@@ -439,20 +440,20 @@ namespace ns3 {
 				if (handledDstIpSet.count(m_switchNodes[i].flowTableEntries[j].dstIp) == 0)
 				{
 					handledDstIpSet.insert(m_switchNodes[i].flowTableEntries[j].dstIp);
-					lineBuffer.clear();
-					lineBuffer.str("");
-					lineBuffer << "table_add ipv4_nhop set_ipv4_nhop " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].dstIp << std::endl;
-					fp << lineBuffer.str();
+					line_buffer.clear();
+					line_buffer.str("");
+					line_buffer << "table_add ipv4_nhop set_ipv4_nhop " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].dstIp << std::endl;
+					fp << line_buffer.str();
 
-					lineBuffer.clear();
-					lineBuffer.str("");
-					lineBuffer << "table_add arp_nhop set_arp_nhop " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].dstIp << std::endl;
-					fp << lineBuffer.str();
+					line_buffer.clear();
+					line_buffer.str("");
+					line_buffer << "table_add arp_nhop set_arp_nhop " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].dstIp << std::endl;
+					fp << line_buffer.str();
 
-					lineBuffer.clear();
-					lineBuffer.str("");
-					lineBuffer << "table_add forward_table set_port " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].outPort << std::endl;
-					fp << lineBuffer.str();
+					line_buffer.clear();
+					line_buffer.str("");
+					line_buffer << "table_add forward_table set_port " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " <<m_switchNodes[i].flowTableEntries[j].outPort << std::endl;
+					fp << line_buffer.str();
 				}
 			}
 			fp.close();
@@ -464,4 +465,3 @@ table_add ipv4_nhop set_ipv4_nhop dstIp => dstIp
 table_add arp_nhop set_arp_nhop dstIp => dstIp
 table_add forward_table set_port dstIp => port
 */
-

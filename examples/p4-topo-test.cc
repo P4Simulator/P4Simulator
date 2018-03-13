@@ -29,12 +29,15 @@
 #include "ns3/internet-module.h"
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
 #include <unistd.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include "ns3/global.h"
 #include "ns3/p4-topology-reader-helper-new.h"
 #include "ns3/helper.h"
+#include "ns3/build-flowtable-helper.h"
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("P4Example");
@@ -74,13 +77,13 @@ void InitSwitchConfig()
 	}
 }*/
 
-struct SwitchNode_t
+struct SwitchNodeC_t
 {
 	NetDeviceContainer switchDevices;
 	std::vector<std::string> switchPortInfos;
 };
 
-struct HostNode_t
+struct HostNodeC_t
 {
 	NetDeviceContainer hostDevice;
 	Ipv4InterfaceContainer hostIpv4;
@@ -100,9 +103,10 @@ int main(int argc, char *argv[])
 	P4GlobalVar::g_nsType = NS4;
 
 	int podNum = 2;
+	int toBuild=1;// whether build flow table entired by program
+	int application=0; //application type (0 onOff Sink)
 	// start debug module
 	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
-	NS_LOG_LOGIC("P4-Topo-Test");
 	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
 	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
 	// define topo format,path
@@ -115,8 +119,10 @@ int main(int argc, char *argv[])
 	CommandLine cmd;
 	cmd.AddValue("format", "Format to use for data input [Orbis|Inet|Rocketfuel|CsmaTopo].",
 		topoFormat);
-	cmd.AddValue("model", "Select p4 model(0) or traditional bridge model(1)", P4GlobalVar::g_nsType);
+	cmd.AddValue("model", "Select p4 model[0] or traditional bridge model[1]", P4GlobalVar::g_nsType);
 	cmd.AddValue("podnum", "Numbers of built tree topo levels", podNum);
+	cmd.AddValue("build","Build flow table entries by program[1] or not[0]",toBuild);
+	cmd.AddValue("application","Application type.OnoffSink[0]",application);
 	cmd.Parse(argc, argv);
 	
 	// build topo
@@ -157,8 +163,8 @@ int main(int argc, char *argv[])
 
 	// init network link info
 	P4TopologyReader::ConstLinksIterator_t iter;
-	SwitchNode_t switchNodes[switchNum];
-	HostNode_t hostNodes[hostNum];
+	SwitchNodeC_t switchNodes[switchNum];
+	HostNodeC_t hostNodes[hostNum];
 	unsigned int fromIndex, toIndex;
 	std::string dataRate,delay;
 	for (iter = topoReader->LinksBegin(); iter != topoReader->LinksEnd(); iter++)
@@ -242,11 +248,29 @@ int main(int argc, char *argv[])
 		hostNodes[i].hostIpv4Str = Uint32ipToHex(hostNodes[i].hostIpv4.GetAddress(0).Get());
 		std::cout<<i<<" "<<hostNodes[i].hostIpv4Str<<std::endl;
 	}
-
+	
+	//build needed parameter to build flow table entries 
+	std::vector<unsigned int> linkSwitchIndex(hostNum);
+	std::vector<unsigned int> linkSwitchPort(hostNum);
+	std::vector<std::string> hostIpv4(hostNum);
+	std::vector<std::vector<std::string>> switchPortInfo(switchNum);
+	for(unsigned int i=0;i<hostNum;i++)
+	{
+		linkSwitchIndex[i]=hostNodes[i].linkSwitchIndex;
+		linkSwitchPort[i]=hostNodes[i].linkSwitchPort;
+		hostIpv4[i]=hostNodes[i].hostIpv4Str;
+	}
+	for(unsigned int i=0;i<switchNum;i++)
+	{
+		switchPortInfo[i]=switchNodes[i].switchPortInfos;
+	}
 	//build flow table entries by program
-	/*
-	*/
-
+	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
+	{
+		BuildFlowtableHelper flowtableHelper;
+		flowtableHelper.Build(linkSwitchIndex,linkSwitchPort,hostIpv4,switchPortInfo);
+		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
+	}
 	//bridge siwtch and switch devices
 	P4GlobalVar::InitNfStrUintMap();
 	if (P4GlobalVar::g_nsType == NS4)
@@ -274,9 +298,63 @@ int main(int argc, char *argv[])
 	}
 
 	//build application
+	Config::SetDefault("ns3::Ipv4RawSocketImpl::Protocol",StringValue("2"));
+	if(application==0) //Onoff Sink
+	{
+		NS_LOG_LOGIC("OnoffSink");
+		ApplicationContainer apps;
+		unsigned int halfHostNum=hostNum/2;
+		for(unsigned int i=0;i<halfHostNum;i++)
+		{
+			unsigned int serverI=hostNum-i-1;
+			Ipv4Address serverAddr=hostNodes[serverI].hostIpv4.GetAddress(0);
+			InetSocketAddress dst=InetSocketAddress(serverAddr);
+			
+			OnOffHelper onOff=OnOffHelper("ns3::TcpSocketFactory",dst);
+			onOff.SetAttribute("PacketSize",UintegerValue(1024));
+			onOff.SetAttribute("DataRate",StringValue("1Mbps"));
+			onOff.SetAttribute("MaxBytes",StringValue("0"));
+
+			apps=onOff.Install(hosts.Get(i));
+			apps.Start(Seconds(1.0));
+			apps.Stop(Seconds(100.0));
+
+			PacketSinkHelper sink=PacketSinkHelper("ns3::TcpSocketFactory",dst);
+			apps=sink.Install(hosts.Get(serverI));
+			apps.Start(Seconds(0.0));
+			apps.Stop(Seconds(101.0));
+		}
+	}
+	if(application==1) // Udp Echo Client Server Application
+	{
+		NS_LOG_LOGIC("Udp Echo Client Server");
+                unsigned int halfHostNum=hostNum/2;
+                for(unsigned int i=0;i<halfHostNum;i++)
+                {
+                        unsigned int serverI=hostNum-i-1;
+			UdpServerHelper echoServer(9);
+			ApplicationContainer serverApps=echoServer.Install(hosts.Get(serverI));
+			serverApps.Start(Seconds(1.0));
+			serverApps.Stop(Seconds(10.0));			
+                        Ipv4Address serverAddr=hostNodes[serverI].hostIpv4.GetAddress(0);
+
+			UdpEchoClientHelper echoClient(serverAddr,9);
+			echoClient.SetAttribute ("MaxPackets", UintegerValue (20));
+  			echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+  			echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+  			ApplicationContainer clientApps = echoClient.Install (hosts.Get (i));
+			clientApps.Start (Seconds (2.0));
+  			clientApps.Stop (Seconds (10.0));
+                }
+
+	}
+
+	csma.EnablePcapAll ("p4-example", false);
+  	Packet::EnablePrinting ();
         
 	Simulator::Run ();
   	Simulator::Destroy ();
+	NS_LOG_INFO("Done.");
 	//return 0;
 }
 

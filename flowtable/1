@@ -1,0 +1,3 @@
+table_set_default ipv4_nhop _drop
+table_set_default arp_nhop _drop
+table_set_default forward_table _drop

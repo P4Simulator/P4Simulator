@@ -45,7 +45,6 @@ P4TopologyReaderHelper::SetFileType (const std::string fileType)
   m_fileType = fileType;
 }
 
-
 Ptr<P4TopologyReader>
 P4TopologyReaderHelper::GetTopologyReader ()
 {

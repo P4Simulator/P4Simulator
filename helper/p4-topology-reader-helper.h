@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2010 Universita' di Firenze, Italy
+ * Copyright (c) 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,12 +15,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Tommaso Pecorella (tommaso.pecorella@unifi.it)
- * Author: Valerio Sartini (valesar@gmail.com)
+ * Author: 
  */
 
-#ifndef TOPOLOGY_READER_HELPER_H
-#define TOPOLOGY_READER_HELPER_H
+#ifndef P4_TOPOLOGY_READER_HELPER_H
+#define P4_TOPOLOGY_READER_HELPER_H
 
 #include "ns3/p4-topology-reader.h"
 #include <string>
@@ -64,4 +63,4 @@ private:
 } // namespace ns3
 
 
-#endif /* TOPOLOGY_READER_HELPER_H */
+#endif /* P4_TOPOLOGY_READER_HELPER_H */

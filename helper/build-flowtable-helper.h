@@ -8,13 +8,13 @@
 #include <set>
 namespace ns3 {
 
-	struct TerminalNode
+	struct HostNode_t
 	{
 		std::string ipAddr;
 		unsigned int linkSwitchIndex;
 		unsigned int portIndex;
 	public:
-		TerminalNode(const std::string &ip, unsigned int lsi, unsigned int pi)
+		HostNode_t(const std::string &ip, unsigned int lsi, unsigned int pi)
 		{
 			ipAddr = ip;
 			linkSwitchIndex = lsi;
@@ -22,13 +22,13 @@ namespace ns3 {
 		}
 	};
 
-	struct NodeFlagIndex
+	struct NodeFlagIndex_t
 	{
-		int flag;//0 represent terminal; 1 represent switch;
+		int flag;//0 represent host; 1 represent switch;
 		unsigned int nodeIndex;
 		unsigned int nodePort;
 	public:
-		NodeFlagIndex(int f,unsigned int ni,unsigned int np)
+		NodeFlagIndex_t(int f, unsigned int ni, unsigned int np)
 		{
 			flag = f;
 			nodeIndex = ni;
@@ -36,13 +36,13 @@ namespace ns3 {
 		}
 	};
 
-	struct FlowTableEntry
+	struct FlowTableEntry_t
 	{
 		std::string srcIp;
 		std::string dstIp;
 		std::string outPort;
 	public:
-		FlowTableEntry(std::string src, std::string dst, std::string port)
+		FlowTableEntry_t(std::string src, std::string dst, std::string port)
 		{
 			srcIp = src;
 			dstIp = dst;
@@ -50,41 +50,37 @@ namespace ns3 {
 		}
 	};
 
-
-	struct SwitchNode 
+	struct SwitchNode_t
 	{
-		std::vector<FlowTableEntry> flowTableEntries;
-		std::vector<NodeFlagIndex> portNode;
+		std::vector<FlowTableEntry_t> flowTableEntries;
+		std::vector<NodeFlagIndex_t> portNode;
 	public:
-		SwitchNode(const std::vector<std::string> &pn)//(s0_0,t0)
+		SwitchNode_t(const std::vector<std::string> &pn)//(s0_0,h0)
 		{
-			char type;
 			int flag;
-			unsigned int node_index;
-			unsigned int node_port;
-
+			unsigned int nodeIndex;
+			unsigned int nodePort;
 			for (size_t i = 0; i < pn.size(); i++)
 			{
-				type = pn[i][0];
-				if (type == 's') //switch
+				if (pn[i][0] == 's') //switch
 				{
 					flag = 1;
 					unsigned int pos = pn[i].find("_");
-					node_index = str_to_uint(pn[i].substr(1, pos - 1));
-					node_port = str_to_uint(pn[i].substr(pos+1));
-					portNode.push_back(NodeFlagIndex(flag, node_index, node_port));
+					nodeIndex = StrToUint(pn[i].substr(1, pos - 1));
+					nodePort = StrToUint(pn[i].substr(pos + 1));
+					portNode.push_back(NodeFlagIndex_t(flag, nodeIndex, nodePort));
 				}
-				else //terminal
+				else //host
 				{
 					flag = 0;
-					node_index = str_to_uint(pn[i].substr(1));
-					node_port = 0;
-					portNode.push_back(NodeFlagIndex(flag,node_index,node_port));
+					nodeIndex = StrToUint(pn[i].substr(1));
+					nodePort = 0;
+					portNode.push_back(NodeFlagIndex_t(flag, nodeIndex, nodePort));
 				}
 			}
 		}
 	private:
-		unsigned int str_to_uint(std::string str)
+		unsigned int StrToUint(std::string str)
 		{
 			unsigned int res = 0;
 			for (size_t i = 0; i < str.size(); i++)
@@ -93,19 +89,17 @@ namespace ns3 {
 			}
 			return res;
 		}
-
-
 	};
 
-	struct SaveNode
+	struct SaveNode_t
 	{
-		unsigned int switch_index;
-		unsigned int out_port_index;
+		unsigned int switchIndex;
+		unsigned int outPortIndex;
 	public:
-		SaveNode(unsigned int si,unsigned int opi)
+		SaveNode_t(unsigned int si, unsigned int opi)
 		{
-			switch_index = si;
-			out_port_index = opi;
+			switchIndex = si;
+			outPortIndex = opi;
 		}
 	};
 
@@ -113,67 +107,68 @@ namespace ns3 {
 	{
 	public:
 
-		BuildFlowtableHelper(std::string buildType="default",unsigned int podNum=2);
+		BuildFlowtableHelper(std::string buildType = "default", unsigned int podNum = 2);
 		~BuildFlowtableHelper();
-		
-		virtual void write(std::string file_dir);
 
-		void build(const std::vector<unsigned int> &terminalLinkSwitchIndex, const std::vector<unsigned int> &terminalLinkSwitchPort,
-			const std::vector<std::string> &terminalIp, const std::vector<std::vector<std::string>> &switchPortInfo)
+		virtual void Write(std::string fileDir);
+
+		void Build(const std::vector<unsigned int> &linkSwitchIndex, const std::vector<unsigned int> &linkSwitchPort,
+			const std::vector<std::string> &hostIpv4, const std::vector<std::vector<std::string>> &switchPortInfo)
 		{
-			for (size_t i = 0; i < terminalLinkSwitchIndex.size(); i++)
+			for (size_t i = 0; i < linkSwitchIndex.size(); i++)
 			{
-				m_terminalNodes.push_back(TerminalNode(terminalIp[i], terminalLinkSwitchIndex[i], terminalLinkSwitchPort[i]));
+				m_hostNodes.push_back(HostNode_t(hostIpv4[i], linkSwitchIndex[i],linkSwitchPort[i]));
 			}
 			for (size_t i = 0; i < switchPortInfo.size(); i++)
 			{
-				m_switchNodes.push_back(SwitchNode(switchPortInfo[i]));
+				m_switchNodes.push_back(SwitchNode_t(switchPortInfo[i]));
 			}
-			setSwitchesFlowtableEntries();
+
+			SetSwitchesFlowtableEntries();
 		}
 
-		void show()
+		void Show()
 		{
 			for (size_t i = 0; i < m_switchNodes.size(); i++)
 			{
 				std::cout << "s" << i << ":" << std::endl;
 				for (size_t j = 0; j < m_switchNodes[i].flowTableEntries.size(); j++)
-					std::cout << m_switchNodes[i].flowTableEntries[j].srcIp<<" "<<
-					m_switchNodes[i].flowTableEntries[j].dstIp<<" "<<m_switchNodes[i].flowTableEntries[j].outPort<< std::endl;
+					std::cout << m_switchNodes[i].flowTableEntries[j].srcIp << " " <<
+					m_switchNodes[i].flowTableEntries[j].dstIp << " " << m_switchNodes[i].flowTableEntries[j].outPort << std::endl;
 			}
 		}
 
 	private:
-                unsigned int m_podNum;
+		unsigned int m_podNum;
 		std::string m_buildType;
 
-		void setSwitchesFlowtableEntries();
+		void SetSwitchesFlowtableEntries();
 
-		void dfsFromTerminalIndex(unsigned int terminal_index);
+		void DfsFromHostIndex(unsigned int hostIndex);
 
-		std::vector<TerminalNode> m_terminalNodes;
-		std::vector<SwitchNode> m_switchNodes;
+		std::vector<HostNode_t> m_hostNodes;
+		std::vector<SwitchNode_t> m_switchNodes;
 
 		BuildFlowtableHelper(const BuildFlowtableHelper&);
 
 		BuildFlowtableHelper operator=(const BuildFlowtableHelper&);
 
-		std::string uintToStr(unsigned int num);
-                
-                std::string uintToPortStr(unsigned int num);
+		std::string UintToStr(unsigned int num);
 
-                void dfs(unsigned int terminal_index, unsigned int switch_index, unsigned int switch_in_port,std::stack<SaveNode>& pass_switch,std::set<unsigned int> &record_pass_switch);
+		std::string UintToPortStr(unsigned int num);
 
-		void addFlowtableEntry(unsigned int switch_index, unsigned int src_ip, unsigned int dst_ip, unsigned int out_port)
+		void Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch, std::set<unsigned int> &recordPassSwitch);
+
+		void AddFlowtableEntry(unsigned int switchIndex, unsigned int srcIp, unsigned int dstIp, unsigned int outPort)
 		{
-			std::string port=uintToPortStr(out_port);
-			m_switchNodes[switch_index].flowTableEntries.push_back(FlowTableEntry(m_terminalNodes[src_ip].ipAddr,m_terminalNodes[dst_ip].ipAddr,port));
+			std::string port = UintToPortStr(outPort);
+			m_switchNodes[switchIndex].flowTableEntries.push_back(FlowTableEntry_t(m_hostNodes[srcIp].ipAddr, m_hostNodes[dstIp].ipAddr, port));
 		}
-			void buildFattreeFlowTable();
+		void BuildFattreeFlowTable();
 
-		void buildSilkroadFlowTable();
+		void BuildSilkroadFlowTable(){}
 
-		void showSwitchReachTmlIndex(const std::vector<std::vector<unsigned int>>&switchMap)
+		void ShowSwitchReachHostIndex(const std::vector<std::vector<unsigned int>>&switchMap)
 		{
 			for (size_t i = 0; i < switchMap.size(); i++)
 			{
@@ -190,3 +185,5 @@ namespace ns3 {
 }
 
 #endif
+
+

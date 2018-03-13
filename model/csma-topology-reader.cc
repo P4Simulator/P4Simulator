@@ -1,224 +1,173 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2010 Universita' di Firenze, Italy
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation;
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * Author: Tommaso Pecorella (tommaso.pecorella@unifi.it)
- * Author: Valerio Sartini (Valesar@gmail.com)
- */
+* Copyright (c)
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 2 as
+* published by the Free Software Foundation;
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+* Author:
+*/
 
 #include <fstream>
 #include <cstdlib>
 #include <sstream>
 #include <set>
 #include "ns3/log.h"
+#include <vector>
 
 #include "csma-topology-reader.h"
 
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("CsmaTopologyReader");
+	NS_LOG_COMPONENT_DEFINE("CsmaTopologyReader");
 
-NS_OBJECT_ENSURE_REGISTERED (CsmaTopologyReader);
+	NS_OBJECT_ENSURE_REGISTERED(CsmaTopologyReader);
 
-TypeId CsmaTopologyReader::GetTypeId (void)
-{
-  static TypeId tid = TypeId ("ns3::CsmaTopologyReader")
-    .SetParent<P4TopologyReader> ()
-    .SetGroupName ("P4TopologyReader")
-    .AddConstructor<CsmaTopologyReader> ()
-  ;
-  return tid;
-}
-
-CsmaTopologyReader::CsmaTopologyReader ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-CsmaTopologyReader::~CsmaTopologyReader ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-struct NameNode{
-	std::string name;
-	Ptr<Node> node;
-	NameNode(const std::string& n,const Ptr<Node>& no)
+	TypeId CsmaTopologyReader::GetTypeId(void)
 	{
-	 name=n;
-	 node=no;
+		static TypeId tid = TypeId("ns3::CsmaTopologyReader")
+			.SetParent<P4TopologyReader>()
+			.SetGroupName("P4TopologyReader")
+			.AddConstructor<CsmaTopologyReader>()
+			;
+		return tid;
 	}
-        unsigned int str_to_uint(std::string str)const
+
+	CsmaTopologyReader::CsmaTopologyReader()
 	{
-		unsigned int res = 0;
-		for (size_t i = 0; i < str.size(); i++)
-			res = res * 10 + str[i] - '0';
-		return res;
+		NS_LOG_FUNCTION(this);
 	}
-	bool operator<(const NameNode& r)const
+
+	CsmaTopologyReader::~CsmaTopologyReader()
 	{
-		if (str_to_uint(name) < str_to_uint(r.name))
-			return true;
-		else
-			return false;
+		NS_LOG_FUNCTION(this);
 	}
-};
-void
-CsmaTopologyReader::Read (void)
-{
-  std::ifstream topgen;
-  topgen.open (GetFileName ().c_str ());
-  std::map<std::string, Ptr<Node> > nodeMap;
-  //NodeContainer nodes;
 
-  if ( !topgen.is_open () )
-    {
-      NS_LOG_WARN ("Csma topology file object is not open, check file name and permissions");
-      //return nodes;
-      abort();
-    }
+	void
+		CsmaTopologyReader::Read(void)
+	{
+		std::ifstream topgen;
+		topgen.open(GetFileName().c_str());
 
-  std::string from;
-  std::string fromType;
-  unsigned int fromLinkedSwitchIndex;
-  std::string to;
-  std::string toType;
-  unsigned int toLinkedSwitchIndex;
+		std::vector<Ptr<Node>> nodes;
+		//NodeContainer nodes;
 
-  std::string linkAttr;
-  std::set<NameNode> terminalSet;
-  std::set<NameNode> switchSet;
+		if (!topgen.is_open())
+		{
+			NS_LOG_WARN("Csma topology file object is not open, check file name and permissions");
+			//return nodes;
+			abort();
+		}
+		unsigned int fromIndex;
+		char fromType;
+		unsigned int toIndex;
+		char toType;
 
-  int linksNumber = 0;
-  int nodesNumber = 0;
+		std::string DataRate;// eg:"1000Mbps", using StringValue
+		std::string Delay;// eg:"2ms",using StringValue
+		
 
-  int totnode = 0;
-  int totlink = 0;
+		int switchNum = 0;
+		int hostNum = 0;
+		int linkNum = 0;
+		int nodeNum = 0;
 
-  std::istringstream lineBuffer;
-  std::string line;
+		int curLinkNumber = 0;
+		int curNodeNumber = 0;
+	
+		std::istringstream lineBuffer;
+		std::string line;
 
-  getline (topgen,line);
-  lineBuffer.str (line);
+		getline(topgen, line);
+		lineBuffer.str(line);
 
-  lineBuffer >> totnode;
-  lineBuffer >> totlink;
-  NS_LOG_INFO ("Csma topology should have " << totnode << " nodes and " << totlink << " links");
+		lineBuffer >> switchNum >> hostNum >> linkNum;
+		
+		NS_LOG_INFO("Csma topology should have " << switchNum << " switches and " << hostNum << " hosts and "<< linkNum <<" links");
 
-  /*for (int i = 0; i < totnode && !topgen.eof (); i++)
-    {
-      getline (topgen,line);
-    }*/
+		nodeNum = switchNum + hostNum;
+		nodes.resize(nodeNum);
 
-  for (int i = 0; i < totlink && !topgen.eof (); i++)
-    {
-      getline (topgen,line);
-      lineBuffer.clear ();
-      lineBuffer.str (line);
+		for (int i = 0; i < nodeNum; i++)
+			nodes[i] = 0;
 
-      lineBuffer >> from >>fromType>>fromLinkedSwitchIndex;
-      lineBuffer >> to>>toType>>toLinkedSwitchIndex;
-      lineBuffer >> linkAttr;
+		// read link info
+		for (int i = 0; i < linkNum && !topgen.eof(); i++)
+		{
+			getline(topgen, line);
+			lineBuffer.clear();
+			lineBuffer.str(line);
 
-      if ( (!from.empty ()) && (!to.empty ()) )
-        {
-          NS_LOG_INFO ( "Link " << linksNumber << " from: " << from<<" "<<fromType<<" "<<fromLinkedSwitchIndex << " to: " << to<<" "<<toType<<" "<<toLinkedSwitchIndex);
+			lineBuffer >> fromIndex >> fromType >> toIndex >> toType >> DataRate >> Delay;
 
-          if ( nodeMap[from] == 0 )
-            {
-              NS_LOG_INFO ( "Node " << nodesNumber << " name: " << from);
-              Ptr<Node> tmpNode = CreateObject<Node> ();
-              nodeMap[from] = tmpNode;
-              //nodes.Add (tmpNode);
-              if(fromType.compare("terminal")==0)
-              {
-                //terminals.Add(tmpNode);
-		terminalSet.insert(NameNode(from,tmpNode));
-              }
-              else
-              {
-                if(fromType.compare("switch")==0)
-                {
-                 // switches.Add(tmpNode);
-		   switchSet.insert(NameNode(from,tmpNode));
+			NS_LOG_INFO("Link " << curLinkNumber << " from: " << fromIndex << " " << fromType << " to: " << toIndex << " " << toType);
 
-                }
-                else
-                {
-                  NS_LOG_INFO("type error");
-                  abort();
-                }
-              }
-              nodesNumber++;
-            }
+			if (nodes[fromIndex] == 0)
+			{
+				NS_LOG_INFO("Node " << curNodeNumber << " index: " << fromIndex);
+				Ptr<Node> tmpNode = CreateObject<Node>();
+				nodes[fromIndex] = tmpNode;
+				curNodeNumber++;
+			}
 
-          if (nodeMap[to] == 0)
-            {
-              NS_LOG_INFO ( "Node " << nodesNumber << " name: " << to);
-              Ptr<Node> tmpNode = CreateObject<Node> ();
-              nodeMap[to] = tmpNode;
-              //nodes.Add (tmpNode);
-              if(toType.compare("terminal")==0)
-              {
-                //terminals.Add(tmpNode);
-		terminalSet.insert(NameNode(to,tmpNode));
+			if (nodes[toIndex] == 0)
+			{
+				NS_LOG_INFO("Node " << curNodeNumber << " index: " << toIndex);
+				Ptr<Node> tmpNode = CreateObject<Node>();
+				nodes[toIndex] = tmpNode;
+				curNodeNumber++;
+			}
 
-              }
-              else
-              {
-                if(toType.compare("switch")==0)
-                {
-                 // switches.Add(tmpNode);
-		 switchSet.insert(NameNode(to,tmpNode));
+			Link link(nodes[fromIndex], fromIndex, fromType, nodes[toIndex], toIndex, toType);
 
-                }
-                else
-                {
-                  NS_LOG_INFO("type error");
-                  abort();
-                }
-              }
-              nodesNumber++;
-            }
+			if (!DataRate.empty())
+			{
+				NS_LOG_INFO("Link " << curLinkNumber << " DataRate: " << DataRate);
+				link.SetAttribute("DataRate", DataRate);
+			}
+			if(!Delay.empty())
+			{
+				NS_LOG_INFO("Link "<< curLinkNumber <<" Delay: "<< Delay);
+				link.SetAttribute("Delay",Delay);
+			}
 
-          Link link ( nodeMap[from], from, fromType,fromLinkedSwitchIndex,nodeMap[to], to,toType,toLinkedSwitchIndex);
-          if ( !linkAttr.empty () )
-            {
-              NS_LOG_INFO ( "Link " << linksNumber << " weight: " << linkAttr);
-              link.SetAttribute ("Weight", linkAttr);
-            }
-          AddLink (link);
+			AddLink(link);
 
-          linksNumber++;
-        }
-    }
-  for (std::set<NameNode>::iterator iter = terminalSet.begin(); iter != terminalSet.end(); iter++)
-      {
-        std::cout<<"t"<<iter->name<<" ";
-        terminals.Add(iter->node);
-      }
-  for (std::set<NameNode>::iterator iter = switchSet.begin(); iter != switchSet.end(); iter++)
-      {
-        std::cout<<"s"<<iter->name<<" ";
-        switches.Add(iter->node);
-      }
+			curLinkNumber++;
+		}
+		// read switch network function info
+		m_switchNetFunc.resize(switchNum);
+		int switchIndex;
+		std::string networkFunction;
+		for (int i = 0; i < switchNum && !topgen.eof(); i++)
+		{
+			getline(topgen, line);
+			lineBuffer.clear();
+			lineBuffer.str(line);
 
-  NS_LOG_INFO ("Csma topology created with " << nodesNumber << " nodes and " << linksNumber << " links");
-  topgen.close ();
-}
+			lineBuffer >> switchIndex >> networkFunction;
+			m_switchNetFunc[switchIndex] = networkFunction;
+			NS_LOG_INFO("switchIndex "<<switchIndex<<" networkFunction "<<networkFunction);
+		}
+
+		for (int i = 0; i < switchNum; i++)
+			m_switches.Add(nodes[i]);
+		for (int i = 0; i < hostNum; i++)
+			m_hosts.Add(nodes[switchNum + i]);
+
+		NS_LOG_INFO("Csma topology created with " << curNodeNumber << " nodes and " << curLinkNumber << " links");
+		topgen.close();
+	}
 
 } /* namespace ns3 */
