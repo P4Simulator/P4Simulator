@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <iostream>
+#include <time.h>
 #include "ns3/log.h"
 
 
@@ -38,13 +39,21 @@ namespace ns3 {
 	{
 		return m_terminalNum;
 	}
-	void FattreeTopoHelper::SetLinkAttr(std::string attr)
+	void FattreeTopoHelper::SetLinkDataRate(std::string dataRate)
 	{
-		m_linkAttr = attr;
+		m_linkDataRate=dataRate;
 	}
-	std::string FattreeTopoHelper::GetLinkAttr()
+	std::string FattreeTopoHelper::GetLinkDataRate()
 	{
-		return m_linkAttr;
+		return m_linkDataRate;
+	}
+	void FattreeTopoHelper::SetLinkDelay(std::string delay)
+	{
+		m_linkDelay=delay;
+	}
+	std::string FattreeTopoHelper::GetLinkDelay()
+	{
+		return m_linkDelay;
 	}
 	unsigned int FattreeTopoHelper::GetLinkNum()
 	{
@@ -65,7 +74,8 @@ namespace ns3 {
 
 	void FattreeTopoHelper::Build(unsigned int podNum)
 	{
-		m_podNum = podNum;
+		srand((unsigned int) time(NULL));
+		m_podNum =podNum;
 		m_coreSwitchNum = (podNum / 2)*(podNum / 2);
 		// maybe overflow
 		m_switchNum = 5*m_coreSwitchNum;
@@ -87,11 +97,25 @@ namespace ns3 {
 				curEdgeSwitchIndex = edgeSwitchIndex + i*halfPodNum + j;
 				for (unsigned int p = 0; p < halfPodNum; p++)
 				{
-					m_switchLinkNodeTypeIndex[curAggrSwitchIndex].push_back("s"+UintToStr(j*halfPodNum + p));//link core switch
-					m_switchLinkNodeTypeIndex[curAggrSwitchIndex].push_back("s" + UintToStr(edgeSwitchIndex + i*halfPodNum + p));//link edge switch
-					m_switchLinkNodeTypeIndex[curEdgeSwitchIndex].push_back("t"+UintToStr(tmlIndex + i*m_coreSwitchNum+j*halfPodNum + p));//link terminal
-					m_linkNum += 3;
+					//m_switchLinkNodeTypeIndex[curAggrSwitchIndex].push_back("s"+UintToStr(j*halfPodNum + p));//link core switch
+					m_switchLinkNodeTypeIndex[curAggrSwitchIndex].push_back(LinkNodeTypeIndex_t('s',edgeSwitchIndex + i*halfPodNum + p));//link edge switch
+					m_switchLinkNodeTypeIndex[curEdgeSwitchIndex].push_back(LinkNodeTypeIndex_t('h',tmlIndex+i*m_coreSwitchNum+j*halfPodNum + p));//link terminal
+					m_linkNum += 2;
 				}
+			}
+		}
+		for(unsigned int i=0;i<m_coreSwitchNum;i++)// traverse core switch (every core switch need link every pod) 
+		{
+			unsigned int k=rand() % halfPodNum;
+			for(unsigned int j=0;j<podNum;j++)// traverse pod
+			{
+				if(k==halfPodNum-1)
+					k=0;
+				else
+					k++;
+				curAggrSwitchIndex = aggrSwitchIndex + j*halfPodNum+k;
+				m_switchLinkNodeTypeIndex[curAggrSwitchIndex].push_back(LinkNodeTypeIndex_t('s',i));
+				m_linkNum++;
 			}
 		}
 	}
@@ -101,34 +125,45 @@ namespace ns3 {
 		std::ofstream file;
 		file.open(m_topoFileName);
 
-		std::string fromType = "terminal";
-		std::string toType = "switch";
-		std::string linkAttr;
+		char fromType = 's';
+		char toType = 's';
+		std::string linkDataRate;
+		std::string linkDelay;
 
 		std::ostringstream lineBuffer;
 		std::string line;
-		lineBuffer << m_switchNum + m_terminalNum << " " << m_linkNum << std::endl;
+		lineBuffer << m_switchNum << " "<<m_terminalNum << " " << m_linkNum << std::endl;
 		file << lineBuffer.str();
 
+		//write link info
 		for (unsigned int i = 0; i < m_switchNum; i++)
 		{
-			for (std::vector<std::string>::iterator iter = m_switchLinkNodeTypeIndex[i].begin(); iter != m_switchLinkNodeTypeIndex[i].end(); iter++)
+			for (std::vector<LinkNodeTypeIndex_t>::iterator iter = m_switchLinkNodeTypeIndex[i].begin(); iter != m_switchLinkNodeTypeIndex[i].end(); iter++)
 			{
 				//from,fromType,*iter,*iter,toType,*iter,linkAttr
 				lineBuffer.clear();
 				lineBuffer.str("");
-				if ((*iter)[0] == 's')
+				if (iter->type == 's')
 				{
-					fromType = "switch";
-					lineBuffer << iter->substr(1) << " " << fromType << " " << iter->substr(1) << " " << i << " " << toType << " " << i << " " << linkAttr << std::endl;
+					toType = 's';
+					lineBuffer << i << " " << fromType << " " << iter->index << " " << toType <<" "<< linkDataRate<<" "<<linkDelay << std::endl;
 				}
 				else
 				{
-					fromType = "terminal";
-					lineBuffer << iter->substr(1) << " " << fromType << " " << i << " " << i << " " << toType << " " << i << " " << linkAttr << std::endl;
+					toType = 'h';
+					lineBuffer << i << " " << fromType << " " << iter->index << " " << toType <<" "<< linkDataRate<<" "<<linkDelay << std::endl;
 				}
 				file << lineBuffer.str();
 			}
+		}
+		
+		//write switch network function info
+		for(unsigned int i=0;i<m_switchNum;i++)
+		{
+			lineBuffer.clear();
+			lineBuffer.str("");
+			lineBuffer<<i<<" "<<"SIMPLE_ROUTER"<<std::endl;
+			file<<lineBuffer.str();
 		}
 
 		file.close();
@@ -139,12 +174,13 @@ namespace ns3 {
 		for (unsigned int i = 0; i < m_switchNum; i++)
 		{
 			std::cout << i << ": ";
-			for (std::vector<std::string>::iterator iter = m_switchLinkNodeTypeIndex[i].begin(); iter != m_switchLinkNodeTypeIndex[i].end(); ++iter)
+			for (std::vector<LinkNodeTypeIndex_t>::iterator iter = m_switchLinkNodeTypeIndex[i].begin(); iter != m_switchLinkNodeTypeIndex[i].end(); ++iter)
 			{
-				std::cout << *iter << " ";
+				std::cout << iter->type <<" "<<iter->index<< std::endl;
 			}
 			std::cout << std::endl;
 		}
 	}
 }
+
 

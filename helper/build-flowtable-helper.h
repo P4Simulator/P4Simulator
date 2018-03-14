@@ -97,7 +97,7 @@ namespace ns3 {
 		unsigned int inPortIndex;
 		unsigned int outPortIndex;
 	public:
-		SaveNode_t(unsigned int si, unsigned int ipi,unsigned int opi)
+		SaveNode_t(unsigned int si, unsigned int ipi, unsigned int opi)
 		{
 			switchIndex = si;
 			inPortIndex = ipi;
@@ -118,7 +118,7 @@ namespace ns3 {
 		{
 			for (size_t i = 0; i < linkSwitchIndex.size(); i++)
 			{
-				m_hostNodes.push_back(HostNode_t(hostIpv4[i], linkSwitchIndex[i],linkSwitchPort[i]));
+				m_hostNodes.push_back(HostNode_t(hostIpv4[i], linkSwitchIndex[i], linkSwitchPort[i]));
 			}
 			for (size_t i = 0; i < switchPortInfo.size(); i++)
 			{
@@ -174,8 +174,8 @@ namespace ns3 {
 
 		std::string UintToPortStr(unsigned int num);
 
-		void Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch, 
-			std::set<unsigned int> &recordPassSwitch,std::vector<std::vector<unsigned int>> &hostLink,unsigned int &linkCounter);
+		void Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch,
+			std::set<unsigned int> &recordPassSwitch, std::vector<std::vector<unsigned int>> &hostLink, unsigned int &linkCounter);
 
 
 
@@ -185,13 +185,13 @@ namespace ns3 {
 			m_switchNodes[switchIndex].flowTableEntries.push_back(FlowTableEntry_t(m_hostNodes[srcIp].ipAddr, m_hostNodes[dstIp].ipAddr, outPort));
 		}
 
-		void AddFlowtableEntry2(unsigned int srcIp,unsigned int inPort,unsigned int switchIndex, unsigned int outPort, unsigned int dstIp)
+		void AddFlowtableEntry2(unsigned int srcIp, unsigned int inPort, unsigned int switchIndex, unsigned int outPort, unsigned int dstIp)
 		{
 			m_switchNodes[switchIndex].flowTableEntries.push_back(FlowTableEntry_t(m_hostNodes[dstIp].ipAddr, m_hostNodes[srcIp].ipAddr, inPort));
 			m_switchNodes[switchIndex].flowTableEntries.push_back(FlowTableEntry_t(m_hostNodes[srcIp].ipAddr, m_hostNodes[dstIp].ipAddr, outPort));
 		}
-		
-		void BuildFattreeFlowTable() {}
+
+		void BuildFattreeFlowTable();
 
 		void BuildSilkroadFlowTable() {}
 		void ShowSwitchReachHostIndex(const std::vector<std::vector<unsigned int>>&switchMap)
@@ -211,5 +211,6 @@ namespace ns3 {
 }
 
 #endif
+
 
 

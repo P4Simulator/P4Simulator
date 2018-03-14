@@ -30,6 +30,8 @@
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 #include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/tree-topo-helper.h"
+#include "ns3/fattree-topo-helper.h"
 #include <unistd.h>
 #include <sys/time.h>
 #include <netinet/in.h>
@@ -112,7 +114,7 @@ int main(int argc, char *argv[])
 	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
-	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo1.txt";
+	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo.txt";
 	NS_LOG_LOGIC(topoPath);
 	std::string topoInput(topoPath);
         
@@ -130,6 +132,8 @@ int main(int argc, char *argv[])
 	/*
 	You can build network topo by program or handwork, we use handwork to build topo to test topology reader program.
 	*/
+	FattreeTopoHelper treeTopo(podNum,topoPath);
+	treeTopo.Write();
         
 	// read topo
 	P4TopologyReaderHelper p4TopoHelp;
@@ -269,7 +273,7 @@ int main(int argc, char *argv[])
 	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
-		BuildFlowtableHelper flowtableHelper;
+		BuildFlowtableHelper flowtableHelper("fattree",podNum);
 		flowtableHelper.Build(linkSwitchIndex,linkSwitchPort,hostIpv4,switchPortInfo);
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
 		flowtableHelper.Show();
@@ -360,26 +364,4 @@ int main(int argc, char *argv[])
 	NS_LOG_INFO("Done.");
 	//return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
