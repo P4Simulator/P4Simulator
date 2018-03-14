@@ -44,40 +44,13 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("P4Example");
 
-// set switch network function, flowtable path and flowtable match type path
-// firewall router silkroad
-
-/*void SetSwitchConfigInfo(std::string ftPath, std::string mtPath)
-{
-	P4GlobalVar::g_flowTablePath = ftPath;
-	P4GlobalVar::g_p4MatchTypePath = mtPath;
+static void SinkRx (Ptr<const Packet> p, const Address &ad) {
+    std::cout << "Rx" << "Received from  "<< ad << std::endl;
 }
 
-void InitSwitchConfig()
-{
-	switch (P4GlobalVar::g_networkFunc)
-	{
-	case FIREWALL:
-	{
-		SetSwitchConfigInfo(P4GlobalVar::g_nfDir + "firewall/command.txt", P4GlobalVar::g_nfDir + "firewall/mtype.txt");
-		break;
-	}
-	case ROUTER:
-	{
-		SetSwitchConfigInfo(P4GlobalVar::g_nfDir + "router/command.txt", P4GlobalVar::g_nfDir + "router/mtype.txt");
-		break;
-	}
-	case SILKROAD:
-	{
-		SetSwitchConfigInfo(P4GlobalVar::g_nfDir + "silkroad/command.txt", P4GlobalVar::g_nfDir + "silkroad/mtype.txt");
-		break;
-	}
-	default:
-	{
-		break;
-	}
-	}
-}*/
+static void PingRtt (std::string context, Time rtt) {
+    std::cout << "Rtt" << context << " " << rtt << std::endl;
+}
 
 struct SwitchNodeC_t
 {
@@ -96,7 +69,7 @@ struct HostNodeC_t
 
 int main(int argc, char *argv[])
 {
-	
+	unsigned long mainStart=getTickCount();	
 	P4GlobalVar::g_homePath="/home/kphf1995cm/";
 	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
 	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
@@ -125,7 +98,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("model", "Select p4 model[0] or traditional bridge model[1]", P4GlobalVar::g_nsType);
 	cmd.AddValue("podnum", "Numbers of built tree topo levels", podNum);
 	cmd.AddValue("build","Build flow table entries by program[1] or not[0]",toBuild);
-	cmd.AddValue("application","Application type.OnoffSink[0]",application);
+	cmd.AddValue("application","Application type OnoffSink[0] UdpClientServer[1]",application);
 	cmd.Parse(argc, argv);
 	
 	// build topo
@@ -357,11 +330,21 @@ int main(int argc, char *argv[])
 	}
 
 	csma.EnablePcapAll ("p4-example", false);
+	Config::ConnectWithoutContext("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
+		MakeCallback(&SinkRx));
+	Config::Connect("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt",
+		MakeCallback(&PingRtt));
   	Packet::EnablePrinting ();
-        
+
+	unsigned long simulateStart=getTickCount();        
 	Simulator::Run ();
   	Simulator::Destroy ();
 	NS_LOG_INFO("Done.");
+	unsigned long end=getTickCount();
+
+	std::cout << "Host Num: " << hostNum << " Switch Num: " << switchNum << std::endl;
+	std::cout << "Program Running time: " << end - mainStart<<"ms" << std::endl;
+	std::cout << "Simulate Running time: " << end - simulateStart<<"ms" << std::endl;
 	//return 0;
 }
 
