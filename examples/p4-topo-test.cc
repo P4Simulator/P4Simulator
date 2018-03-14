@@ -30,7 +30,7 @@
 #include "ns3/p4-helper.h"
 #include "ns3/v4ping-helper.h"
 #include "ns3/ipv4-global-routing-helper.h"
-#include "ns3/tree-topo-helper.h"
+#include "ns3/binary-tree-topo-helper.h"
 #include "ns3/fattree-topo-helper.h"
 #include <unistd.h>
 #include <sys/time.h>
@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
 	/*
 	You can build network topo by program or handwork, we use handwork to build topo to test topology reader program.
 	*/
-	FattreeTopoHelper treeTopo(podNum,topoPath);
+	//FattreeTopoHelper treeTopo(podNum,topoPath);
+	BinaryTreeTopoHelper treeTopo(podNum,topoPath);
 	treeTopo.Write();
         
 	// read topo
@@ -246,7 +247,8 @@ int main(int argc, char *argv[])
 	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
-		BuildFlowtableHelper flowtableHelper("fattree",podNum);
+		//BuildFlowtableHelper flowtableHelper("fattree",podNum);
+		BuildFlowtableHelper flowtableHelper;
 		flowtableHelper.Build(linkSwitchIndex,linkSwitchPort,hostIpv4,switchPortInfo);
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
 		flowtableHelper.Show();

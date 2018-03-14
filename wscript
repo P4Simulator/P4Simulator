@@ -28,7 +28,7 @@ def build(bld):
 	'model/helper.cc',
 	'model/global.cc',
         'helper/p4-topology-reader-helper.cc',
-        'helper/tree-topo-helper.cc',
+        'helper/binary-tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
         'helper/build-flowtable-helper.cc',
         ]
@@ -48,7 +48,7 @@ def build(bld):
         'helper/p4-topology-reader-helper.h',
         'model/csma-topology-reader.h',
         'model/p4-topology-reader.h',
-        'helper/tree-topo-helper.h',
+        'helper/binary-tree-topo-helper.h',
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
 	'model/global.h'

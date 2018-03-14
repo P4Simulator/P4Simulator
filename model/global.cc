@@ -21,6 +21,23 @@ namespace ns3 {
   std::string P4GlobalVar::g_flowTableDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/flowtable/";
   unsigned int P4GlobalVar::g_nsType=NS4;
   std::map<std::string,unsigned int> P4GlobalVar::g_nfStrUintMap;
+
+  unsigned long getTickCount(void)
+  {
+    unsigned long currentTime=0;
+    #ifdef WIN32
+      currentTime = GetTickCount();
+    #endif
+      struct timeval current;
+      gettimeofday(&current, NULL);
+      currentTime = current.tv_sec * 1000 + current.tv_usec / 1000;
+    #ifdef OS_VXWORKS
+      ULONGA timeSecond = tickGet() / sysClkRateGet();
+      ULONGA timeMilsec = tickGet() % sysClkRateGet() * 1000 / sysClkRateGet();
+      currentTime = timeSecond * 1000 + timeMilsec;
+    #endif
+    return currentTime;
+  } 
   void P4GlobalVar::SetP4MatchTypeJsonPath()
   {
     if(P4GlobalVar::g_networkFunc==FIREWALL)
@@ -44,6 +61,7 @@ namespace ns3 {
           P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "simple_router/mtype.txt";
        }
   }
+
   void P4GlobalVar::InitNfStrUintMap()
   {
     P4GlobalVar::g_nfStrUintMap["ROUTER"]=ROUTER;

@@ -23,6 +23,7 @@
 #include <cstring>
 #include <map>
 #include "ns3/object.h"
+#include <sys/time.h>
 
 namespace ns3 {
 
@@ -43,6 +44,9 @@ unsigned const int LPM = 1;
 unsigned const int TERNARY = 2;
 unsigned const int VALID = 3;
 unsigned const int RANGE = 4;
+
+//get current time (ms)
+unsigned long getTickCount(void);
 
 class P4GlobalVar : public Object
 {

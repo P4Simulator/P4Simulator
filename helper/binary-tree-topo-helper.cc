@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
-#include "tree-topo-helper.h"
+#include "binary-tree-topo-helper.h"
 #include "ns3/log.h"
 #include <math.h>
 #include <fstream>
@@ -10,21 +10,21 @@
 
 namespace ns3 {
 
-    NS_LOG_COMPONENT_DEFINE("TreeTopoHelper");
+    NS_LOG_COMPONENT_DEFINE("BinaryTreeTopoHelper");
     //NS_OBJECT_ENSURE_REGISTERED(TreeTopoHelper);
 
 
-    TreeTopoHelper::TreeTopoHelper(unsigned int treeLevelNum, std::string topoFileName) {
+    BinaryTreeTopoHelper::BinaryTreeTopoHelper(unsigned int treeLevelNum, std::string topoFileName) {
         //NS_LOG_FUNCTION();
         NS_LOG_FUNCTION_NOARGS ();
         Build(treeLevelNum);
         m_topoFileName = topoFileName;
     }
-    TreeTopoHelper::~TreeTopoHelper()
+    BinaryTreeTopoHelper::~BinaryTreeTopoHelper()
     {
         delete[] m_switchLinkTmlIndex;
     }
-    void TreeTopoHelper::SetTopoFileName(const std::string & topoFileName)
+    void BinaryTreeTopoHelper::SetTopoFileName(std::string & topoFileName)
     {
         m_topoFileName = topoFileName;
     }
@@ -34,40 +34,56 @@ namespace ns3 {
     unsigned int m_terminalNum;
     std::vector<unsigned int> m_switchLinkTmlIndex;*/
 
-    unsigned int TreeTopoHelper::GetSwitchNum()
+    unsigned int BinaryTreeTopoHelper::GetSwitchNum()
     {
         return m_switchNum;
     }
-    unsigned int TreeTopoHelper::GetTreeLevelNum()
+    unsigned int BinaryTreeTopoHelper::GetTreeLevelNum()
     {
         return m_treeLevelNum;
     }
-    unsigned int TreeTopoHelper::GetTerminalNum()
+    unsigned int BinaryTreeTopoHelper::GetTerminalNum()
     {
         return m_terminalNum;
     }
-    void TreeTopoHelper::SetLinkAttr(std::string attr)
+
+    void BinaryTreeTopoHelper::SetLinkDataRate(std::string dataRate)
     {
-        m_linkAttr = attr;
+        m_linkDataRate=dataRate;
     }
-    std::string TreeTopoHelper::GetLinkAttr()
+
+    std::string BinaryTreeTopoHelper::GetLinkDataRate()
     {
-        return m_linkAttr;
+        return m_linkDataRate;
     }
-    unsigned int TreeTopoHelper::GetLinkNum()
+
+    void BinaryTreeTopoHelper::SetLinkDelay(std::string delay)
+    {
+        m_linkDelay=delay;
+    }
+
+    std::string BinaryTreeTopoHelper::GetLinkDelay()
+    {
+        return m_linkDelay;
+    }
+
+    unsigned int BinaryTreeTopoHelper::GetLinkNum()
     {
         return m_linkNum;
     }
-    std::vector<unsigned int>* TreeTopoHelper::GetSwitchLinkTmlIndex()
+
+    std::vector<unsigned int>* BinaryTreeTopoHelper::GetSwitchLinkTmlIndex()
     {
         return m_switchLinkTmlIndex;
     }
-    void TreeTopoHelper::Build(unsigned int treeLevelNum)
+
+    void BinaryTreeTopoHelper::Build(unsigned int treeLevelNum)
     {
         m_treeLevelNum = treeLevelNum;
         // maybe overflow
         m_switchNum = (unsigned int)pow(2, treeLevelNum) - 1;
         m_switchLinkTmlIndex = new std::vector<unsigned int>[m_switchNum];
+
         unsigned int curTmlIndex = m_switchNum;
         unsigned int curSwitchIndex = 0;
 
@@ -102,18 +118,19 @@ namespace ns3 {
         m_linkNum = m_terminalNum + m_switchNum - 1;
     }
 
-    void TreeTopoHelper::Write()
+    void BinaryTreeTopoHelper::Write()
     {
         std::ofstream file;
         file.open(m_topoFileName);
 
-        std::string fromType="terminal";
-        std::string toType="switch";
-        std::string linkAttr;
+        char fromType='h';
+        char toType='s';
+        std::string linkDataRate;
+        std::string linkDelay;
 
         std::ostringstream lineBuffer;
         std::string line;
-        lineBuffer << m_switchNum + m_terminalNum << " " << m_linkNum << std::endl;
+        lineBuffer << m_switchNum<<" "<<m_terminalNum << " " << m_linkNum << std::endl;
         file << lineBuffer.str();
 
         for (unsigned int i = 0; i < m_switchNum; i++)
@@ -123,7 +140,7 @@ namespace ns3 {
                 //from,fromType,*iter,*iter,toType,*iter,linkAttr
                 lineBuffer.clear();
                 lineBuffer.str("");
-                lineBuffer << *iter << " " << fromType << " " <<i << " " <<i<<" "<< toType << " " << i << " " << linkAttr << std::endl;
+                lineBuffer << *iter << " " << fromType << " " << i <<" "<< toType << " " << linkDataRate <<" "<< linkDelay << std::endl;
                 file << lineBuffer.str();
             }
             
@@ -131,11 +148,18 @@ namespace ns3 {
             {
                 lineBuffer.clear();
                 lineBuffer.str("");
-                lineBuffer << (i-1)/2 << " " << "switch" << " " << (i-1)/2 << " " << i << " " << toType << " " << i << " " << linkAttr << std::endl;
+                lineBuffer << (i-1)/2 << " " << 's' << " " << i << " " << toType << " " << linkDataRate << " " << linkDelay << std::endl;
                 file << lineBuffer.str();
             }
         }
-
+	for(unsigned int i=0;i<m_switchNum;i++)
+	{
+		lineBuffer.clear();
+		lineBuffer.str("");
+		lineBuffer << i << " " <<"SIMPLE_ROUTER" << std::endl;
+		file << lineBuffer.str();
+	}
         file.close();
     }
 }
+

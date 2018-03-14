@@ -51,22 +51,6 @@
 
 using namespace ns3;
 
-/*
-// siwtch info
-unsigned int g_networkFunc;
-std::string g_p4MatchTypePath;
-std::string g_flowtablePath;
-
-unsigned int g_populateFlowtableWay;
-
-// path info
-std::string g_homePath;
-std::string g_ns3RootName;
-std::string g_ns3SrcName;
-unsigned int g_nsType;
-std::string g_nfDir;
-*/
-
 #define MAXSIZE 512
 MatchKeyValue_t flowtableMatchType;
 
