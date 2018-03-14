@@ -18,13 +18,12 @@ namespace ns3 {
 		m_podNum = podNum;
 	}
 
-
 	BuildFlowtableHelper::~BuildFlowtableHelper()
 	{
 		NS_LOG_FUNCTION(this);
 	}
 
-	void BuildFlowtableHelper::BuildFattreeFlowTable()
+	/*void BuildFlowtableHelper::BuildFattreeFlowTable()
 	{
 		unsigned int coreSwitchNum = (m_podNum / 2)*(m_podNum / 2);
 		unsigned int hostNum = coreSwitchNum*m_podNum;
@@ -133,7 +132,7 @@ namespace ns3 {
 				}
 			}
 		}
-	}
+	}*/
 
 	/*void BuildFlowtableHelper::BuildSilkroadFlowTable()
 	{
@@ -304,8 +303,11 @@ namespace ns3 {
 	{
 		if (m_buildType == "default")
 		{
-			for (size_t i = 0; i < m_hostNodes.size(); i++)
-				DfsFromHostIndex(i);
+			std::vector<std::vector<unsigned int>> hostLink(m_hostNodes.size(),std::vector<unsigned int>(m_hostNodes.size()));
+			unsigned int linkCounter=0;
+			unsigned int linkSum = m_hostNodes.size()*(m_hostNodes.size() - 1);
+			for (size_t i = 0; i < m_hostNodes.size()&&linkCounter<linkSum; i++)
+				DfsFromHostIndex(i, hostLink,linkCounter);
 		}
 		else
 		{
@@ -323,13 +325,15 @@ namespace ns3 {
 		}
 	}
 
-	void BuildFlowtableHelper::DfsFromHostIndex(unsigned int hostIndex)
+	void BuildFlowtableHelper::DfsFromHostIndex(unsigned int hostIndex, std::vector<std::vector<unsigned int>> &hostLink, unsigned int &linkCounter)
 	{
 		std::stack<SaveNode_t> passSwitch;
 		std::set<unsigned int> recordPassSwitch;
-		Dfs(hostIndex, m_hostNodes[hostIndex].linkSwitchIndex, m_hostNodes[hostIndex].portIndex, passSwitch, recordPassSwitch);
+		Dfs(hostIndex, m_hostNodes[hostIndex].linkSwitchIndex, m_hostNodes[hostIndex].portIndex, passSwitch, recordPassSwitch,hostLink,linkCounter);
 	}
-	void BuildFlowtableHelper::Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch, std::set<unsigned int> &recordPassSwitch)
+
+	void BuildFlowtableHelper::Dfs(unsigned int hostIndex, unsigned int switchIndex, unsigned int switchInPort, std::stack<SaveNode_t>& passSwitch, 
+		std::set<unsigned int> &recordPassSwitch, std::vector<std::vector<unsigned int>> &hostLink, unsigned int &linkCounter)
 	{
 		unsigned int curPassSwitchNum = passSwitch.size();
 		for (size_t t = 0; t < m_switchNodes[switchIndex].portNode.size(); t++)//traver port number
@@ -337,15 +341,24 @@ namespace ns3 {
 			if (t == switchInPort) continue;
 			if (m_switchNodes[switchIndex].portNode[t].flag == 0)// represent host
 			{
-				std::stack<SaveNode_t> s = passSwitch;
-				// add passed switch entry
-				while (s.empty() == false)
+				unsigned int dstHostIndex = m_switchNodes[switchIndex].portNode[t].nodeIndex;
+				if (hostLink[hostIndex][dstHostIndex] == 0) 
 				{
-					AddFlowtableEntry(s.top().switchIndex, hostIndex, m_switchNodes[switchIndex].portNode[t].nodeIndex, s.top().outPortIndex);
-					s.pop();
+					hostLink[hostIndex][dstHostIndex] = 1;
+					hostLink[dstHostIndex][hostIndex] = 1;
+					linkCounter += 2;
+					std::stack<SaveNode_t> s = passSwitch;
+					// add passed switch entry
+					while(s.size()>curPassSwitchNum)
+						s.pop();
+					while (s.empty() == false)
+					{
+						AddFlowtableEntry2(hostIndex, s.top().inPortIndex, s.top().switchIndex, s.top().outPortIndex, dstHostIndex);
+						s.pop();
+					}
+					// add cur switch entry
+					AddFlowtableEntry2(hostIndex, switchInPort, switchIndex, t, dstHostIndex);
 				}
-				// add cur switch entry
-				AddFlowtableEntry(switchIndex, hostIndex, m_switchNodes[switchIndex].portNode[t].nodeIndex, t);
 			}
 			else //represent switch
 			{
@@ -353,16 +366,16 @@ namespace ns3 {
 				unsigned nextSwitchPort = m_switchNodes[switchIndex].portNode[t].nodePort;
 				if (recordPassSwitch.count(nextSwitchIndex) == 0)
 				{// make sure stay in init switch num
+					NS_LOG_LOGIC("nextSwitchInfo"<<nextSwitchIndex<<" "<<nextSwitchPort);
 					while (passSwitch.size() > curPassSwitchNum)
 						passSwitch.pop();
-					passSwitch.push(SaveNode_t(switchIndex, t));
+					passSwitch.push(SaveNode_t(switchIndex,switchInPort,t));
 					recordPassSwitch.insert(switchIndex);
-					Dfs(hostIndex, nextSwitchIndex, nextSwitchPort, passSwitch, recordPassSwitch);
+					Dfs(hostIndex, nextSwitchIndex, nextSwitchPort, passSwitch, recordPassSwitch,hostLink,linkCounter);
 				}
 			}
 		}
 	}
-
 
 	std::string BuildFlowtableHelper::UintToStr(unsigned int num)
 	{
@@ -405,10 +418,9 @@ namespace ns3 {
 		}
 	}
 
-
-
 	void BuildFlowtableHelper::Write(std::string fileDir)
 	{
+		NS_LOG_LOGIC("Write");
 		std::ofstream fp;
 
 		std::ostringstream lineBuffer;
@@ -458,7 +470,9 @@ namespace ns3 {
 			fp.close();
 		}
 	}
+
 }
+
 /*
 table_add ipv4_nhop set_ipv4_nhop dstIp => dstIp
 table_add arp_nhop set_arp_nhop dstIp => dstIp

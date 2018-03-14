@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
 	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
 	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
 	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
+	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
 	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo1.txt";
@@ -267,9 +268,11 @@ int main(int argc, char *argv[])
 	//build flow table entries by program
 	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
 	{
+		NS_LOG_LOGIC("BuildFlowtableHelper");
 		BuildFlowtableHelper flowtableHelper;
 		flowtableHelper.Build(linkSwitchIndex,linkSwitchPort,hostIpv4,switchPortInfo);
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
+		flowtableHelper.Show();
 	}
 	//bridge siwtch and switch devices
 	P4GlobalVar::InitNfStrUintMap();
