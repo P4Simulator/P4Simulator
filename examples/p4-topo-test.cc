@@ -36,7 +36,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include "ns3/global.h"
-#include "ns3/p4-topology-reader-helper-new.h"
+#include "ns3/p4-topology-reader-helper.h"
 #include "ns3/helper.h"
 #include "ns3/build-flowtable-helper.h"
 
