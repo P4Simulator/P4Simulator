@@ -461,8 +461,9 @@ int P4Model::init(int argc, char *argv[]) {
             this->init_from_command_line_options(argc, argv, m_argParser);
             int thriftPort = this->get_runtime_port();
             bm_runtime::start_server(this, thriftPort);
-            std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            //std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
+	    NS_LOG_LOGIC("Wait "<<P4GlobalVar::g_runtimeCliTime<<" seconds for RuntimeCLI operations ");
+            std::this_thread::sleep_for(std::chrono::seconds(P4GlobalVar::g_runtimeCliTime));
             //bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
         }
     }

@@ -20,6 +20,7 @@ namespace ns3 {
   std::string P4GlobalVar::g_topoDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/topo/";
   std::string P4GlobalVar::g_flowTableDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/flowtable/";
   unsigned int P4GlobalVar::g_nsType=NS4;
+  unsigned int P4GlobalVar::g_runtimeCliTime=10;
   std::map<std::string,unsigned int> P4GlobalVar::g_nfStrUintMap;
 
   unsigned long getTickCount(void)
@@ -60,6 +61,21 @@ namespace ns3 {
           P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
           P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "simple_router/mtype.txt";
        }
+    if(P4GlobalVar::g_networkFunc==COUNTER)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"counter/counter.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "counter/mtype.txt";
+       }
+    if(P4GlobalVar::g_networkFunc==METER)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"meter/meter.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "meter/mtype.txt";
+       }
+    if(P4GlobalVar::g_networkFunc==REGISTER)
+       {
+          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"register/register.json";
+          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "register/mtype.txt";
+       }
   }
 
   void P4GlobalVar::InitNfStrUintMap()
@@ -68,6 +84,9 @@ namespace ns3 {
     P4GlobalVar::g_nfStrUintMap["SIMPLE_ROUTER"]=SIMPLE_ROUTER;
     P4GlobalVar::g_nfStrUintMap["FIREWALL"]=FIREWALL;
     P4GlobalVar::g_nfStrUintMap["SILKROAD"]=SILKROAD;
+    P4GlobalVar::g_nfStrUintMap["COUNTER"]=COUNTER;
+    P4GlobalVar::g_nfStrUintMap["METER"]=METER;
+    P4GlobalVar::g_nfStrUintMap["REGISTER"]=REGISTER;
   }
 
   TypeId P4GlobalVar::GetTypeId(void)

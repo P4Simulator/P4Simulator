@@ -37,7 +37,9 @@ unsigned const int ROUTER = 0;
 unsigned const int FIREWALL = 1;
 unsigned const int SILKROAD = 2;
 unsigned const int SIMPLE_ROUTER = 3;
-
+unsigned const int COUNTER = 4;
+unsigned const int METER = 5;
+unsigned const int REGISTER = 6;
 // match type
 unsigned const int EXACT = 0;
 unsigned const int LPM = 1;
@@ -68,6 +70,9 @@ public:
 	static std::string g_nfDir;
 	static std::string g_topoDir;
 	static std::string g_flowTableDir;
+
+	// runtime CLI wait time
+	static unsigned int g_runtimeCliTime;//s
 
 	static std::map<std::string,unsigned int> g_nfStrUintMap;	
 	//set g_p4MatchTypePath,g_p4JsonPath according to g_networkFunc
