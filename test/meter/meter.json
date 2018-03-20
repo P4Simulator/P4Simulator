@@ -68,8 +68,52 @@
             "max_length": null
         },
         {
-            "name": "intrinsic_metadata_t",
+            "name": "arp_t",
             "id": 2,
+            "fields": [
+                [
+                    "hw_type",
+                    16
+                ],
+                [
+                    "protocol_type",
+                    16
+                ],
+                [
+                    "hw_size",
+                    8
+                ],
+                [
+                    "protocol_size",
+                    8
+                ],
+                [
+                    "opcode",
+                    16
+                ],
+                [
+                    "srcMac",
+                    48
+                ],
+                [
+                    "srcIp",
+                    32
+                ],
+                [
+                    "dstMac",
+                    48
+                ],
+                [
+                    "dstIp",
+                    32
+                ]
+            ],
+            "length_exp": null,
+            "max_length": null
+        },
+        {
+            "name": "intrinsic_metadata_t",
+            "id": 3,
             "fields": [
                 [
                     "mcast_grp",
@@ -93,7 +137,7 @@
         },
         {
             "name": "meta_t",
-            "id": 3,
+            "id": 4,
             "fields": [
                 [
                     "meter_tag",
@@ -124,8 +168,14 @@
             "metadata": false
         },
         {
-            "name": "intrinsic_metadata",
+            "name": "arp",
             "id": 3,
+            "header_type": "arp_t",
+            "metadata": false
+        },
+        {
+            "name": "intrinsic_metadata",
+            "id": 4,
             "header_type": "intrinsic_metadata_t",
             "metadata": true
         }
@@ -165,6 +215,44 @@
                             ]
                         }
                     ],
+                    "transition_key": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "ethernet",
+                                "etherType"
+                            ]
+                        }
+                    ],
+                    "transitions": [
+                        {
+                            "type": "hexstr",
+                            "value": "0x0806",
+                            "mask": null,
+                            "next_state": "parse_arp"
+                        },
+                        {
+                            "type": "default",
+                            "value": null,
+                            "mask": null,
+                            "next_state": null
+                        }
+                    ]
+                },
+                {
+                    "name": "parse_arp",
+                    "id": 2,
+                    "parser_ops": [
+                        {
+                            "op": "extract",
+                            "parameters": [
+                                {
+                                    "type": "regular",
+                                    "value": "arp"
+                                }
+                            ]
+                        }
+                    ],
                     "transition_key": [],
                     "transitions": [
                         {
@@ -184,7 +272,8 @@
             "name": "deparser",
             "id": 0,
             "order": [
-                "ethernet"
+                "ethernet",
+                "arp"
             ]
         }
     ],
@@ -253,7 +342,26 @@
                         },
                         {
                             "type": "hexstr",
-                            "value": "0x1"
+                            "value": "0x0"
+                        }
+                    ]
+                },
+                {
+                    "op": "modify_field",
+                    "parameters": [
+                        {
+                            "type": "field",
+                            "value": [
+                                "arp",
+                                "srcIp"
+                            ]
+                        },
+                        {
+                            "type": "field",
+                            "value": [
+                                "meta",
+                                "meter_tag"
+                            ]
                         }
                     ]
                 }

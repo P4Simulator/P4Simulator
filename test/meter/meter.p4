@@ -14,11 +14,26 @@ limitations under the License.
 // to test direct meters
 #define USE_DIRECT_METER
 
+#define ETHERTYPE_ARP 0x0806
 header_type ethernet_t {
     fields {
         dstAddr : 48;
         srcAddr : 48;
         etherType : 16;
+    }
+}
+
+header_type arp_t{
+ fields {
+        hw_type : 16;
+        protocol_type : 16;
+        hw_size : 8;
+        protocol_size : 8;
+        opcode : 16;
+        srcMac : 48;
+        srcIp : 32;
+        dstMac : 48;
+        dstIp : 32;
     }
 }
 
@@ -44,11 +59,20 @@ parser start {
 }
 
 header ethernet_t ethernet;
+header arp_t arp;
 metadata intrinsic_metadata_t intrinsic_metadata;
 
 parser parse_ethernet {
     extract(ethernet);
-    return ingress;
+    return select(latest.etherType){
+      ETHERTYPE_ARP:parse_arp;
+      default:ingress;
+    }
+}
+
+parser parse_arp{
+  extract(arp);
+  return ingress;
 }
 
 action _drop() {
@@ -79,7 +103,8 @@ action m_action(meter_idx) {
 #else
     execute_meter(my_meter, meter_idx, meta.meter_tag);
 #endif
-    modify_field(standard_metadata.egress_spec, 1);
+    modify_field(standard_metadata.egress_spec, 0);//modify egress_spec to dst port
+    modify_field(arp.srcIp,meta.meter_tag);//view meta.meter_tag
 }
 
 table m_table {

@@ -16,6 +16,21 @@
  * Author: PengKuang <kphf1995cm@outlook.com>
  */
 
+/*
+ *          Network topology discription
+ *          _________________________
+ *          |                        |
+ *          |        switch          |      
+ *          |                        |
+ *          |________________________|
+ *            |      |      |      |  
+ *           h0(dst) h1     h2     h3(src)
+ *      ip:10.1.1.1              10.1.1.4
+ *     mac:00:00:00:00:00:01     00:00:00:00:00:07
+ *application:UdpEchoServer      UdpEchoClient
+ * simulate start:h3 send ArpHeader packet whose dstIp is 10.1.1.1 to switch.
+ *
+*/
 
 #include <iostream>
 #include <fstream>
