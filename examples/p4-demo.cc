@@ -97,10 +97,9 @@ int main (int argc, char *argv[])
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
       P4GlobalVar::g_populateFlowTableWay=RUNTIME_CLI;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=METER;
-      //InitSwitchConfig();
+      P4GlobalVar::g_networkFunc=REGISTER;
       P4GlobalVar::SetP4MatchTypeJsonPath();
-      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"meter/command.txt";
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"register/command.txt";
 
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);
