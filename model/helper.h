@@ -9,6 +9,7 @@ namespace ns3 {
 
 char *IntToStr(int num);
 
+// can handle 0x 0b or normal digit
 unsigned int StrToInt(const std::string str);
 
 int HexcharToInt(char c);

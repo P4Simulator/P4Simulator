@@ -51,6 +51,7 @@
 #include <bm/SimpleSwitch.h>
 #include <bm/bm_runtime/bm_runtime.h>
 #include <bm/bm_sim/target_parser.h>
+#include "ns3/switch-api.h"
 
 
 using namespace ns3;
@@ -67,7 +68,9 @@ int main (int argc, char *argv[])
   P4GlobalVar::g_ns3SrcName="ns-3.26/";
   P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
   P4GlobalVar::g_nsType=NS4;
-  P4GlobalVar::g_runtimeCliTime=30;
+  P4GlobalVar::g_runtimeCliTime=10;
+  SwitchApi::InitApiMap();
+  
 
   CommandLine cmd;
   cmd.AddValue("time", "Waiting time for Runtime CLI Operations", P4GlobalVar::g_runtimeCliTime);
@@ -96,10 +99,10 @@ int main (int argc, char *argv[])
   Ptr<Node> switchNode = csmaSwitch.Get (0);
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
-      P4GlobalVar::g_populateFlowTableWay=RUNTIME_CLI;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=REGISTER;
+      P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
+      P4GlobalVar::g_networkFunc=ROUTER;
       P4GlobalVar::SetP4MatchTypeJsonPath();
-      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"register/command.txt";
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"router/command.txt";
 
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);

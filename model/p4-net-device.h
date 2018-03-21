@@ -72,7 +72,39 @@ namespace ns3 {
  * loss of metadata. We are currently working on reserving the metadata.
  *
  */
-typedef std::map<std::string,bm::MatchKeyParam::Type> MatchKeyValue_t;
+//typedef std::map<std::string,bm::MatchKeyParam::Type> MatchKeyValue_t;
+
+struct Meter_t{ // meter attribute
+  bool isDirect;
+  public:
+    Meter_t(){}
+    Meter_t(bool isD){
+      isDirect=isD;
+    }
+};
+
+struct Counter_t{
+  bool isDirect;
+  std::string tableName;
+  public:
+    Counter_t(){}
+    Counter_t(bool isD){
+      isDirect=isD;
+    }
+    Counter_t(bool isD,const std::string& name){
+      isDirect=isD;
+      tableName=name;
+    }
+};
+
+struct FlowTable_t{
+  bm::MatchKeyParam::Type matchType;
+  public:
+    FlowTable_t(){}
+    FlowTable_t(bm::MatchKeyParam::Type mt){
+      matchType=mt;
+    }
+};
 
 class P4Model: public bm::Switch {
 public:
@@ -149,12 +181,16 @@ public:
     /**
      *\brief
      */
-    void ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tableActionMatchType);
+    void ReadP4Info(std::string filePath);
 
     /**
      *\brief
      */
     void ViewFlowtableEntryNum(std::string flowtableName);
+
+    void AttainSwitchFlowTableInfo(const std::string commandPath);
+
+    void ParseAttainFlowTableInfoCommand(const std::string commandRow);
 
 private:
 
@@ -196,6 +232,12 @@ private:
      * configurable by the control plane.
      */
     std::shared_ptr<bm::McSimplePre> m_pre;
+
+    std::unordered_map<std::string,Meter_t> m_meter;
+
+    std::unordered_map<std::string,FlowTable_t> m_flowTable;
+
+    std::unordered_map<std::string,Counter_t> m_counter;
 };
 
 /**

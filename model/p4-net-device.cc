@@ -52,7 +52,7 @@
 using namespace ns3;
 
 #define MAXSIZE 512
-MatchKeyValue_t flowtableMatchType;
+//MatchKeyValue_t flowtableMatchType;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
 NS_OBJECT_ENSURE_REGISTERED(P4Model);
@@ -177,28 +177,6 @@ P4NetDevice::P4NetDevice() :
     m_channel = CreateObject<BridgeChannel> ();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
     p4Model = new P4Model;
     char * a3;
-    /*std::string jsonPath;
-    if(P4GlobalVar::g_networkFunc==FIREWALL) 
-       {
-	     jsonPath=P4GlobalVar::g_nfDir+"firewall/firewall.json";
-         a3=(char*)jsonPath.data();
-
-	   }
-    if(P4GlobalVar::g_networkFunc==SILKROAD)
-       {
-	    jsonPath=P4GlobalVar::g_nfDir+"silkroad/silkroad.json";
-        a3=(char*)jsonPath.data();
-	}
-    if(P4GlobalVar::g_networkFunc==ROUTER)
-       {
-	    jsonPath=P4GlobalVar::g_nfDir+"router/router.json";
-        a3=(char*)jsonPath.data();
-	}
-    if(P4GlobalVar::g_networkFunc==SIMPLE_ROUTER)
-       {
-        jsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
-		a3=(char*)jsonPath.data();
-	}*/
     a3=(char*)P4GlobalVar::g_p4JsonPath.data();
     char * args[2] = { NULL,a3};
     p4Model->init(2, args);
@@ -448,10 +426,11 @@ int P4Model::init(int argc, char *argv[]) {
     if(P4GlobalVar::g_populateFlowTableWay==LOCAL_CALL)
     {
         this->InitFromCommandLineOptionsLocal(argc, argv, m_argParser);
-        ReadTableActionMatchType(P4GlobalVar::g_p4MatchTypePath,flowtableMatchType);
+        //ReadTableActionMatchType(P4GlobalVar::g_p4MatchTypePath,flowtableMatchType);
+        ReadP4Info(P4GlobalVar::g_p4MatchTypePath);
         PopulateFlowTable(P4GlobalVar::g_flowTablePath);
-        for(MatchKeyValue_t::iterator iter=flowtableMatchType.begin();iter!=flowtableMatchType.end();iter++)
-	      ViewFlowtableEntryNum(iter->first); 
+        //for(MatchKeyValue_t::iterator iter=flowtableMatchType.begin();iter!=flowtableMatchType.end();iter++)
+	      //ViewFlowtableEntryNum(iter->first); 
     }
     else
     {
@@ -476,7 +455,7 @@ void P4Model::ViewFlowtableEntryNum(std::string flowtableName)
     std::cout<<flowtableName<<" entry num:"<<entries.size()<<std::endl;
 }
 
-void P4Model::ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tableActionMatchType)
+void P4Model::ReadP4Info(std::string filePath)
 {
 
     std::ifstream topgen;
@@ -488,7 +467,7 @@ void P4Model::ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tab
         abort();
     }
 
-    std::string tableAction;
+    std::string tableName;
     std::string matchType;
 
     std::istringstream lineBuffer;
@@ -499,34 +478,34 @@ void P4Model::ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tab
         lineBuffer.clear();
         lineBuffer.str(line);
 
-        lineBuffer >> tableAction >> matchType;
+        lineBuffer >> tableName >> matchType;
         if (matchType.compare("exact")==0)
         {
-            tableActionMatchType[tableAction]=bm::MatchKeyParam::Type::EXACT;
+            m_flowTable[tableName].matchType=bm::MatchKeyParam::Type::EXACT;
         }
         else
         {
             if (matchType.compare("lpm")==0)
             {
-                 tableActionMatchType[tableAction]=bm::MatchKeyParam::Type::LPM;
+                 m_flowTable[tableName].matchType=bm::MatchKeyParam::Type::LPM;
             }
             else
             {
                 if (matchType.compare("ternary")==0)
                 {
-                     tableActionMatchType[tableAction]=bm::MatchKeyParam::Type::TERNARY;
+                     m_flowTable[tableName].matchType=bm::MatchKeyParam::Type::TERNARY;
                 }
                 else
                 {
                     if (matchType.compare("valid")==0)
                     {
-                         tableActionMatchType[tableAction]=bm::MatchKeyParam::Type::VALID;
+                         m_flowTable[tableName].matchType=bm::MatchKeyParam::Type::VALID;
                     }
                     else
                     {
                         if (matchType.compare("range")==0)
                         {
-                             tableActionMatchType[tableAction]=bm::MatchKeyParam::Type::RANGE;
+                             m_flowTable[tableName].matchType=bm::MatchKeyParam::Type::RANGE;
                         }
                         else
                         {
@@ -536,7 +515,6 @@ void P4Model::ReadTableActionMatchType(std::string filePath,MatchKeyValue_t& tab
                 }
             }
         }
-    //    std::cout << table_action << " " << match_type << std::endl;
     }
 }
 
@@ -627,7 +605,7 @@ void P4Model::ParseFlowtableCommand(const std::string commandRow)
                 std::vector<bm::MatchKeyParam> matchKey;
                 bm::ActionData actionData;
                 bm::entry_handle_t *handle=new bm::entry_handle_t(1);// table entry num
-                bm::MatchKeyParam::Type matchType=flowtableMatchType[parms[1]];
+                bm::MatchKeyParam::Type matchType=m_flowTable[parms[1]].matchType;
                 
                 unsigned int keyNum=0;
                 unsigned int actionDataNum=0;
@@ -780,3 +758,191 @@ struct Bm2PacketAndPort * P4Model::Ns3ToBmv2(
     return ret;
 }
 
+void P4Model::AttainSwitchFlowTableInfo(const std::string commandPath)
+{
+	std::fstream fp;
+	fp.open(commandPath);
+	if (!fp)
+	{
+		std::cout << "AttainSwitchFlowTableInfo, " << commandPath << " can't open." << std::endl;
+	}
+	else
+	{
+		const int maxSize = 500;
+		char row[maxSize];
+		while (fp.getline(row, maxSize))
+		{
+			ParseAttainFlowTableInfoCommand(std::string(row));
+		}
+	}
+}
+
+void P4Model::ParseAttainFlowTableInfoCommand(const std::string commandRow)
+{
+	std::vector<std::string> parms;
+	int lastP = 0, curP = 0;
+	for (size_t i = 0; i < commandRow.size(); i++, curP++)
+	{
+		if (commandRow[i] == ' ')
+		{
+			parms.push_back(commandRow.substr(lastP, curP - lastP));
+			lastP = i + 1;
+		}
+	}
+	if (lastP < curP)
+	{
+		parms.push_back(commandRow.substr(lastP, curP - lastP));
+	}
+	if (parms.size() > 0)
+	{
+		unsigned int commandType = SwitchApi::g_apiMap[parms[0]];
+		switch (commandType)
+		{
+		case TABLE_NUM_ENTRIES: {//table_num_entries <table name>
+			if (parms.size() == 2)
+			{
+				size_t num_entries; 
+				mt_get_num_entries(0, parms[1], &num_entries);
+				std::cout << parms[1] << " entry num: " <<num_entries<<std::endl;
+			}
+			break;
+		}
+		case TABLE_CLEAR: {// table_clear <table name>
+			if (parms.size() == 2)
+			{
+				mt_clear_entries(0, parms[1], false);
+			}
+			break;
+		}
+		case METER_GET_RATES: {//meter_get_rates <name> <index>
+			if (parms.size() == 3)
+			{
+				if (m_meter.count(parms[1]) > 0)
+				{
+					if (m_meter[parms[1]].isDirect)//direct
+					{
+						bm::entry_handle_t handle(StrToInt(parms[2]));
+						std::vector<bm::Meter::rate_config_t> configs;
+						mt_get_meter_rates(0, parms[1], handle,&configs);
+						for (size_t i = 0; i < configs.size(); i++)
+						{
+							std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
+						}
+					}
+					else//indirect
+					{
+						size_t idx(StrToInt(parms[2]));
+						std::vector<bm::Meter::rate_config_t> configs;
+						meter_get_rates(0, parms[1], idx, &configs);
+						for (size_t i = 0; i < configs.size(); i++)
+						{
+							std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
+						}
+					}
+				}	
+			}
+			break;
+		}
+		case COUNTER_READ: { //counter_read <name> <index>
+			if (parms.size() == 3)
+			{
+				if (m_counter.count(parms[1]) > 0)
+				{
+					if (m_counter[parms[1]].isDirect)//direct
+					{
+						bm::entry_handle_t handle(StrToInt(parms[2]));
+						bm::MatchTableAbstract::counter_value_t bytes;
+						bm::MatchTableAbstract::counter_value_t packets;
+						mt_read_counters(0,parms[1],handle,&bytes,&packets);
+						std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+					}
+					else
+					{
+						size_t index(StrToInt(parms[2]));
+						bm::MatchTableAbstract::counter_value_t bytes;
+						bm::MatchTableAbstract::counter_value_t packets;
+						read_counters(0,parms[1],index,&bytes,&packets);
+						std::cout << "counter " << parms[1] << "[" << index << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+					}
+				}
+			}
+			break;		
+		}
+		case COUNTER_RESET: {//counter_reset <name>
+			if (parms.size() == 2)
+			{
+				if (m_counter.count(parms[1]) > 0)
+				{
+					if (m_counter[parms[1]].isDirect)//direct
+					{
+						mt_reset_counters(0,m_counter[parms[1]].tableName);
+					}
+					else //indirect
+					{
+						reset_counters(0,parms[1]);
+					}
+				}
+			}
+			break;
+		}
+		case REGISTER_READ: {//register_read <name> [index]
+			if (parms.size() == 3)
+			{
+				size_t index(StrToInt(parms[2]));
+				bm::Data value;
+				register_read(0, parms[1], index, &value);
+				std::cout <<"register "<<parms[1]<<"["<<index<<"] value :"<<value<<std::endl;
+			}
+			break;
+		}
+		case REGISTER_WRITE: { //register_write <name> <index> <value>
+			if (parms.size() == 4)
+			{
+				size_t index(StrToInt(parms[2]));
+				bm::Data value(StrToInt(parms[3]));
+				register_write(0,parms[1],index,value);
+			}
+			break;
+		}
+		case REGISTER_RESET: {//register_reset <name>
+			if (parms.size() == 2)
+			{
+				register_reset(0, parms[1]);
+			}
+			break;
+		}
+		case TABLE_DUMP_ENTRY: {// table_dump_entry <table name> <entry handle>
+			if (parms.size() == 3)
+			{
+				bm::entry_handle_t handle(StrToInt(parms[2]));
+				bm::MatchTable::Entry entry;
+				mt_get_entry(0, parms[1],handle,&entry);
+				std::cout << parms[1] << " entry " << handle << " :"<<std::endl;
+				std::cout << "MatchKey:";
+				for (size_t i = 0; i < entry.match_key.size(); i++)
+				{
+					std::cout << entry.match_key[i].key << " ";
+				}
+				std::cout << std::endl << "ActionData:";
+				for (size_t i = 0; i < entry.action_data.action_data.size(); i++)
+				{
+				std::cout << entry.action_data.action_data[i] << " ";
+				}
+				std::cout<<std::endl;
+			}
+			break;
+		}
+		case TABLE_DUMP: {//table_dump <table name>
+			if (parms.size() == 2)
+			{
+				std::vector<bm::MatchTable::Entry> entries;
+				entries=mt_get_entries(0, parms[1]);
+				// TO DO: output entries info
+			}
+			break;
+		
+		}
+		default:break;
+		}
+	}
+}
