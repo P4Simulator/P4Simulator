@@ -27,6 +27,7 @@ def build(bld):
         'model/p4-topology-reader.cc',
 	'model/helper.cc',
 	'model/global.cc',
+	'model/switch-api.cc',
         'helper/p4-topology-reader-helper.cc',
         'helper/binary-tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
@@ -51,7 +52,8 @@ def build(bld):
         'helper/binary-tree-topo-helper.h',
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
-	'model/global.h'
+	'model/global.h',
+	'model/switch-api.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

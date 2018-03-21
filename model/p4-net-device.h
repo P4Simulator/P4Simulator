@@ -33,7 +33,7 @@
 #include "ns3/string.h"
 #include "ns3/integer.h"
 #include "ns3/uinteger.h"
-
+#include "ns3/switch-api.h"
 #include <bm/bm_sim/queue.h>
 #include <bm/bm_sim/queueing.h>
 #include <bm/bm_sim/packet.h>
