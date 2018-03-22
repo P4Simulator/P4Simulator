@@ -162,6 +162,12 @@ public:
      */
     P4Model();
 
+    ~P4Model()
+    {
+      if(m_argParser!=NULL)
+        delete m_argParser;
+    }
+
     /**
      * \brief configure switch with json file
      */

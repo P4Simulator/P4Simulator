@@ -198,7 +198,8 @@ P4NetDevice::GetBridgePort(uint32_t n) const {
 }
 
 P4NetDevice::~P4NetDevice() {
-	delete p4Model;
+	if(p4Model!=NULL)
+		delete p4Model;
 	NS_LOG_FUNCTION_NOARGS();
 }
 
