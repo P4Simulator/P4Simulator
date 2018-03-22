@@ -3,6 +3,7 @@
 #include <math.h>
 
 namespace ns3 {
+
 char * IntToStr(int num)
 {
     char *ss=new char[10];
@@ -26,7 +27,7 @@ char * IntToStr(int num)
     return ss;
 }
 
-unsigned int StrToInt(const std::string str)
+unsigned int StrToInt(const std::string& str)
 {
 
     unsigned int res = 0;
@@ -106,14 +107,14 @@ int HexcharToInt(char c)
                 temp=c-'A'+10;
             else
             {
-                std::cout << "HexcharToInt error" << std::endl;
+                std::cout << " Attention: HexcharToInt error" << std::endl;
             }
         }
     }
     return temp;
 }
 
-std::string HexstrToBytes(const std::string str)
+std::string HexstrToBytes(const std::string& str)
 {
 
     std::string hexStr;
@@ -134,7 +135,7 @@ std::string HexstrToBytes(const std::string str)
     return res;
 }
 
-std::string HexstrToBytes(const std::string str, unsigned int bitWidth)
+std::string HexstrToBytes(const std::string& str, unsigned int bitWidth)
 {
 
     std::string hexStr;
@@ -238,6 +239,20 @@ std::string Uint32ipToHex(unsigned int ip)
     else
         return std::string("0x00000000");
 }
+double StrToDouble(const std::string& str)
+{
+	double integerRes = 0;
+	double decimalRes = 0;
+	size_t pos = str.find('.');
+	if (pos >= str.size())
+		pos = str.size();
+	//handle integer part
+	for (size_t i = 0; i < pos; i++)
+		integerRes = integerRes * 10 + str[i] - '0';
+	//handle decimal part
+	for (size_t i = str.size() - 1; i > pos; i--)
+		decimalRes = decimalRes*0.1 + str[i] - '0';
 
-
+	return integerRes + decimalRes*0.1;
+}
 }

@@ -48,7 +48,6 @@
 #include <memory>
 #include <vector>
 #include <chrono>
-
 namespace ns3 {
 //
 
@@ -186,11 +185,15 @@ public:
     /**
      *\brief
      */
-    void ViewFlowtableEntryNum(std::string flowtableName);
+    //void ViewFlowtableEntryNum(std::string flowtableName);
+
+    void ViewFlowtableEntryNum();
 
     void AttainSwitchFlowTableInfo(const std::string commandPath);
 
     void ParseAttainFlowTableInfoCommand(const std::string commandRow);
+
+    void ParsePopulateFlowTableCommand(const std::string commandRow);
 
 private:
 

@@ -28,6 +28,7 @@ def build(bld):
 	'model/helper.cc',
 	'model/global.cc',
 	'model/switch-api.cc',
+	'model/exception-handle.cc',
         'helper/p4-topology-reader-helper.cc',
         'helper/binary-tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
@@ -53,7 +54,8 @@ def build(bld):
         'helper/fattree-topo-helper.h',
         'helper/build-flowtable-helper.h',
 	'model/global.h',
-	'model/switch-api.h'
+	'model/switch-api.h',
+	'model/exception-handle.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:
