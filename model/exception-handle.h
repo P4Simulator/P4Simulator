@@ -12,6 +12,9 @@ namespace ns3 {
 	unsigned int const ACTION_DATA_NUM_ERROR = 3;
 	unsigned int const ACTION_DATA_TYPE_ERROR = 4;
 	unsigned int const NO_SUCCESS = 5;
+	unsigned int const COMMAND_ERROR = 6;
+	unsigned int const METER_NO_EXIST = 7;
+	unsigned int const COUNTER_NO_EXIST = 8;
 	unsigned int const OTHER_ERROR = 20;
 
 	class P4Exception :public std::exception

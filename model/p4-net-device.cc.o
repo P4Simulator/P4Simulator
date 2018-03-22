@@ -198,7 +198,6 @@ P4NetDevice::GetBridgePort(uint32_t n) const {
 }
 
 P4NetDevice::~P4NetDevice() {
-	delete p4Model;
 	NS_LOG_FUNCTION_NOARGS();
 }
 
@@ -428,9 +427,11 @@ int P4Model::init(int argc, char *argv[]) {
 	if (P4GlobalVar::g_populateFlowTableWay == LOCAL_CALL)
 	{
 		this->InitFromCommandLineOptionsLocal(argc, argv, m_argParser);
+		//ReadTableActionMatchType(P4GlobalVar::g_p4MatchTypePath,flowtableMatchType);
 		ReadP4Info(P4GlobalVar::g_p4MatchTypePath);
 		PopulateFlowTable(P4GlobalVar::g_flowTablePath);
-		ViewFlowtableEntryNum();
+		//for(MatchKeyValue_t::iterator iter=flowtableMatchType.begin();iter!=flowtableMatchType.end();iter++)
+		ViewFlowtableEntryNum(); 
 	}
 	else
 	{
@@ -440,6 +441,7 @@ int P4Model::init(int argc, char *argv[]) {
 			this->init_from_command_line_options(argc, argv, m_argParser);
 			int thriftPort = this->get_runtime_port();
 			bm_runtime::start_server(this, thriftPort);
+			//std::cout << "\nNight is coming. Sleep for 5 seconds.\n";
 			NS_LOG_LOGIC("Wait " << P4GlobalVar::g_runtimeCliTime << " seconds for RuntimeCLI operations ");
 			std::this_thread::sleep_for(std::chrono::seconds(P4GlobalVar::g_runtimeCliTime));
 			//bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
@@ -448,6 +450,12 @@ int P4Model::init(int argc, char *argv[]) {
 	return 0;
 }
 
+/*void P4Model::ViewFlowtableEntryNum(std::string flowtableName)
+{
+	std::vector<bm::MatchTable::Entry> entries = mt_get_entries(0, flowtableName);
+	std::cout << flowtableName << " entry num:" << entries.size() << std::endl;
+}*/
+
 void P4Model::ViewFlowtableEntryNum()
 {
 	//table_num_entries <table name>
@@ -455,7 +463,7 @@ void P4Model::ViewFlowtableEntryNum()
 	for (FlowTableIter_t iter = m_flowTable.begin(); iter != m_flowTable.end(); ++iter)
 	{
 		std::string parm("table_num_entries ");
-		ParseAttainFlowTableInfoCommand(parm + iter->first);
+		ParseAttainFlowTableInfoCommand(parm+iter->first);
 
 		//size_t num_entries;
 		//mt_get_num_entries(0, iter->first, &num_entries);
@@ -463,7 +471,6 @@ void P4Model::ViewFlowtableEntryNum()
 	}
 }
 
-// TO DO: attain meter, counter attribute
 void P4Model::ReadP4Info(std::string filePath)
 {
 
@@ -556,6 +563,7 @@ int P4Model::InitFromCommandLineOptionsLocal(int argc, char *argv[], bm::TargetP
 	return status;
 }
 
+
 void P4Model::PopulateFlowTable(const std::string commandPath)
 {
 
@@ -576,7 +584,6 @@ void P4Model::PopulateFlowTable(const std::string commandPath)
 		}
 	}
 }
-
 void P4Model::ParseFlowtableCommand(const std::string commandRow)
 {
 
@@ -806,313 +813,215 @@ void P4Model::ParseAttainFlowTableInfoCommand(const std::string commandRow)
 	if (parms.size() > 0)
 	{
 		unsigned int commandType = SwitchApi::g_apiMap[parms[0]];
-		try {
-			switch (commandType)
-			{
-			case TABLE_NUM_ENTRIES: { //table_num_entries <table name>
-				try {
-					if (parms.size() == 2)
-					{
-						size_t num_entries;
-						if (mt_get_num_entries(0, parms[1], &num_entries) != bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-						std::cout << parms[1] << " entry num: " << num_entries << std::endl;
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_CLEAR: {// table_clear <table name>
-				try {
-					if (parms.size() == 2)
-					{
-						if (mt_clear_entries(0, parms[1], false) !=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case METER_GET_RATES: {//meter_get_rates <name> <index>
-				try {
-					if (parms.size() == 3)
-					{
-						if (m_meter.count(parms[1]) > 0)
-						{
-							if (m_meter[parms[1]].isDirect)//direct
-							{
-								bm::entry_handle_t handle(StrToInt(parms[2]));
-								std::vector<bm::Meter::rate_config_t> configs;
-								if (mt_get_meter_rates(0, parms[1], handle, &configs) != bm::MatchErrorCode::SUCCESS)
-									throw P4Exception(NO_SUCCESS);
-								for (size_t i = 0; i < configs.size(); i++)
-								{
-									std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
-								}
-							}
-							else//indirect
-							{
-								size_t idx(StrToInt(parms[2]));
-								std::vector<bm::Meter::rate_config_t> configs;
-								if (meter_get_rates(0, parms[1], idx, &configs) != 0)
-									throw P4Exception(NO_SUCCESS);
-								for (size_t i = 0; i < configs.size(); i++)
-								{
-									std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
-								}
-							}
-						}
-						else
-							throw P4Exception(METER_NO_EXIST);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case COUNTER_READ: { //counter_read <name> <index>
-				try {
-					if (parms.size() == 3)
-					{
-						if (m_counter.count(parms[1]) > 0)
-						{
-							if (m_counter[parms[1]].isDirect)//direct
-							{
-								bm::entry_handle_t handle(StrToInt(parms[2]));
-								bm::MatchTableAbstract::counter_value_t bytes;
-								bm::MatchTableAbstract::counter_value_t packets;
-								if (mt_read_counters(0, parms[1], handle, &bytes, &packets) != bm::MatchErrorCode::SUCCESS)
-									throw P4Exception(NO_SUCCESS);
-								std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
-							}
-							else
-							{
-								size_t index(StrToInt(parms[2]));
-								bm::MatchTableAbstract::counter_value_t bytes;
-								bm::MatchTableAbstract::counter_value_t packets;
-								if(read_counters(0, parms[1], index, &bytes, &packets)!=0)
-									throw P4Exception(NO_SUCCESS);
-								std::cout << "counter " << parms[1] << "[" << index << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
-							}
-						}
-						else
-							throw P4Exception(COUNTER_NO_EXIST);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case COUNTER_RESET: {//counter_reset <name>
-				try {
-					if (parms.size() == 2)
-					{
-						if (m_counter.count(parms[1]) > 0)
-						{
-							if (m_counter[parms[1]].isDirect)//direct
-							{
-								if(mt_reset_counters(0, m_counter[parms[1]].tableName)!=bm::MatchErrorCode::SUCCESS)
-									throw P4Exception(NO_SUCCESS);
-							}
-							else //indirect
-							{
-								if(reset_counters(0, parms[1])!=0)
-									throw P4Exception(NO_SUCCESS);
-							}
-						}
-						else
-							throw P4Exception(COUNTER_NO_EXIST);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case REGISTER_READ: {//register_read <name> [index]
-				try {
-					if (parms.size() == 3)
-					{
-						size_t index(StrToInt(parms[2]));
-						bm::Data value;
-						if(register_read(0, parms[1], index, &value)!=0)
-							throw P4Exception(NO_SUCCESS);
-						std::cout << "register " << parms[1] << "[" << index << "] value :" << value << std::endl;
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case REGISTER_WRITE: { //register_write <name> <index> <value>
-				try {
-					if (parms.size() == 4)
-					{
-						size_t index(StrToInt(parms[2]));
-						bm::Data value(StrToInt(parms[3]));
-						if(register_write(0, parms[1], index, value)!=0)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case REGISTER_RESET: {//register_reset <name>
-				try {
-					if (parms.size() == 2)
-					{
-						if(register_reset(0, parms[1])!=0)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_DUMP_ENTRY: {// table_dump_entry <table name> <entry handle>
-				try {
-					if (parms.size() == 3)
-					{
-						bm::entry_handle_t handle(StrToInt(parms[2]));
-						bm::MatchTable::Entry entry;
-						if(mt_get_entry(0, parms[1], handle, &entry)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-						std::cout << parms[1] << " entry " << handle << " :" << std::endl;
-						std::cout << "MatchKey:";
-						for (size_t i = 0; i < entry.match_key.size(); i++)
-						{
-							std::cout << entry.match_key[i].key << " ";
-						}
-						std::cout << std::endl << "ActionData:";
-						for (size_t i = 0; i < entry.action_data.action_data.size(); i++)
-						{
-							std::cout << entry.action_data.action_data[i] << " ";
-						}
-						std::cout << std::endl;
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_DUMP: {//table_dump <table name>
-				try {
-					if (parms.size() == 2)
-					{
-						std::vector<bm::MatchTable::Entry> entries;
-						entries = mt_get_entries(0, parms[1]);
-						// TO DO: output entries info
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			default: {
-				throw P4Exception(COMMAND_ERROR);
-				break; 
-			}
-			}
-		}
-		catch (P4Exception& e)
+		switch (commandType)
 		{
-			std::cerr << e.what() << std::endl;
+		case TABLE_NUM_ENTRIES: {//table_num_entries <table name>
+			try {
+				if (parms.size() == 2)
+				{
+					size_t num_entries;
+					mt_get_num_entries(0, parms[1], &num_entries);
+					std::cout << parms[1] << " entry num: " << num_entries << std::endl;
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_NUM_ENTRIES EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case TABLE_CLEAR: {// table_clear <table name>
+			try {
+				if (parms.size() == 2)
+				{
+					mt_clear_entries(0, parms[1], false);
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_CLEAR EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case METER_GET_RATES: {//meter_get_rates <name> <index>
+			try {
+				if (parms.size() == 3)
+				{
+					if (m_meter.count(parms[1]) > 0)
+					{
+						if (m_meter[parms[1]].isDirect)//direct
+						{
+							bm::entry_handle_t handle(StrToInt(parms[2]));
+							std::vector<bm::Meter::rate_config_t> configs;
+							mt_get_meter_rates(0, parms[1], handle, &configs);
+							for (size_t i = 0; i < configs.size(); i++)
+							{
+								std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
+							}
+						}
+						else//indirect
+						{
+							size_t idx(StrToInt(parms[2]));
+							std::vector<bm::Meter::rate_config_t> configs;
+							meter_get_rates(0, parms[1], idx, &configs);
+							for (size_t i = 0; i < configs.size(); i++)
+							{
+								std::cout << "info_rate:" << configs[i].info_rate << " burst_size:" << configs[i].burst_size << std::endl;
+							}
+						}
+					}
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "METER_GET_RATES EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case COUNTER_READ: { //counter_read <name> <index>
+			try {
+				if (parms.size() == 3)
+				{
+					if (m_counter.count(parms[1]) > 0)
+					{
+						if (m_counter[parms[1]].isDirect)//direct
+						{
+							bm::entry_handle_t handle(StrToInt(parms[2]));
+							bm::MatchTableAbstract::counter_value_t bytes;
+							bm::MatchTableAbstract::counter_value_t packets;
+							mt_read_counters(0, parms[1], handle, &bytes, &packets);
+							std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+						}
+						else
+						{
+							size_t index(StrToInt(parms[2]));
+							bm::MatchTableAbstract::counter_value_t bytes;
+							bm::MatchTableAbstract::counter_value_t packets;
+							read_counters(0, parms[1], index, &bytes, &packets);
+							std::cout << "counter " << parms[1] << "[" << index << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+						}
+					}
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "COUNTER_READ EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case COUNTER_RESET: {//counter_reset <name>
+			try {
+				if (parms.size() == 2)
+				{
+					if (m_counter.count(parms[1]) > 0)
+					{
+						if (m_counter[parms[1]].isDirect)//direct
+						{
+							mt_reset_counters(0, m_counter[parms[1]].tableName);
+						}
+						else //indirect
+						{
+							reset_counters(0, parms[1]);
+						}
+					}
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "COUNTER_RESET EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case REGISTER_READ: {//register_read <name> [index]
+			try {
+				if (parms.size() == 3)
+				{
+					size_t index(StrToInt(parms[2]));
+					bm::Data value;
+					register_read(0, parms[1], index, &value);
+					std::cout << "register " << parms[1] << "[" << index << "] value :" << value << std::endl;
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "REGISTER_READ EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case REGISTER_WRITE: { //register_write <name> <index> <value>
+			try {
+				if (parms.size() == 4)
+				{
+					size_t index(StrToInt(parms[2]));
+					bm::Data value(StrToInt(parms[3]));
+					register_write(0, parms[1], index, value);
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "REGISTER_WRITE EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case REGISTER_RESET: {//register_reset <name>
+			try {
+				if (parms.size() == 2)
+				{
+					register_reset(0, parms[1]);
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "REGISTER_RESET EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case TABLE_DUMP_ENTRY: {// table_dump_entry <table name> <entry handle>
+			try {
+				if (parms.size() == 3)
+				{
+					bm::entry_handle_t handle(StrToInt(parms[2]));
+					bm::MatchTable::Entry entry;
+					mt_get_entry(0, parms[1], handle, &entry);
+					std::cout << parms[1] << " entry " << handle << " :" << std::endl;
+					std::cout << "MatchKey:";
+					for (size_t i = 0; i < entry.match_key.size(); i++)
+					{
+						std::cout << entry.match_key[i].key << " ";
+					}
+					std::cout << std::endl << "ActionData:";
+					for (size_t i = 0; i < entry.action_data.action_data.size(); i++)
+					{
+						std::cout << entry.action_data.action_data[i] << " ";
+					}
+					std::cout << std::endl;
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_DUMP_ENTRY EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case TABLE_DUMP: {//table_dump <table name>
+			try {
+				if (parms.size() == 2)
+				{
+					std::vector<bm::MatchTable::Entry> entries;
+					entries = mt_get_entries(0, parms[1]);
+					// TO DO: output entries info
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_DUMP EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		default:break;
 		}
 	}
 }
-
 void P4Model::ParsePopulateFlowTableCommand(const std::string commandRow)
 {
 	std::vector<std::string> parms;
@@ -1132,297 +1041,269 @@ void P4Model::ParsePopulateFlowTableCommand(const std::string commandRow)
 	if (parms.size() > 0)
 	{
 		unsigned int commandType = SwitchApi::g_apiMap[parms[0]];
-		try {
-			switch (commandType)
-			{
-			case TABLE_SET_DEFAULT: {//table_set_default <table name> <action name> <action parameters>
-				try {
-					if (parms.size() >= 3) {
-						bm::ActionData actionData;
-						if (parms.size() > 3)// means have ActionData
-						{
-							for (size_t i = 3; i < parms.size(); i++)
-								actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
-						}
-						if(mt_set_default_action(0, parms[1], parms[2], actionData)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-									// Just support hexadecimal match fields, can support arbitrarily action parameters
-
-			case TABLE_ADD: {//table_add <table name> <action name> <match fields> => <action parameters> [priority]
-				try {
-					std::vector<bm::MatchKeyParam> matchKey;
+		switch (commandType)
+		{
+		case TABLE_SET_DEFAULT: {//table_set_default <table name> <action name> <action parameters>
+			try {
+				if (parms.size() >= 3) {
 					bm::ActionData actionData;
-					bm::entry_handle_t handle;
-					bm::MatchKeyParam::Type matchType = m_flowTable[parms[1]].matchType;
-					unsigned int keyNum = 0;
-					unsigned int actionDataNum = 0;
-					size_t i;
-					for (i = 3; i < parms.size(); i++)
+					if (parms.size() > 3)// means have ActionData
 					{
-						if (parms[i].compare("=>") != 0)
-						{
-							keyNum++;
-							switch (matchType)
-							{
-							case bm::MatchKeyParam::Type::EXACT:
-							{
-								matchKey.push_back(bm::MatchKeyParam(matchType, HexstrToBytes(parms[i])));
-								break;
-							}
-							case bm::MatchKeyParam::Type::LPM:
-							{
-								int pos = parms[i].find("/");
-								std::string prefix = parms[i].substr(0, pos);
-								std::string length = parms[i].substr(pos + 1);
-								unsigned int prefixLength = StrToInt(length);
-								matchKey.push_back(bm::MatchKeyParam(matchType, HexstrToBytes(parms[i], prefixLength), int(prefixLength)));
-								break;
-							}
-							case bm::MatchKeyParam::Type::TERNARY:
-							{
-								int pos = parms[i].find("&&&");
-								std::string key = HexstrToBytes(parms[i].substr(0, pos));
-								std::string mask = HexstrToBytes(parms[i].substr(pos + 3));
-								if (key.size() != mask.size())
-								{
-									std::cerr << "key and mask length unmatch!" << std::endl;
-								}
-								else
-								{
-									matchKey.push_back(bm::MatchKeyParam(matchType, key, mask));
-								}
-								break;
-							}
-							case bm::MatchKeyParam::Type::RANGE:
-							{
-								// TO DO: handle range match type
-								break;
-							}
-							case bm::MatchKeyParam::Type::VALID:
-							{
-								// TO DO: handle valid match type
-								break;
-							}
-							default:
-							{
-								std::cerr << "Match Type Error!" << std::endl;
-								break;
-							}
-							}
-						}
-						else
-							break;
-					}
-					i++;
-					int priority;
-					//TO DO:judge key_num equal table need key num
-					if (matchType != bm::MatchKeyParam::Type::TERNARY&&matchType != bm::MatchKeyParam::Type::RANGE)
-					{
-						for (; i < parms.size(); i++)
-						{
-							actionDataNum++;
-							actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
-						}
-						priority = 0;
-						//TO DO:judge action_data_num equal action need num
-						if(mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-					{
-						for (; i < parms.size() - 1; i++)
-						{
-							actionDataNum++;
-							actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
-						}
-						//TO DO:judge action_data_num equal action need num
-						priority = StrToInt(parms[parms.size() - 1]);
-						if(mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_SET_TIMEOUT: { //table_set_timeout <table_name> <entry handle> <timeout (ms)>
-				try {
-					if (parms.size() == 4)
-					{
-						bm::entry_handle_t handle(StrToInt(parms[2]));
-						unsigned int ttl_ms(StrToInt(parms[3]));
-						if(mt_set_entry_ttl(0, parms[1], handle, ttl_ms)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_MODIFY: {//table_modify <table name> <action name> <entry handle> [action parameters]
-				try {
-					if (parms.size() >= 4) {
-						bm::ActionData actionData;
-						bm::entry_handle_t handle(StrToInt(parms[3]));
-						unsigned int actionDataNum = 0;
-						for (size_t i = 4; i < parms.size(); i++)
-						{
-							actionDataNum++;
-							actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
-						}
-						//TO DO:judge action_data_num equal action need num
-						if(mt_modify_entry(0, parms[1], handle, parms[2], actionData)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case TABLE_DELETE: {// table_delete <table name> <entry handle>
-				try {
-					if (parms.size() == 3)
-					{
-						bm::entry_handle_t handle(StrToInt(parms[2]));
-						if(mt_delete_entry(0, parms[1], handle)!=bm::MatchErrorCode::SUCCESS)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case METER_ARRAY_SET_RATES: {//meter_array_set_rates <name> <rate_1>:<burst_1> <rate_2>:<burst_2> ...
-				try {
-					if (parms.size() > 2) {
-						std::vector<bm::Meter::rate_config_t> configs;
-						for (size_t i = 2; i < parms.size(); i++)
-						{
-							int pos = parms[i].find(":");// may be ':' better, should think more...
-							std::string rate = parms[i].substr(0, pos);
-							std::string burst = parms[i].substr(pos + 1);
-							bm::Meter::rate_config_t rateConfig;
-							rateConfig.info_rate = StrToDouble(rate);
-							rateConfig.burst_size = StrToInt(burst);
-							configs.push_back(rateConfig);
-						}
-						if (meter_array_set_rates(0, parms[1], configs) != 0)
-							throw P4Exception(NO_SUCCESS);
-					}
-					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
-				}
-				catch (P4Exception& e)
-				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
-				}
-				catch (...)
-				{
-					ShowExceptionEntry(commandRow);
-				}
-				break;
-			}
-			case METER_SET_RATES: {// meter_set_rates <name> <index> <rate_1>:<burst_1> <rate_2>:<burst_2> ...
-				try {
-					if (parms.size() > 3) {
-						std::vector<bm::Meter::rate_config_t> configs;
 						for (size_t i = 3; i < parms.size(); i++)
+							actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+					}
+					mt_set_default_action(0, parms[1], parms[2], actionData);
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_SET_DEFAULT EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		// Just support hexadecimal match fields, can support arbitrarily action parameters
+
+		case TABLE_ADD: {//table_add <table name> <action name> <match fields> => <action parameters> [priority]
+			try {
+				std::vector<bm::MatchKeyParam> matchKey;
+				bm::ActionData actionData;
+				bm::entry_handle_t handle;
+				bm::MatchKeyParam::Type matchType = m_flowTable[parms[1]].matchType;
+				unsigned int keyNum = 0;
+				unsigned int actionDataNum = 0;
+				size_t i;
+				for (i = 3; i < parms.size(); i++)
+				{
+					if (parms[i].compare("=>") != 0)
+					{
+						keyNum++;
+						switch (matchType)
 						{
-							int pos = parms[i].find(":");
-							std::string rate = parms[i].substr(0, pos);
-							std::string burst = parms[i].substr(pos + 1);
-							bm::Meter::rate_config_t rateConfig;
-							rateConfig.info_rate = StrToDouble(rate);
-							rateConfig.burst_size = StrToInt(burst);
-							configs.push_back(rateConfig);
+						case bm::MatchKeyParam::Type::EXACT:
+						{
+							matchKey.push_back(bm::MatchKeyParam(matchType, HexstrToBytes(parms[i])));
+							break;
 						}
-						if (m_meter[parms[1]].isDirect)//direct
+						case bm::MatchKeyParam::Type::LPM:
 						{
-							bm::entry_handle_t handle(StrToInt(parms[2]));
-							if (mt_set_meter_rates(0, parms[1], handle, configs) != bm::MatchErrorCode::SUCCESS)
-								throw P4Exception(NO_SUCCESS);
+							int pos = parms[i].find("/");
+							std::string prefix = parms[i].substr(0, pos);
+							std::string length = parms[i].substr(pos + 1);
+							unsigned int prefixLength = StrToInt(length);
+							matchKey.push_back(bm::MatchKeyParam(matchType, HexstrToBytes(parms[i], prefixLength), int(prefixLength)));
+							break;
 						}
-						else//indirect
+						case bm::MatchKeyParam::Type::TERNARY:
 						{
-							size_t idx(StrToInt(parms[2]));
-							if (meter_set_rates(0, parms[1], idx, configs) != 0)
-								throw P4Exception(NO_SUCCESS);
+							int pos = parms[i].find("&&&");
+							std::string key = HexstrToBytes(parms[i].substr(0, pos));
+							std::string mask = HexstrToBytes(parms[i].substr(pos + 3));
+							if (key.size() != mask.size())
+							{
+								std::cerr << "key and mask length unmatch!" << std::endl;
+							}
+							else
+							{
+								matchKey.push_back(bm::MatchKeyParam(matchType, key, mask));
+							}
+							break;
+						}
+						case bm::MatchKeyParam::Type::RANGE:
+						{
+							// TO DO: handle range match type
+							break;
+						}
+						case bm::MatchKeyParam::Type::VALID:
+						{
+							// TO DO: handle valid match type
+							break;
+						}
+						default: 
+						{
+							std::cerr << "Match Type Error!" << std::endl;
+							break;
+						}
 						}
 					}
 					else
-						throw P4Exception(PARAMETER_NUM_ERROR);
+						break;
 				}
-				catch (P4Exception& e)
+				i++;
+				int priority;
+				//TO DO:judge key_num equal table need key num
+				if (matchType != bm::MatchKeyParam::Type::TERNARY&&matchType != bm::MatchKeyParam::Type::RANGE)
 				{
-					std::cerr << e.what() << std::endl;
-					ShowExceptionEntry(commandRow);
+					for (; i < parms.size(); i++)
+					{
+						actionDataNum++;
+						actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+					}
+					priority = 0;
+					//TO DO:judge action_data_num equal action need num
+					mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority);
 				}
-				catch (...)
+				else
 				{
-					ShowExceptionEntry(commandRow);
+					for (; i < parms.size() - 1; i++)
+					{
+						actionDataNum++;
+						actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+					}
+					//TO DO:judge action_data_num equal action need num
+					priority = StrToInt(parms[parms.size() - 1]);
+					mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority);
 				}
-				break;
 			}
-			default: 
+			catch (...)
 			{
-				throw P4Exception(COMMAND_ERROR);
-				break;
+				std::cerr << "TABLE_ADD EXCEPTION" << std::endl;
 			}
-			}
+			break;
 		}
-		catch (P4Exception&e) {
-			std::cerr << e.what() << std::endl;
+		case TABLE_SET_TIMEOUT: { //table_set_timeout <table_name> <entry handle> <timeout (ms)>
+			try {
+				if (parms.size() == 4)
+				{
+					bm::entry_handle_t handle(StrToInt(parms[2]));
+					unsigned int ttl_ms(StrToInt(parms[3]));
+					mt_set_entry_ttl(0,parms[1],handle,ttl_ms);
+				}
+				else
+				{
+					throw "Parameter Number Exception";
+				}
+			}
+			catch (...)
+			{
+				std::cerr << "TABLE_SET_DEFAULT EXCEPTION" << std::endl;
+			}
+			break;
+		}
+		case TABLE_MODIFY: {//table_modify <table name> <action name> <entry handle> [action parameters]
+			try {
+				if (parms.size() >= 4) {
+					bm::ActionData actionData;
+					bm::entry_handle_t handle(StrToInt(parms[3]));
+					unsigned int actionDataNum = 0;
+					for (size_t i = 4; i < parms.size(); i++)
+					{
+						actionDataNum++;
+						actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+					}
+					//TO DO:judge action_data_num equal action need num
+					mt_modify_entry(0, parms[1],handle,parms[2],actionData);
+				}
+				else
+					throw P4Exception(PARAMETER_NUM_ERROR);
+			}
+			catch (P4Exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+				ShowExceptionEntry(commandRow);
+			}
+			catch (...)
+			{
+				ShowExceptionEntry(commandRow);
+			}
+			break;
+		}
+		case TABLE_DELETE: {// table_delete <table name> <entry handle>
+			try {
+				if (parms.size() == 3)
+				{
+					bm::entry_handle_t handle(StrToInt(parms[2]));
+					mt_delete_entry(0, parms[1], handle);
+				}
+				else
+					throw P4Exception(PARAMETER_NUM_ERROR);
+
+			}
+			catch (P4Exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+				ShowExceptionEntry(commandRow);
+			}
+			catch (...)
+			{
+				ShowExceptionEntry(commandRow);
+			}
+			break;
+		}
+		case METER_ARRAY_SET_RATES: {//meter_array_set_rates <name> <rate_1>:<burst_1> <rate_2>:<burst_2> ...
+			try {
+				if (parms.size() > 2) {
+					std::vector<bm::Meter::rate_config_t> configs;
+					for (size_t i = 2; i < parms.size(); i++)
+					{
+						int pos = parms[i].find(":");// may be ':' better, should think more...
+						std::string rate=parms[i].substr(0, pos);
+						std::string burst = parms[i].substr(pos + 1);
+						bm::Meter::rate_config_t rateConfig;
+						rateConfig.info_rate=StrToDouble(rate);
+						rateConfig.burst_size=StrToInt(burst);
+						configs.push_back(rateConfig);
+					}
+					if (meter_array_set_rates(0, parms[1], configs) != 0)
+						throw P4Exception(NO_SUCCESS);
+				}
+				else
+					throw P4Exception(PARAMETER_NUM_ERROR);
+			}
+			catch (P4Exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+				ShowExceptionEntry(commandRow);
+			}
+			catch (...)
+			{
+				ShowExceptionEntry(commandRow);
+			}
+			break;
+		}
+		case METER_SET_RATES: {// meter_set_rates <name> <index> <rate_1>:<burst_1> <rate_2>:<burst_2> ...
+			try {
+				if (parms.size() > 3) {
+					std::vector<bm::Meter::rate_config_t> configs;
+					for (size_t i = 3; i < parms.size(); i++)
+					{
+						int pos = parms[i].find(":");
+						std::string rate = parms[i].substr(0, pos);
+						std::string burst = parms[i].substr(pos + 1);
+						bm::Meter::rate_config_t rateConfig;
+                                                rateConfig.info_rate=StrToDouble(rate);
+                                                rateConfig.burst_size=StrToInt(burst);
+                                                configs.push_back(rateConfig);
+					}
+					if (m_meter[parms[1]].isDirect)//direct
+					{
+						bm::entry_handle_t handle(StrToInt(parms[2]));
+						if(mt_set_meter_rates(0, parms[1], handle, configs)!=bm::MatchErrorCode::SUCCESS)
+							throw P4Exception(NO_SUCCESS);
+					}
+					else//indirect
+					{
+						size_t idx(StrToInt(parms[2]));
+						if(meter_set_rates(0,parms[1],idx,configs)!=0)
+							throw P4Exception(NO_SUCCESS);
+					}
+				}
+				else
+					throw P4Exception(PARAMETER_NUM_ERROR);
+			}
+			catch (P4Exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+				ShowExceptionEntry(commandRow);
+			}
+			catch (...)
+			{
+				ShowExceptionEntry(commandRow);
+			}
+			break;
+		}
+		default:break;
 		}
 	}
 }
+
+
