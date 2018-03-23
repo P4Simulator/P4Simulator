@@ -367,7 +367,7 @@ namespace ns3 {
 						if (parms.size() == 4)
 						{
 							size_t index(StrToInt(parms[2]));
-							bm::Data value(StrToInt(parms[3]));
+							bm::Data value(parms[3]);
 							if (m_p4Model->register_write(0, parms[1], index, value) != 0)
 								throw P4Exception(NO_SUCCESS);
 						}
@@ -502,12 +502,13 @@ namespace ns3 {
 				{
 				case TABLE_SET_DEFAULT: {//table_set_default <table name> <action name> <action parameters>
 					try {
+						//NS_LOG_LOGIC("TABLE_SET_DEFAULT:"<<commandRow);
 						if (parms.size() >= 3) {
 							bm::ActionData actionData;
 							if (parms.size() > 3)// means have ActionData
 							{
 								for (size_t i = 3; i < parms.size(); i++)
-									actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+									actionData.push_back_action_data(bm::Data(parms[i]));
 							}
 							if (m_p4Model->mt_set_default_action(0, parms[1], parms[2], actionData) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
@@ -526,10 +527,11 @@ namespace ns3 {
 					}
 					break;
 				}
-										// Just support hexadecimal match fields, can support arbitrarily action parameters
+										// Just support hexadecimal match fields, action parameters
 
 				case TABLE_ADD: {//table_add <table name> <action name> <match fields> => <action parameters> [priority]
 					try {
+						//NS_LOG_LOGIC("TABLE_ADD:"<<commandRow);
 						std::vector<bm::MatchKeyParam> matchKey;
 						bm::ActionData actionData;
 						bm::entry_handle_t handle;
@@ -546,6 +548,7 @@ namespace ns3 {
 								{
 								case bm::MatchKeyParam::Type::EXACT:
 								{
+									//NS_LOG_LOGIC("EXACT");
 									matchKey.push_back(bm::MatchKeyParam(matchType, HexstrToBytes(parms[i])));
 									break;
 								}
@@ -598,10 +601,11 @@ namespace ns3 {
 						//TO DO:judge key_num equal table need key num
 						if (matchType != bm::MatchKeyParam::Type::TERNARY&&matchType != bm::MatchKeyParam::Type::RANGE)
 						{
+							//NS_LOG_LOGIC("Parse ActionData from index:"<<i);
 							for (; i < parms.size(); i++)
 							{
 								actionDataNum++;
-								actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+								actionData.push_back_action_data(bm::Data(parms[i]));
 							}
 							priority = 0;
 							//TO DO:judge action_data_num equal action need num
@@ -613,7 +617,7 @@ namespace ns3 {
 							for (; i < parms.size() - 1; i++)
 							{
 								actionDataNum++;
-								actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+								actionData.push_back_action_data(bm::Data(parms[i]));
 							}
 							//TO DO:judge action_data_num equal action need num
 							priority = StrToInt(parms[parms.size() - 1]);
@@ -664,7 +668,7 @@ namespace ns3 {
 							for (size_t i = 4; i < parms.size(); i++)
 							{
 								actionDataNum++;
-								actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
+								actionData.push_back_action_data(bm::Data(parms[i]));
 							}
 							//TO DO:judge action_data_num equal action need num
 							if (m_p4Model->mt_modify_entry(0, parms[1], handle, parms[2], actionData) != bm::MatchErrorCode::SUCCESS)
@@ -799,3 +803,4 @@ namespace ns3 {
 		ViewFlowtableEntryNum();
 	}
 }
+
