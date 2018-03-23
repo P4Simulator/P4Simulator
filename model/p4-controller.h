@@ -8,6 +8,8 @@
 
 
 namespace ns3 {
+	
+	class P4SwitchInterface;
 
 	class P4Controller :public Object
 	{

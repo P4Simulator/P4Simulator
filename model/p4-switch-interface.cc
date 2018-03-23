@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include "ns3/exception-handle.h"
+#include "ns3/helper.h"
 
 namespace ns3 {
 
@@ -176,7 +177,7 @@ namespace ns3 {
 						if (parms.size() == 2)
 						{
 							size_t num_entries;
-							if (m_p4Model->mt_get_num_entries(0, parms[1], &num_entries) != 0)
+							if (m_p4Model->mt_get_num_entries(0, parms[1], &num_entries) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 							std::cout << parms[1] << " entry num: " << num_entries << std::endl;
 						}
@@ -198,7 +199,7 @@ namespace ns3 {
 					try {
 						if (parms.size() == 2)
 						{
-							if (m_p4Model->mt_clear_entries(0, parms[1], false) != 0)
+							if (m_p4Model->mt_clear_entries(0, parms[1], false) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else
@@ -225,7 +226,7 @@ namespace ns3 {
 								{
 									bm::entry_handle_t handle(StrToInt(parms[2]));
 									std::vector<bm::Meter::rate_config_t> configs;
-									if (m_p4Model->mt_get_meter_rates(0, parms[1], handle, &configs) != 0)
+									if (m_p4Model->mt_get_meter_rates(0, parms[1], handle, &configs) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
 									for (size_t i = 0; i < configs.size(); i++)
 									{
@@ -272,7 +273,7 @@ namespace ns3 {
 									bm::entry_handle_t handle(StrToInt(parms[2]));
 									bm::MatchTableAbstract::counter_value_t bytes;
 									bm::MatchTableAbstract::counter_value_t packets;
-									if (m_p4Model->mt_read_counters(0, parms[1], handle, &bytes, &packets) != 0)
+									if (m_p4Model->mt_read_counters(0, parms[1], handle, &bytes, &packets) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
 									std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
 								}
@@ -311,7 +312,7 @@ namespace ns3 {
 							{
 								if (m_counter[parms[1]].isDirect)//direct
 								{
-									if (m_p4Model->mt_reset_counters(0, m_counter[parms[1]].tableName) != 0)
+									if (m_p4Model->mt_reset_counters(0, m_counter[parms[1]].tableName) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
 								}
 								else //indirect
@@ -411,7 +412,7 @@ namespace ns3 {
 						{
 							bm::entry_handle_t handle(StrToInt(parms[2]));
 							bm::MatchTable::Entry entry;
-							if (m_p4Model->mt_get_entry(0, parms[1], handle, &entry) != 0)
+							if (m_p4Model->mt_get_entry(0, parms[1], handle, &entry) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 							std::cout << parms[1] << " entry " << handle << " :" << std::endl;
 							std::cout << "MatchKey:";
@@ -472,7 +473,6 @@ namespace ns3 {
 			{
 				std::cerr << e.what() << std::endl;
 			}
-			break;
 		}
 	}
 
@@ -509,7 +509,7 @@ namespace ns3 {
 								for (size_t i = 3; i < parms.size(); i++)
 									actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
 							}
-							if (m_p4Model->mt_set_default_action(0, parms[1], parms[2], actionData) != 0)
+							if (m_p4Model->mt_set_default_action(0, parms[1], parms[2], actionData) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else
@@ -605,7 +605,7 @@ namespace ns3 {
 							}
 							priority = 0;
 							//TO DO:judge action_data_num equal action need num
-							if (m_p4Model->mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority) != 0)
+							if (m_p4Model->mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else
@@ -617,7 +617,7 @@ namespace ns3 {
 							}
 							//TO DO:judge action_data_num equal action need num
 							priority = StrToInt(parms[parms.size() - 1]);
-							if (m_p4Model->mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority) != 0)
+							if (m_p4Model->mt_add_entry(0, parms[1], matchKey, parms[2], actionData, &handle, priority) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 					}
@@ -638,7 +638,7 @@ namespace ns3 {
 						{
 							bm::entry_handle_t handle(StrToInt(parms[2]));
 							unsigned int ttl_ms(StrToInt(parms[3]));
-							if (m_p4Model->mt_set_entry_ttl(0, parms[1], handle, ttl_ms) != 0)
+							if (m_p4Model->mt_set_entry_ttl(0, parms[1], handle, ttl_ms) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else
@@ -667,7 +667,7 @@ namespace ns3 {
 								actionData.push_back_action_data(bm::Data(StrToInt(parms[i])));
 							}
 							//TO DO:judge action_data_num equal action need num
-							if (m_p4Model->mt_modify_entry(0, parms[1], handle, parms[2], actionData) != 0)
+							if (m_p4Model->mt_modify_entry(0, parms[1], handle, parms[2], actionData) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else
@@ -689,7 +689,7 @@ namespace ns3 {
 						if (parms.size() == 3)
 						{
 							bm::entry_handle_t handle(StrToInt(parms[2]));
-							if (m_p4Model->mt_delete_entry(0, parms[1], handle) != 0)
+							if (m_p4Model->mt_delete_entry(0, parms[1], handle) != bm::MatchErrorCode::SUCCESS)
 								throw P4Exception(NO_SUCCESS);
 						}
 						else

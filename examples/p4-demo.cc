@@ -75,13 +75,13 @@ int main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue("time", "Waiting time for Runtime CLI Operations", P4GlobalVar::g_runtimeCliTime);
   cmd.Parse (argc, argv);
-  NS_LOG_INFO ("Create nodes.");
+  //NS_LOG_INFO ("Create nodes.");
   NodeContainer terminals;
   terminals.Create (4);
   NodeContainer csmaSwitch;
   csmaSwitch.Create (1);
 
-  NS_LOG_INFO ("Build Topology");
+  //NS_LOG_INFO ("Build Topology");
     
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", DataRateValue (5000000));
@@ -117,13 +117,13 @@ int main (int argc, char *argv[])
   internet.Install (terminals);
 
   // Assign IP addresses.
-  NS_LOG_INFO ("Assign IP Addresses.");
+  //NS_LOG_INFO ("Assign IP Addresses.");
   Ipv4AddressHelper ipv4;
   ipv4.SetBase ("10.1.1.0", "255.255.255.0");
   Ipv4InterfaceContainer addresses = ipv4.Assign (terminalDevices);
 
-  NS_LOG_INFO ("Create Applications.");
-  NS_LOG_INFO ("Create Source");
+  //NS_LOG_INFO ("Create Applications.");
+  //NS_LOG_INFO ("Create Source");
   Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
     
   UdpEchoServerHelper echoServer (9);
@@ -147,12 +147,12 @@ int main (int argc, char *argv[])
   csma.EnablePcapAll ("p4-example", false);
   Packet::EnablePrinting ();
 
-  NS_LOG_INFO ("Run Simulation.");
+  //NS_LOG_INFO ("Run Simulation.");
   Simulator::Run ();
   Simulator::Destroy ();
   if(P4GlobalVar::g_populateFlowTableWay==RUNTIME_CLI)
     while (true) std::this_thread::sleep_for(std::chrono::seconds(100));
-  NS_LOG_INFO ("Done.");
+  //NS_LOG_INFO ("Done.");
 }
 
 

@@ -6,6 +6,8 @@ namespace ns3 {
   NS_LOG_COMPONENT_DEFINE("P4GlobalVar");
   NS_OBJECT_ENSURE_REGISTERED(P4GlobalVar);
 
+  P4Controller P4GlobalVar::g_p4Controller;
+
   // init default static global variable
   unsigned int P4GlobalVar::g_networkFunc=ROUTER;
   std::string P4GlobalVar::g_flowTablePath="";

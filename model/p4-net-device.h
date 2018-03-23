@@ -48,6 +48,7 @@
 #include <memory>
 #include <vector>
 #include <chrono>
+#include "ns3/p4-controller.h"
 namespace ns3 {
 //
 
@@ -71,39 +72,6 @@ namespace ns3 {
  * loss of metadata. We are currently working on reserving the metadata.
  *
  */
-//typedef std::map<std::string,bm::MatchKeyParam::Type> MatchKeyValue_t;
-
-struct Meter_t{ // meter attribute
-  bool isDirect;
-  public:
-    Meter_t(){}
-    Meter_t(bool isD){
-      isDirect=isD;
-    }
-};
-
-struct Counter_t{
-  bool isDirect;
-  std::string tableName;
-  public:
-    Counter_t(){}
-    Counter_t(bool isD){
-      isDirect=isD;
-    }
-    Counter_t(bool isD,const std::string& name){
-      isDirect=isD;
-      tableName=name;
-    }
-};
-
-struct FlowTable_t{
-  bm::MatchKeyParam::Type matchType;
-  public:
-    FlowTable_t(){}
-    FlowTable_t(bm::MatchKeyParam::Type mt){
-      matchType=mt;
-    }
-};
 
 class P4Model: public bm::Switch {
 public:
@@ -172,34 +140,6 @@ public:
      * \brief configure switch with json file
      */
     int InitFromCommandLineOptionsLocal(int argc, char *argv[],bm::TargetParserBasic *tp = nullptr);
-    /**
-     * \brief populate flow table 
-     * @parm commandPath is command's path
-     */
-    void PopulateFlowTable(const std::string commandPath);
-    /**
-     *\brief handle every command
-     *@parm commandRow is a concrete command, such as table_set_default, table_add and so on
-     */
-    void ParseFlowtableCommand(const std::string commandRow);
-    
-    /**
-     *\brief
-     */
-    void ReadP4Info(std::string filePath);
-
-    /**
-     *\brief
-     */
-    //void ViewFlowtableEntryNum(std::string flowtableName);
-
-    void ViewFlowtableEntryNum();
-
-    void AttainSwitchFlowTableInfo(const std::string commandPath);
-
-    void ParseAttainFlowTableInfoCommand(const std::string commandRow);
-
-    void ParsePopulateFlowTableCommand(const std::string commandRow);
 
 private:
 
@@ -242,11 +182,6 @@ private:
      */
     std::shared_ptr<bm::McSimplePre> m_pre;
 
-    std::unordered_map<std::string,Meter_t> m_meter;
-
-    std::unordered_map<std::string,FlowTable_t> m_flowTable;
-
-    std::unordered_map<std::string,Counter_t> m_counter;
 };
 
 /**

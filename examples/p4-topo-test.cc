@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 	unsigned long simulateStart=getTickCount();        
 	Simulator::Run ();
   	Simulator::Destroy ();
-	NS_LOG_INFO("Done.");
+	//NS_LOG_INFO("Done.");
 	unsigned long end=getTickCount();
 
 	std::cout << "Host Num: " << hostNum << " Switch Num: " << switchNum << std::endl;

@@ -33,7 +33,7 @@ namespace ns3 {
 		NS_LOG_FUNCTION(this);
 	}
 
-	void ViewAllSwitchInfo()
+	void P4Controller::ViewAllSwitchInfo()
 	{
 		for (size_t i = 0; i < m_p4Switches.size(); i++)
 		{
@@ -41,7 +41,7 @@ namespace ns3 {
 		}
 	}
 
-	void ViewP4SwitchInfo(size_t index)//view p4 switch flow table, counter, register, meter info
+	void P4Controller::ViewP4SwitchInfo(size_t index)//view p4 switch flow table, counter, register, meter info
 	{
 		if(m_p4Switches[index]!=NULL)
 			m_p4Switches[index]->AttainSwitchFlowTableInfo();
@@ -51,12 +51,12 @@ namespace ns3 {
 		}
 	}
 
-	P4SwitchInterface* GetP4Switch(size_t index)
+	P4SwitchInterface* P4Controller::GetP4Switch(size_t index)
 	{
 		return m_p4Switches[index];
 	}
 
-	P4SwitchInterface* AddP4Switch()
+	P4SwitchInterface* P4Controller::AddP4Switch()
 	{
 		P4SwitchInterface* p4Switch = new P4SwitchInterface;
 		m_p4Switches.push_back(p4Switch);

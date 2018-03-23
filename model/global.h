@@ -24,6 +24,7 @@
 #include <map>
 #include "ns3/object.h"
 #include <sys/time.h>
+#include "ns3/p4-controller.h"
 
 namespace ns3 {
 
@@ -54,6 +55,8 @@ class P4GlobalVar : public Object
 {
 public:
 	static TypeId GetTypeId(void);
+	//controller
+	static P4Controller g_p4Controller;
 
 	// siwtch info
 	static unsigned int g_networkFunc;
