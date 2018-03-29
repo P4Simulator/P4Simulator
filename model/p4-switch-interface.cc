@@ -63,55 +63,93 @@ namespace ns3 {
 			abort();
 		}
 
-		std::string tableName;
-		std::string matchType;
-
 		std::istringstream lineBuffer;
 		std::string line;
 
-		while (getline(topgen, line))
-		{
-			lineBuffer.clear();
-			lineBuffer.str(line);
+		std::string elementType;
+		std::string tableName;
+		std::string matchType;
+		std::string meterName;
+		unsigned int isDirect;
+		std::string counterName;
 
-			lineBuffer >> tableName >> matchType;
-			if (matchType.compare("exact") == 0)
-			{
-				m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::EXACT;
-			}
-			else
-			{
-				if (matchType.compare("lpm") == 0)
-				{
-					m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::LPM;
-				}
-				else
-				{
-					if (matchType.compare("ternary") == 0)
-					{
-						m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::TERNARY;
-					}
-					else
-					{
-						if (matchType.compare("valid") == 0)
-						{
-							m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::VALID;
-						}
-						else
-						{
-							if (matchType.compare("range") == 0)
-							{
-								m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::RANGE;
-							}
-							else
-							{
-								std::cout << "match type error." << std::endl;
-							}
-						}
-					}
-				}
-			}
-		}
+		while (getline(topgen, line))
+                {
+                        lineBuffer.clear();
+                        lineBuffer.str(line);
+
+                        lineBuffer >> elementType;
+                        if(elementType.compare("table")==0)
+                        {
+                                lineBuffer>>tableName>>matchType;
+                                if (matchType.compare("exact") == 0)
+                                {
+                                        m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::EXACT;
+                                }
+                                else
+                                {
+                                        if (matchType.compare("lpm") == 0)
+                                        {
+                                                m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::LPM;
+                                        }
+                                        else
+                                        {
+                                                if (matchType.compare("ternary") == 0)
+                                                {
+                                                        m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::TERNARY;
+                                                }
+                                                else
+                                                {
+                                                        if (matchType.compare("valid") == 0)
+                                                        {
+                                                                m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::VALID;
+                                                        }
+                                                        else
+                                                        {
+                                                                if (matchType.compare("range") == 0)
+                                                                {
+                                                                        m_flowTable[tableName].matchType = bm::MatchKeyParam::Type::RANGE;
+                                                                }
+                                                                else
+                                                                {
+                                                                        std::cerr<< "p4-switch-interface.cc ReadP4Info() MatchType undefined!!!" << std::endl;
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                }
+                                continue;
+                        }
+                        if(elementType.compare("meter")==0)
+                        {
+                                lineBuffer>>meterName>>isDirect;
+                                if(isDirect==1)
+                                        m_meter[meterName].isDirect=true;
+                                else
+                                        m_meter[meterName].isDirect=false;
+                                continue;
+                        }
+                        if(elementType.compare("counter")==0)
+                        {
+                                lineBuffer>>counterName>>isDirect>>tableName;
+                                if(isDirect==1)
+                                {
+                                        m_counter[counterName].isDirect=true;
+                                        m_counter[counterName].tableName=tableName;
+                                }
+                                else
+                                {
+                                        m_counter[counterName].isDirect=false;
+                                        m_counter[counterName].tableName=tableName;
+                                }
+                                
+                                continue;
+                        }
+                        std::cerr<<"p4-switch-interface.cc ReadP4Info() ElementType undefined!!!"<<std::endl;
+                }
+
+
+
 	}
 
 	void P4SwitchInterface::ViewFlowtableEntryNum()

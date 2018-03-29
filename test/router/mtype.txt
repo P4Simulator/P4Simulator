@@ -1,4 +1,4 @@
-ipv4_nhop exact
-arp_nhop exact
-forward_table exact
-send_frame exact
+table ipv4_nhop exact
+table arp_nhop exact
+table forward_table exact
+table send_frame exact

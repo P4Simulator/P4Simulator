@@ -1,1 +1,1 @@
-m_table exact
+table m_table exact

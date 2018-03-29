@@ -1,3 +1,0 @@
-arp_nhop exact
-forward_table exact
-ipv4_nhop exact

@@ -1,2 +1,2 @@
-m_table exact
-m_filter exact
+table m_table exact
+table m_filter exact

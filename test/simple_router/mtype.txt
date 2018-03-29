@@ -1,3 +1,3 @@
-arp_nhop exact
-forward_table exact
-ipv4_nhop exact
+table arp_nhop exact
+table forward_table exact
+table ipv4_nhop exact

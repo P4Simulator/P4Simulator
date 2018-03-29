@@ -102,9 +102,9 @@ int main (int argc, char *argv[])
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=ROUTER;
+      P4GlobalVar::g_networkFunc=FIREWALL;
       P4GlobalVar::SetP4MatchTypeJsonPath();
-      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"router/command.txt";
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"firewall/command.txt";
 
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);

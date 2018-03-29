@@ -1,6 +1,0 @@
-vipt_with_tcp exact
-vipt_with_udp exact
-arp_nhop exact
-forward_table exact
-set_ipv4_srcip exact
-set_arp_srcip exact

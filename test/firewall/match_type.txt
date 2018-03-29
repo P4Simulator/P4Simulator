@@ -1,4 +1,0 @@
-firewall_with_tcp ternary
-firewall_with_udp ternary
-forward_table exact
-

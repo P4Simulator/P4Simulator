@@ -1,4 +1,4 @@
-firewall_with_tcp ternary
-firewall_with_udp ternary
-forward_table exact
+table firewall_with_tcp ternary
+table firewall_with_udp ternary
+table forward_table exact
 
