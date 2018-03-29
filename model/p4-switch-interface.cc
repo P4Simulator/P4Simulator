@@ -273,7 +273,7 @@ namespace ns3 {
 									bm::entry_handle_t handle(StrToInt(parms[2]));
 									bm::MatchTableAbstract::counter_value_t bytes;
 									bm::MatchTableAbstract::counter_value_t packets;
-									if (m_p4Model->mt_read_counters(0, parms[1], handle, &bytes, &packets) != bm::MatchErrorCode::SUCCESS)
+									if (m_p4Model->mt_read_counters(0, m_counter[parms[1]].tableName, handle, &bytes, &packets) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
 									std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
 								}

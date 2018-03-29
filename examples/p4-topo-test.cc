@@ -69,7 +69,10 @@ struct HostNodeC_t
 
 int main(int argc, char *argv[])
 {
-	unsigned long mainStart=getTickCount();	
+
+	unsigned long mainStart=getTickCount();
+
+	// init global variable 	
 	P4GlobalVar::g_homePath="/home/kphf1995cm/";
 	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
 	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
@@ -77,19 +80,20 @@ int main(int argc, char *argv[])
 	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
 	P4GlobalVar::g_nsType = NS4;
 	P4GlobalVar::g_runtimeCliTime=10;
-
         SwitchApi::InitApiMap();
-
+	P4GlobalVar::InitNfStrUintMap();
 
 	int podNum = 2;
-	int toBuild=1;// whether build flow table entired by program
-	int application=0; //application type (0 onOff Sink)
+	int toBuild=1;  // whether build flow table entired by program
+	int application=0;   //application type (0 onOff Sink)
+	
 	// start debug module
 	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
 	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
 	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
 	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
 	LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
+	
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
 	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo.txt";
@@ -248,6 +252,7 @@ int main(int argc, char *argv[])
 	{
 		switchPortInfo[i]=switchNodes[i].switchPortInfos;
 	}
+
 	//build flow table entries by program
 	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
 	{
@@ -258,8 +263,8 @@ int main(int argc, char *argv[])
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
 		flowtableHelper.Show();
 	}
+
 	//bridge siwtch and switch devices
-	P4GlobalVar::InitNfStrUintMap();
 	if (P4GlobalVar::g_nsType == NS4)
 	{
 		P4GlobalVar::g_populateFlowTableWay = LOCAL_CALL;

@@ -60,9 +60,11 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 int main (int argc, char *argv[]) 
 {
+
   LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
-
+  
+  // init 
   P4GlobalVar::g_homePath="/home/kphf1995cm/";
   P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
   P4GlobalVar::g_ns3SrcName="ns-3.26/";
