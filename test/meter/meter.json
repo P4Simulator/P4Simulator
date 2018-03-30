@@ -281,13 +281,8 @@
         {
             "name": "my_meter",
             "id": 0,
-            "is_direct": true,
-            "binding": "m_table",
+            "is_direct": false,
             "size": 16384,
-            "result_target": [
-                "meta",
-                "meter_tag"
-            ],
             "rate_count": 2,
             "type": "packets"
         }
@@ -310,23 +305,27 @@
             "runtime_data": [
                 {
                     "name": "meter_idx",
-                    "bitwidth": 9
+                    "bitwidth": 32
                 }
             ],
             "primitives": [
                 {
-                    "op": "modify_field",
+                    "op": "execute_meter",
                     "parameters": [
                         {
-                            "type": "field",
-                            "value": [
-                                "standard_metadata",
-                                "egress_spec"
-                            ]
+                            "type": "meter_array",
+                            "value": "my_meter"
                         },
                         {
                             "type": "runtime_data",
                             "value": 0
+                        },
+                        {
+                            "type": "field",
+                            "value": [
+                                "meta",
+                                "meter_tag"
+                            ]
                         }
                     ]
                 },
@@ -387,7 +386,7 @@
                     "type": "simple",
                     "max_size": 16384,
                     "with_counters": false,
-                    "direct_meters": "my_meter",
+                    "direct_meters": null,
                     "support_timeout": false,
                     "key": [
                         {

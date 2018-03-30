@@ -122,7 +122,8 @@ namespace ns3 {
                         }
                         if(elementType.compare("meter")==0)
                         {
-                                lineBuffer>>meterName>>isDirect;
+                                lineBuffer>>meterName>>isDirect>>tableName;
+								m_meter[meterName].tableName=tableName;
                                 if(isDirect==1)
                                         m_meter[meterName].isDirect=true;
                                 else
@@ -264,7 +265,7 @@ namespace ns3 {
 								{
 									bm::entry_handle_t handle(StrToInt(parms[2]));
 									std::vector<bm::Meter::rate_config_t> configs;
-									if (m_p4Model->mt_get_meter_rates(0, parms[1], handle, &configs) != bm::MatchErrorCode::SUCCESS)
+									if (m_p4Model->mt_get_meter_rates(0, m_meter[parms[1]].tableName, handle, &configs) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
 									for (size_t i = 0; i < configs.size(); i++)
 									{
@@ -797,7 +798,7 @@ namespace ns3 {
 							if (m_meter[parms[1]].isDirect)//direct
 							{
 								bm::entry_handle_t handle(StrToInt(parms[2]));
-								if (m_p4Model->mt_set_meter_rates(0, parms[1], handle, configs) != bm::MatchErrorCode::SUCCESS)
+								if (m_p4Model->mt_set_meter_rates(0, m_meter[parms[1]].tableName, handle, configs) != bm::MatchErrorCode::SUCCESS)
 									throw P4Exception(NO_SUCCESS);
 							}
 							else//indirect

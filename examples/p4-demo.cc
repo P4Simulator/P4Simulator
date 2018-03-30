@@ -102,10 +102,10 @@ int main (int argc, char *argv[])
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=COUNTER;
+      P4GlobalVar::g_networkFunc=METER;
       P4GlobalVar::SetP4MatchTypeJsonPath();
-      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"counter/command.txt";
-	  P4GlobalVar::g_viewFlowTablePath=P4GlobalVar::g_nfDir+"counter/view.txt";
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"meter/command.txt";
+	  P4GlobalVar::g_viewFlowTablePath=P4GlobalVar::g_nfDir+"meter/view.txt";
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);
 

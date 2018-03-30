@@ -1,0 +1,1 @@
+meter_get_rates my_meter 0

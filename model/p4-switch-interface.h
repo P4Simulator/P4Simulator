@@ -16,10 +16,16 @@ namespace ns3 {
 
 	struct Meter_t { // meter attribute
 		bool isDirect;
+		std::string tableName;
 	public:
 		Meter_t() {}
 		Meter_t(bool isD) {
 			isDirect = isD;
+		}
+		Meter_t(bool isD,const std::string& name)
+		{
+			isDirect=isD;
+			tableName=name;
 		}
 	};
 

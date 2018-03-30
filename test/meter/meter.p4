@@ -12,7 +12,7 @@ limitations under the License.
 */
 
 // to test direct meters
-#define USE_DIRECT_METER
+//#define USE_DIRECT_METER
 
 #define ETHERTYPE_ARP 0x0806
 header_type ethernet_t {
