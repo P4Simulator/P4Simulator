@@ -1,0 +1,2 @@
+register_write my_register 0 0x15678
+register_read my_register 0
