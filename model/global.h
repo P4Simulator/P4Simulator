@@ -62,6 +62,7 @@ public:
 	static unsigned int g_networkFunc;
 	static std::string g_p4MatchTypePath;
 	static std::string g_flowTablePath;
+	static std::string g_viewFlowTablePath;
 	static std::string g_p4JsonPath;
 	static unsigned int g_populateFlowTableWay;
 

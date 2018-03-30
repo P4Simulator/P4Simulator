@@ -16,6 +16,7 @@ namespace ns3 {
 	unsigned int const METER_NO_EXIST = 7;
 	unsigned int const COUNTER_NO_EXIST = 8;
 	unsigned int const P4_SWITCH_POINTER_NULL=9;
+	unsigned int const MATCH_TYPE_ERROR=10;
 	unsigned int const OTHER_ERROR = 20;
 
 	class P4Exception :public std::exception
@@ -41,6 +42,7 @@ namespace ns3 {
 			case METER_NO_EXIST:return "METER_NO_EXIST";
 			case COUNTER_NO_EXIST:return "COUNTER_NO_EXIST";
 			case P4_SWITCH_POINTER_NULL:return "P4_SWITCH_POINTER_NULL";
+			case MATCH_TYPE_ERROR:return "MATCH_TYPE_ERROR";
 
 			default:return "OTHER_ERROR";
 			}

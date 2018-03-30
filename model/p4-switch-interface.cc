@@ -170,10 +170,10 @@ namespace ns3 {
 	void P4SwitchInterface::AttainSwitchFlowTableInfo()
 	{
 		std::fstream fp;
-		fp.open(m_p4InfoPath);
+		fp.open(m_viewFlowTablePath);
 		if (!fp)
 		{
-			std::cout << "AttainSwitchFlowTableInfo, " << m_p4InfoPath << " can't open." << std::endl;
+			std::cout << "AttainSwitchFlowTableInfo, " << m_viewFlowTablePath << " can't open." << std::endl;
 		}
 		else
 		{
@@ -313,7 +313,7 @@ namespace ns3 {
 									bm::MatchTableAbstract::counter_value_t packets;
 									if (m_p4Model->mt_read_counters(0, m_counter[parms[1]].tableName, handle, &bytes, &packets) != bm::MatchErrorCode::SUCCESS)
 										throw P4Exception(NO_SUCCESS);
-									std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+									std::cout << "counter " << parms[1] << "[" << handle << "] size:" << bytes << " bytes " << packets << " packets" << std::endl;
 								}
 								else
 								{
@@ -322,7 +322,7 @@ namespace ns3 {
 									bm::MatchTableAbstract::counter_value_t packets;
 									if (m_p4Model->read_counters(0, parms[1], index, &bytes, &packets) != 0)
 										throw P4Exception(NO_SUCCESS);
-									std::cout << "counter " << parms[1] << "[" << index << "] size:" << bytes << " bytes" << packets << " packets" << std::endl;
+									std::cout << "counter " << parms[1] << "[" << index << "] size:" << bytes << " bytes " << packets << " packets" << std::endl;
 								}
 							}
 							else
@@ -626,7 +626,7 @@ namespace ns3 {
 								}
 								default:
 								{
-									std::cerr << "Match Type Error!" << std::endl;
+									throw P4Exception(MATCH_TYPE_ERROR);
 									break;
 								}
 								}

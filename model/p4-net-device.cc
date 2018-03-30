@@ -155,7 +155,7 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 			outNetDevice->Send(egressPacketAndPort->packet->Copy(), destination, protocol);
 		}
 		else
-			std::cout << "Drop Packet!\n";
+			std::cout << "Drop Packet!!!(511)\n";
 	}
 	else
 		std::cout << "Null Packet!\n";
@@ -183,6 +183,7 @@ P4NetDevice::P4NetDevice() :
 	p4Switch->SetJsonPath(P4GlobalVar::g_p4JsonPath);
 	p4Switch->SetP4InfoPath(P4GlobalVar::g_p4MatchTypePath);
 	p4Switch->SetFlowTablePath(P4GlobalVar::g_flowTablePath);
+	p4Switch->SetViewFlowTablePath(P4GlobalVar::g_viewFlowTablePath);
 	p4Switch->SetNetworkFunc(P4GlobalVar::g_networkFunc);
 
 	char * a3;

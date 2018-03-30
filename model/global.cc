@@ -11,6 +11,7 @@ namespace ns3 {
   // init default static global variable
   unsigned int P4GlobalVar::g_networkFunc=ROUTER;
   std::string P4GlobalVar::g_flowTablePath="";
+  std::string P4GlobalVar::g_viewFlowTablePath="";
   std::string P4GlobalVar::g_p4MatchTypePath="";
   unsigned int P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;
   std::string P4GlobalVar::g_p4JsonPath="";

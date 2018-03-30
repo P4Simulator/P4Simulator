@@ -33,24 +33,45 @@ namespace ns3 {
 		NS_LOG_FUNCTION(this);
 	}
 
-	void P4Controller::ViewAllSwitchInfo()
+	void P4Controller::ViewAllSwitchFlowTableInfo()
 	{
 		for (size_t i = 0; i < m_p4Switches.size(); i++)
 		{
-			ViewP4SwitchInfo(i);
+			ViewP4SwitchFlowTableInfo(i);
 		}
 	}
 
-	void P4Controller::ViewP4SwitchInfo(size_t index)//view p4 switch flow table, counter, register, meter info
+	void P4Controller::ViewP4SwitchFlowTableInfo(size_t index)//view p4 switch flow table, counter, register, meter info
 	{
 		if(m_p4Switches[index]!=NULL)
 			m_p4Switches[index]->AttainSwitchFlowTableInfo();
 		else
 		{
-			std::cerr << "Call ViewP4SwitchInfo(" << index << "): P4SwitchInterface Pointer is Null" << std::endl;
+			std::cerr << "Call ViewP4SwitchFlowTableInfo(" << index << "): P4SwitchInterface Pointer is Null" << std::endl;
 		}
 	}
 
+	void P4Controller::SetP4SwitchViewFlowTablePath(size_t index,const std::string& viewFlowTablePath)
+	{
+		if(m_p4Switches[index]!=NULL)
+			m_p4Switches[index]->SetViewFlowTablePath(viewFlowTablePath);
+		else
+		{
+			std::cerr<<"Call SetP4SwitchViewFlowTablePath("<<index<<"): P4SwitchInterface Pointer is Null"<<std::endl;
+		}
+	}
+
+	void P4Controller::SetP4SwitchFlowTablePath(size_t index,const std::string& flowTablePath)
+	{
+		if(m_p4Switches[index]!=NULL)
+			m_p4Switches[index]->SetFlowTablePath(flowTablePath);
+		else
+		{
+			std::cerr<<"Call SetP4SwitchFlowTablePath("<<index<<"): P4SwitchInterface Pointer is Null"<<std::endl;
+		}
+	}
+
+	
 	P4SwitchInterface* P4Controller::GetP4Switch(size_t index)
 	{
 		return m_p4Switches[index];

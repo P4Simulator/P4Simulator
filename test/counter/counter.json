@@ -200,10 +200,6 @@
                             "value": 0
                         }
                     ]
-                },
-                {
-                    "op": "drop",
-                    "parameters": []
                 }
             ]
         }

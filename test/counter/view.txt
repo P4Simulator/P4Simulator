@@ -1,0 +1,7 @@
+counter_read my_indirect_counter 0
+counter_read my_indirect_counter 1
+counter_read my_indirect_counter 2
+counter_read my_direct_counter 0
+counter_read my_direct_counter 1
+
+

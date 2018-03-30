@@ -19,9 +19,13 @@ namespace ns3 {
 
 		~P4Controller();
 
-		void ViewAllSwitchInfo();
+		void ViewAllSwitchFlowTableInfo();
 
-		void ViewP4SwitchInfo(size_t index);//view p4 switch flow table, counter, register, meter info
+		void ViewP4SwitchFlowTableInfo(size_t index);//view p4 switch flow table, counter, register, meter info
+
+		void SetP4SwitchViewFlowTablePath(size_t index,const std::string& viewFlowTablePath);//set p4 switch viewFlowTablePath
+
+		void SetP4SwitchFlowTablePath(size_t index,const std::string& flowTablePath);//set p4 switch populate flowTablePath
 
 		P4SwitchInterface* GetP4Switch(size_t index);
 

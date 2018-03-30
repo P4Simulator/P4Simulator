@@ -1,4 +1,4 @@
-table_set_default m_table m_action
+table_set_default m_table _nop
 table_add m_table m_action 0x000000000007 => 0
 table_add m_table m_action 0x000000000001 => 1
 

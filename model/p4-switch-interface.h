@@ -79,6 +79,11 @@ namespace ns3 {
 			m_flowTablePath = path;
 		}
 
+		void SetViewFlowTablePath(const std::string&path)
+		{
+			m_viewFlowTablePath=path;
+		}
+
 		void SetNetworkFunc(unsigned int func)
 		{
 			m_networkFunc = func;
@@ -102,6 +107,11 @@ namespace ns3 {
 		std::string GetFlowTablePath()
 		{
 			return m_flowTablePath;
+		}
+
+		std::string GetViewFlowTablePath()
+		{
+			return m_viewFlowTablePath;
 		}
 
 		unsigned int GetNetworkFunc()
@@ -129,6 +139,7 @@ namespace ns3 {
 		std::string m_jsonPath;
 		std::string m_p4InfoPath;
 		std::string m_flowTablePath;
+		std::string m_viewFlowTablePath;
 		unsigned int m_networkFunc;
 
 

@@ -102,12 +102,15 @@ int main (int argc, char *argv[])
   if (P4GlobalVar::g_nsType==NS4) //ns4 mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
-      P4GlobalVar::g_networkFunc=FIREWALL;
+      P4GlobalVar::g_networkFunc=COUNTER;
       P4GlobalVar::SetP4MatchTypeJsonPath();
-      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"firewall/command.txt";
-
+      P4GlobalVar::g_flowTablePath=P4GlobalVar::g_nfDir+"counter/command.txt";
+	  P4GlobalVar::g_viewFlowTablePath=P4GlobalVar::g_nfDir+"counter/view.txt";
       P4Helper bridge;
       bridge.Install (switchNode, switchDevices);
+
+	  // view switch flowtable info by controller before simulate
+	  P4GlobalVar::g_p4Controller.ViewP4SwitchFlowTableInfo(0);
     }
   else //ns3 mode
     {
@@ -148,9 +151,13 @@ int main (int argc, char *argv[])
   //NS_LOG_INFO ("Configure Tracing.");
   csma.EnablePcapAll ("p4-example", false);
   Packet::EnablePrinting ();
-
+  
   //NS_LOG_INFO ("Run Simulation.");
   Simulator::Run ();
+
+  //view switch flowtable info after simulate
+  P4GlobalVar::g_p4Controller.ViewP4SwitchFlowTableInfo(0);
+  
   Simulator::Destroy ();
   if(P4GlobalVar::g_populateFlowTableWay==RUNTIME_CLI)
     while (true) std::this_thread::sleep_for(std::chrono::seconds(100));
