@@ -51,6 +51,7 @@ unsigned const int RANGE = 4;
 //get current time (ms)
 unsigned long getTickCount(void);
 
+class P4Controller;
 class P4GlobalVar : public Object
 {
 public:

@@ -22,6 +22,7 @@ def build(bld):
     module.source = [
 	'model/p4-controller.cc',
         'model/p4-switch-interface.cc',
+	'model/p4-model.cc',
         'model/p4-net-device.cc',
         'helper/p4-helper.cc',
         'model/primitives.cpp',
@@ -47,6 +48,7 @@ def build(bld):
     headers.source = [
 	'model/p4-controller.h',
         'model/p4-switch-interface.h',
+	'model/p4-model.h',
         'model/p4-net-device.h',
         'model/p4.h',
 	'model/helper.h',

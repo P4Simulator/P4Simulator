@@ -5,6 +5,7 @@
 #include "ns3/switch-api.h"
 #include "ns3/p4-controller.h"
 #include "ns3/object.h"
+#include "ns3/p4-model.h"
 #include <vector>
 #include <string>
 #include <unordered_map>

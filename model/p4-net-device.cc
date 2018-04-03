@@ -52,10 +52,8 @@
 using namespace ns3;
 
 #define MAXSIZE 512
-//MatchKeyValue_t flowtableMatchType;
 
 NS_OBJECT_ENSURE_REGISTERED(P4NetDevice);
-NS_OBJECT_ENSURE_REGISTERED(P4Model);
 
 NS_LOG_COMPONENT_DEFINE("P4NetDevice");
 
@@ -87,33 +85,34 @@ std::string exec(const char* cmd)
 	return result;
 }
 
-void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort)
-{
-	if (!Mac48Address::IsMatchingType(bridgePort->GetAddress())) {
-		NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
-	}
-	if (!bridgePort->SupportsSendFrom()) {
-		NS_FATAL_ERROR("Device does not support SendFrom: cannot be added to bridge.");
-	}
-	if (m_address == Mac48Address()) {
-		m_address = Mac48Address::ConvertFrom(bridgePort->GetAddress());
-	}
+P4NetDevice::P4NetDevice() :
+	m_node(0), m_ifIndex(0) {
+	NS_LOG_FUNCTION_NOARGS();
+	m_channel = CreateObject<BridgeChannel>();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
+	P4SwitchInterface* p4Switch = P4GlobalVar::g_p4Controller.AddP4Switch();
 
-	m_node->RegisterProtocolHandler(
-		MakeCallback(&P4NetDevice::ReceiveFromDevice, this), 0, bridgePort,
-		true);
-	m_ports.push_back(bridgePort);
-	m_channel->AddChannel(bridgePort->GetChannel());
-}
+	p4Model = new P4Model(this);
 
-TypeId P4Model::GetTypeId(void)
-{
-	static TypeId tid = TypeId("ns3::P4Model").SetParent<Object>().SetGroupName(
-		"Network")
-		// .AddConstructor<P4Model> ()
+	p4Switch->SetP4Model(p4Model);
+	p4Switch->SetJsonPath(P4GlobalVar::g_p4JsonPath);
+	p4Switch->SetP4InfoPath(P4GlobalVar::g_p4MatchTypePath);
+	p4Switch->SetFlowTablePath(P4GlobalVar::g_flowTablePath);
+	p4Switch->SetViewFlowTablePath(P4GlobalVar::g_viewFlowTablePath);
+	p4Switch->SetNetworkFunc(P4GlobalVar::g_networkFunc);
 
-		;
-	return tid;
+	char * a3;
+	a3 = (char*)P4GlobalVar::g_p4JsonPath.data();
+	char * args[2] = { NULL,a3 };
+	p4Model->init(2, args);
+
+	//TO DO: call P4Model start_and_return_ ,start mutiple thread
+
+	//Init P4Model Flow Table
+	if (P4GlobalVar::g_populateFlowTableWay == LOCAL_CALL)
+		p4Switch->Init();
+
+	p4Switch = NULL;
+	NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 }
 
 void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
@@ -143,9 +142,10 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 
 	ns3Packet->packet->AddHeader(eeh);
 
-	struct Ns3PacketAndPort* egressPacketAndPort = p4Model->ReceivePacket(ns3Packet);
+	//TO DO: call P4Model receive packet, no return value, have to modify
+	p4Model->ReceivePacket(ns3Packet,protocol,destination);
 
-	if (egressPacketAndPort) {
+	/*if (egressPacketAndPort) {
 		egressPacketAndPort->packet->RemoveHeader(eeh);
 		int egressPortNum = egressPacketAndPort->portNum;
 		// judge whether packet drop
@@ -158,7 +158,47 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 			std::cout << "Drop Packet!!!(511)\n";
 	}
 	else
+		std::cout << "Null Packet!\n";*/
+}
+
+void P4NetDevice::SendNs3Packet(Ns3PacketAndPort *ns3Packet, uint16_t protocol, Address const &destination)
+{
+	if (ns3Packet) {
+
+		EthernetHeader eeh;
+		ns3Packet->packet->RemoveHeader(eeh);
+		int egressPortNum = ns3Packet->portNum;
+		// judge whether packet drop
+		if (egressPortNum != 511) {
+			NS_LOG_LOGIC("EgressPortNum: " << egressPortNum);
+			Ptr<NetDevice> outNetDevice = GetBridgePort(egressPortNum);
+			outNetDevice->Send(ns3Packet->packet->Copy(), destination, protocol);
+		}
+		else
+			std::cout << "Drop Packet!!!(511)\n";
+
+	}
+	else
 		std::cout << "Null Packet!\n";
+}
+
+void P4NetDevice::AddBridgePort(Ptr<NetDevice> bridgePort)
+{
+	if (!Mac48Address::IsMatchingType(bridgePort->GetAddress())) {
+		NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
+	}
+	if (!bridgePort->SupportsSendFrom()) {
+		NS_FATAL_ERROR("Device does not support SendFrom: cannot be added to bridge.");
+	}
+	if (m_address == Mac48Address()) {
+		m_address = Mac48Address::ConvertFrom(bridgePort->GetAddress());
+	}
+
+	m_node->RegisterProtocolHandler(
+		MakeCallback(&P4NetDevice::ReceiveFromDevice, this), 0, bridgePort,
+		true);
+	m_ports.push_back(bridgePort);
+	m_channel->AddChannel(bridgePort->GetChannel());
 }
 
 int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
@@ -168,35 +208,6 @@ int P4NetDevice::GetPortNumber(Ptr<NetDevice> port) {
 			return i;
 	}
 	return -1;
-}
-
-
-P4NetDevice::P4NetDevice() :
-	m_node(0), m_ifIndex(0) {
-	NS_LOG_FUNCTION_NOARGS();
-	m_channel = CreateObject<BridgeChannel>();// Use BridgeChannel for prototype. Will develop P4 Channel in the future.
-	P4SwitchInterface* p4Switch=P4GlobalVar::g_p4Controller.AddP4Switch();
-
-	p4Model = new P4Model;
-	
-	p4Switch->SetP4Model(p4Model);
-	p4Switch->SetJsonPath(P4GlobalVar::g_p4JsonPath);
-	p4Switch->SetP4InfoPath(P4GlobalVar::g_p4MatchTypePath);
-	p4Switch->SetFlowTablePath(P4GlobalVar::g_flowTablePath);
-	p4Switch->SetViewFlowTablePath(P4GlobalVar::g_viewFlowTablePath);
-	p4Switch->SetNetworkFunc(P4GlobalVar::g_networkFunc);
-
-	char * a3;
-	a3 = (char*)P4GlobalVar::g_p4JsonPath.data();
-	char * args[2] = { NULL,a3 };
-	p4Model->init(2, args);
-	
-	//Init P4Model Flow Table
-	if(P4GlobalVar::g_populateFlowTableWay == LOCAL_CALL)
-		p4Switch->Init();
-	
-	p4Switch=NULL;
-	NS_LOG_LOGIC("A P4 Netdevice was initialized.");
 }
 
 uint32_t
@@ -213,7 +224,7 @@ P4NetDevice::GetBridgePort(uint32_t n) const {
 }
 
 P4NetDevice::~P4NetDevice() {
-	if(p4Model!=NULL)
+	if (p4Model != NULL)
 		delete p4Model;
 	NS_LOG_FUNCTION_NOARGS();
 }
@@ -229,7 +240,6 @@ P4NetDevice::DoDispose() {
 	m_node = 0;
 	NetDevice::DoDispose();
 }
-
 
 void
 P4NetDevice::SetIfIndex(const uint32_t index) {
@@ -396,174 +406,6 @@ Address P4NetDevice::GetMulticast(Ipv6Address addr) const {
 }
 
 
-using bm::McSimplePre;
-extern int import_primitives();
-
-P4Model::P4Model() :
-	m_pre(new bm::McSimplePre()) {
-
-	add_component<bm::McSimplePre>(m_pre);
-
-	m_argParser = new bm::TargetParserBasic();
-	add_required_field("standard_metadata", "ingress_port");
-	add_required_field("standard_metadata", "packet_length");
-	add_required_field("standard_metadata", "instance_type");
-	add_required_field("standard_metadata", "egress_spec");
-	add_required_field("standard_metadata", "clone_spec");
-	add_required_field("standard_metadata", "egress_port");
-
-	force_arith_field("standard_metadata", "ingress_port");
-	force_arith_field("standard_metadata", "packet_length");
-	force_arith_field("standard_metadata", "instance_type");
-	force_arith_field("standard_metadata", "egress_spec");
-	force_arith_field("standard_metadata", "clone_spec");
-
-	force_arith_field("queueing_metadata", "enq_timestamp");
-	force_arith_field("queueing_metadata", "enq_qdepth");
-	force_arith_field("queueing_metadata", "deq_timedelta");
-	force_arith_field("queueing_metadata", "deq_qdepth");
-
-	force_arith_field("intrinsic_metadata", "ingress_global_timestamp");
-	force_arith_field("intrinsic_metadata", "lf_field_list");
-	force_arith_field("intrinsic_metadata", "mcast_grp");
-	force_arith_field("intrinsic_metadata", "resubmit_flag");
-	force_arith_field("intrinsic_metadata", "egress_rid");
-	force_arith_field("intrinsic_metadata", "recirculate_flag");
-
-	import_primitives();
-}
 
 
-int P4Model::init(int argc, char *argv[]) {
-
-	NS_LOG_FUNCTION(this);
-	using ::sswitch_runtime::SimpleSwitchIf;
-	using ::sswitch_runtime::SimpleSwitchProcessor;
-
-	// use local call to populate flowtable
-	if (P4GlobalVar::g_populateFlowTableWay == LOCAL_CALL)
-	{
-		this->InitFromCommandLineOptionsLocal(argc, argv, m_argParser);
-	}
-	else
-	{
-		// start thrift server , use runtime_CLI populate flowtable
-		if (P4GlobalVar::g_populateFlowTableWay == RUNTIME_CLI)
-		{
-			this->init_from_command_line_options(argc, argv, m_argParser);
-			int thriftPort = this->get_runtime_port();
-			bm_runtime::start_server(this, thriftPort);
-			NS_LOG_LOGIC("Wait " << P4GlobalVar::g_runtimeCliTime << " seconds for RuntimeCLI operations ");
-			std::this_thread::sleep_for(std::chrono::seconds(P4GlobalVar::g_runtimeCliTime));
-			//bm_runtime::add_service<SimpleSwitchIf, SimpleSwitchProcessor>("simple_switch", sswitch_runtime::get_handler(this));
-		}
-	}
-	return 0;
-}
-
-int P4Model::InitFromCommandLineOptionsLocal(int argc, char *argv[], bm::TargetParserBasic *tp)
-{
-
-
-	NS_LOG_FUNCTION(this);
-	bm::OptionsParser parser;
-	parser.parse(argc, argv, tp);
-	//NS_LOG_LOGIC("parse pass");
-	std::shared_ptr<bm::TransportIface> transport = nullptr;
-	int status = 0;
-	if (transport == nullptr)
-	{
-#ifdef BMNANOMSG_ON
-		//notifications_addr = parser.notifications_addr;
-		transport = std::shared_ptr<bm::TransportIface>(
-			TransportIface::make_nanomsg(parser.notifications_addr));
-#else
-		//notifications_addr = "";
-		transport = std::shared_ptr<bm::TransportIface>(bm::TransportIface::make_dummy());
-#endif
-	}
-	if (parser.no_p4)
-		status = init_objects_empty(parser.device_id, transport);
-	else
-		// load p4 json to switch
-		status = init_objects(parser.config_file_path, parser.device_id, transport);
-	return status;
-}
-
-
-struct Ns3PacketAndPort * P4Model::ReceivePacket(
-	struct Ns3PacketAndPort *ns3Packet) {
-	NS_LOG_FUNCTION(this);
-	struct Bm2PacketAndPort * bm2Packet = Ns3ToBmv2(ns3Packet);
-	std::unique_ptr<bm::Packet> packet = std::move(bm2Packet->packet);
-
-	if (packet) {
-		int portNum = bm2Packet->portNum;
-		int len = packet.get()->get_data_size();
-		packet.get()->set_ingress_port(portNum);
-		bm::PHV *phv = packet.get()->get_phv();
-		phv->reset_metadata();
-		phv->get_field("standard_metadata.ingress_port").set(portNum);
-		phv->get_field("standard_metadata.packet_length").set(len);
-
-		if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
-			phv->get_field("intrinsic_metadata.ingress_global_timestamp").set(0);
-		}
-
-		// Ingress
-		bm::Parser *parser = this->get_parser("parser");
-		bm::Pipeline *ingressMau = this->get_pipeline("ingress");
-		phv = packet.get()->get_phv();
-
-		parser->parse(packet.get());
-
-		ingressMau->apply(packet.get());
-
-		packet->reset_exit();
-
-		bm::Field &fEgressSpec = phv->get_field("standard_metadata.egress_spec");
-		int egressPort = fEgressSpec.get_int();
-
-		// Egress
-		bm::Deparser *deparser = this->get_deparser("deparser");
-		bm::Pipeline *egressMau = this->get_pipeline("egress");
-		fEgressSpec = phv->get_field("standard_metadata.egress_spec");
-		fEgressSpec.set(0);
-		egressMau->apply(packet.get());
-		deparser->deparse(packet.get());
-
-		// Build return value
-		struct Bm2PacketAndPort* outPacket = new struct Bm2PacketAndPort;
-		outPacket->packet = std::move(packet);
-		outPacket->portNum = egressPort;
-		return Bmv2ToNs3(outPacket);
-	}
-	return NULL;
-}
-
-struct Ns3PacketAndPort * P4Model::Bmv2ToNs3(
-	struct Bm2PacketAndPort *bm2Packet) {
-	struct Ns3PacketAndPort * ret = new struct Ns3PacketAndPort;
-	void *buffer = bm2Packet->packet.get()->data();
-	size_t length = bm2Packet->packet.get()->get_data_size();
-	ret->packet = new ns3::Packet((uint8_t*)buffer, length);
-	ret->portNum = bm2Packet->portNum;
-	return ret;
-}
-
-struct Bm2PacketAndPort * P4Model::Ns3ToBmv2(
-	struct Ns3PacketAndPort *ns3Packet) {
-	int length = ns3Packet->packet->GetSize();
-	uint8_t* buffer = new uint8_t[length];
-	struct Bm2PacketAndPort* ret = new struct Bm2PacketAndPort;
-
-	int portNum = ns3Packet->portNum;
-	if (ns3Packet->packet->CopyData(buffer, length)) {
-		std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(portNum, m_pktID++,
-			length, bm::PacketBuffer(2048, (char*)buffer, length));
-		ret->packet = std::move(packet_);
-	}
-	ret->portNum = portNum;
-	return ret;
-}
 
