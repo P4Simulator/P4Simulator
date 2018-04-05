@@ -41,45 +41,52 @@ namespace ns3 {
       currentTime = timeSecond * 1000 + timeMilsec;
     #endif
     return currentTime;
-  } 
+  }
   void P4GlobalVar::SetP4MatchTypeJsonPath()
   {
-    if(P4GlobalVar::g_networkFunc==FIREWALL)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"firewall/firewall.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "firewall/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==SILKROAD)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"silkroad/silkroad.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "silkroad/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==ROUTER)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"router/router.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "router/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==SIMPLE_ROUTER)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"simple_router/simple_router.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "simple_router/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==COUNTER)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"counter/counter.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "counter/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==METER)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"meter/meter.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "meter/mtype.txt";
-       }
-    if(P4GlobalVar::g_networkFunc==REGISTER)
-       {
-          P4GlobalVar::g_p4JsonPath=P4GlobalVar::g_nfDir+"register/register.json";
-          P4GlobalVar::g_p4MatchTypePath=P4GlobalVar::g_nfDir + "register/mtype.txt";
-       }
-  }
+	switch (P4GlobalVar::g_networkFunc)
+	{
+	case FIREWALL: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "firewall/firewall.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "firewall/mtype.txt";
+		break;
+	}
+	case SILKROAD: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "silkroad/silkroad.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "silkroad/mtype.txt";
+		break;
+	}
+	case ROUTER: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "router/router.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "router/mtype.txt";
+		break;
+	}
+	case SIMPLE_ROUTER: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "simple_router/simple_router.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "simple_router/mtype.txt";
+		break;
+	}
+	case COUNTER: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "counter/counter.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "counter/mtype.txt";
+		break;
+	}
+	case METER: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "meter/meter.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "meter/mtype.txt";
+		break;
+	}
+	case REGISTER: {
+		P4GlobalVar::g_p4JsonPath = P4GlobalVar::g_nfDir + "register/register.json";
+		P4GlobalVar::g_p4MatchTypePath = P4GlobalVar::g_nfDir + "register/mtype.txt";
+		break;
+	}
+	default: {
+		std::cerr << "NETWORK_FUNCTION_NO_EXIST!!!" << std::endl;
+		break;
+	}
+	}
+  } 
 
   void P4GlobalVar::InitNfStrUintMap()
   {

@@ -78,26 +78,25 @@ int main(int argc, char *argv[])
 	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
 	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
 	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
-	P4GlobalVar::g_nsType = NS3;
+	P4GlobalVar::g_nsType = NS4;
 	P4GlobalVar::g_runtimeCliTime=10;
         SwitchApi::InitApiMap();
 	P4GlobalVar::InitNfStrUintMap();
 
-	int podNum =4;
+	int podNum = 2;
 	int toBuild=1;  // whether build flow table entired by program
 	int application=0;   //application type (0 onOff Sink)
 	
 	// start debug module
 	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("BridgeNetDevice",LOG_LEVEL_LOGIC);
-	//LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
-	//LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
+	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
+	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
+	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
+	LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
 	
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
-	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo.txt";
+	std::string topoPath = P4GlobalVar::g_topoDir + "binary-tree.txt";
 	NS_LOG_LOGIC(topoPath);
 	std::string topoInput(topoPath);
         
@@ -115,9 +114,9 @@ int main(int argc, char *argv[])
 	/*
 	You can build network topo by program or handwork, we use handwork to build topo to test topology reader program.
 	*/
-	FattreeTopoHelper treeTopo(podNum,topoPath);
+	//FattreeTopoHelper treeTopo(podNum,topoPath);
 	//BinaryTreeTopoHelper treeTopo(podNum,topoPath);
-	treeTopo.Write();
+	//treeTopo.Write();
         
 	// read topo
 	P4TopologyReaderHelper p4TopoHelp;
@@ -233,7 +232,8 @@ int main(int argc, char *argv[])
 	for (unsigned int i = 0; i < hostNum; i++)
 	{
 		hostNodes[i].hostIpv4 = ipv4.Assign(hostNodes[i].hostDevice);
-		//ipv4.NewNetwork();
+		if(i==1)
+			ipv4.NewNetwork();
 		hostNodes[i].hostIpv4Str = Uint32ipToHex(hostNodes[i].hostIpv4.GetAddress(0).Get());
 		std::cout<<i<<" "<<hostNodes[i].hostIpv4Str<<std::endl;
 	}
