@@ -147,10 +147,15 @@ void ShowSwitchInfo(SwitchInfo_t& s)
 	}
 }*/
 
-typedef std::unordered_map<unsigned long, unsigned int>::iterator TupleIter_t;
+typedef std::unordered_map<uint64_t, uint32_t>::iterator TupleIter_t;
 void ShowSwitchInfos(Ptr<Node> s)
 {
 	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+	std::cout<<"Receive Tuple Packet Num (TupleHash Num):"<<std::endl;
+        for(TupleIter_t iter=s->m_tupleNum.begin();iter!=s->m_tupleNum.end();iter++)
+	{
+		std::cout<<iter->first<<" "<<iter->second<<std::endl;
+	}
 }
 // Main function
 //
@@ -205,9 +210,9 @@ main(int argc, char *argv[])
 	//
 	
 	int port = 9;
-	unsigned int packetSize = 1024;		// 1024 bytes
+	unsigned int packetSize = 3;		// 1024 bytes
 	double interval = 1; // send packet interval time (s)
-	unsigned maxPackets=10; // send packet max number
+	unsigned maxPackets=1; // send packet max number
 
 	//char dataRate_OnOff[] = "1Mbps";
 	//unsigned int maxBytes = packetSize;		// unlimited
