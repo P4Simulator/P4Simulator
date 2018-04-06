@@ -839,7 +839,7 @@ namespace ns3 {
 	{
 		ReadP4Info();
 		PopulateFlowTable();
-		ViewFlowtableEntryNum();
+		//ViewFlowtableEntryNum();
 	}
 }
 

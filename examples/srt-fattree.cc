@@ -58,7 +58,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE("p4-example");
+NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 unsigned long getTickCount(void)
 {
@@ -125,7 +125,7 @@ int
 main(int argc, char *argv[])
 {
 	unsigned long start = getTickCount();
-	//LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("BridgeNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("CsmaNetDevice",LOG_LEVEL_LOGIC);
@@ -158,14 +158,14 @@ main(int argc, char *argv[])
 
 	int port = 9;
 	unsigned int packetSize = 3;		// send packet data size (byte)
-	double interval = 1; // send packet interval time (s)
+	double interval = 1; // send packet interval time (ms)
 	unsigned maxPackets = 2; // send packet max number
 
 
 	// Initialize parameters for Csma and PointToPoint protocol
 	//
 	char dataRate[] = "1000Mbps";	// 1Gbps
-	int delay = 0.001;		// 0.001 (ms)
+	double delay = 0.001;		// 0.001 (ms)
 
 	// Initalize parameters for UdpEcho Client/Server Appilication 
 	//
@@ -265,7 +265,7 @@ main(int argc, char *argv[])
 		//install client app
 		UdpEchoClientHelper echoClient(dstIp, port);
 		echoClient.SetAttribute("MaxPackets", UintegerValue(maxPackets));
-		echoClient.SetAttribute("Interval", TimeValue(Seconds(interval)));
+		echoClient.SetAttribute("Interval", TimeValue(MilliSeconds(interval)));
 		echoClient.SetAttribute("PacketSize", UintegerValue(packetSize));
 		app[client_i] = echoClient.Install(host[p][q].Get(t));
 	}

@@ -121,12 +121,16 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 	PacketType packetType)
 {
 	NS_LOG_FUNCTION(this);
-	//view received packet real content
+	
+	//************view received packet real content******************************
+	/*
 	int pkgSize = packetIn->GetSize();
 	NS_LOG_LOGIC("received packet_in size:" << pkgSize);
 	packetIn->EnablePrinting();
 	packetIn->Print(std::cout);
 	std::cout << std::endl;
+	*/
+	//**************************************************************************
 
 	Mac48Address src48 = Mac48Address::ConvertFrom(source);
 	Mac48Address dst48 = Mac48Address::ConvertFrom(destination);
