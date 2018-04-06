@@ -1,19 +1,3 @@
-/*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation;
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* Authors: Linh Vu <linhvnl89@gmail.com>, Daji Wong <wong0204@e.ntu.edu.sg>
-*/
 
 #include <iostream>
 #include <fstream>
@@ -35,48 +19,46 @@
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/csma-module.h"
 #include "ns3/ipv4-nix-vector-helper.h"
-//#include "ns3/random-variable.h"
+
 
 /*
-- This work goes along with the paper "Towards Reproducible Performance Studies of Datacenter Network Architectures Using An Open-Source Simulation Approach"
 - The code is constructed in the following order:
 1. Creation of Node Containers
-2. Initialize settings for On/Off Application
+2. Initialize settings for UdpEcho Client/Server Application
 3. Connect hosts to edge switches
 4. Connect edge switches to aggregate switches
 5. Connect aggregate switches to core switches
 6. Start Simulation
+
 - Addressing scheme:
-1. Address of host: 10.pod.switch.0 /24
-2. Address of edge and aggregation switch: 10.pod.switch.0 /16
-3. Address of core switch: 10.(group number + k).switch.0 /8
+1. Address of host: 10.pod.edge.0 /24
+2. Address of edge and aggregation switch: 10.pod.(agg + pod/2).0 /24
+3. Address of core switch: 10.(group + pod).core.0 /24
 (Note: there are k/2 group of core switch)
-- On/Off Traffic of the simulation: addresses of client and server are randomly selected everytime
+
+- Application Setting:
+- PacketSize: (Send packet data size (byte))
+- Interval: (Send packet interval time (s))
+- MaxPackets: (Send packet max number)
+
+- Channel Setting:
+- DataRate: (Gbps)
+- Delay: (ms)
 
 - Simulation Settings:
 - Number of pods (k): 4-24 (run the simulation with varying values of k)
-- Number of nodes: 16-3456
+- Number of hosts: 16-3456
+- UdpEchoClient/Server Communication Pairs: 
+  [k] client connect with [hostNum-k-1] server (k from 0 to halfHostNum-1)
 - Simulation running time: 100 seconds
-- Packet size: 1024 bytes
-- Data rate for packet sending: 1 Mbps
-- Data rate for device channel: 1000 Mbps
-- Delay time for device: 0.001 ms
-- Communication pairs selection: Random Selection with uniform probability
-- Traffic flow pattern: Exponential random traffic
+- Traffic flow pattern: 
 - Routing protocol: Nix-Vector
-- Statistics Output:
-- Flowmonitor XML output file: Fat-tree.xml is located in the /statistics folder
-
 */
+
 
 using namespace ns3;
 
-
 NS_LOG_COMPONENT_DEFINE("p4-example");
-
-static void SinkRx(Ptr<const Packet> p, const Address &ad) {
-	std::cout << "Rx" << "Received from  " << ad << std::endl;
-}
 
 unsigned long getTickCount(void)
 {
@@ -106,7 +88,6 @@ char * toString(int a, int b, int c, int d) {
 
 	char *address = new char[30];
 	char firstOctet[30], secondOctet[30], thirdOctet[30], fourthOctet[30];
-	//address = firstOctet.secondOctet.thirdOctet.fourthOctet;
 
 	bzero(address, 30);
 
@@ -126,46 +107,25 @@ char * toString(int a, int b, int c, int d) {
 	return address;
 }
 
-/*struct SwitchInfo_t
-{
-public:
-	SwitchInfo_t()
-		:packetNum(0)
-	{}
-	unsigned long packetNum;
-	std::unordered_map<unsigned long, unsigned int> tupleNum;
-};
-typedef std::unordered_map<unsigned long, unsigned int>::iterator TupleIter_t;
-
-void ShowSwitchInfo(SwitchInfo_t& s)
-{
-	std::cout << "Packet Num:" << s.packetNum << std::endl;
-	std::cout << "Packet Tuple Num:(format tupleHash packetNum)" << std::endl;
-	for (TupleIter_t iter = s.tupleNum.begin(); iter != s.tupleNum.end(); iter++)
-	{
-		std::cout << iter->first << iter->second << std::endl;
-	}
-}*/
-
 typedef std::unordered_map<uint64_t, uint32_t>::iterator TupleIter_t;
+
+//Output switch received packet info
+//
 void ShowSwitchInfos(Ptr<Node> s)
 {
 	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
-	std::cout<<"Receive Tuple Packet Num (TupleHash Num):"<<std::endl;
-        for(TupleIter_t iter=s->m_tupleNum.begin();iter!=s->m_tupleNum.end();iter++)
+	std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
+	for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
 	{
-		std::cout<<iter->first<<" "<<iter->second<<std::endl;
+		std::cout << iter->first << " " << iter->second << std::endl;
 	}
 }
-// Main function
-//
+
 int
 main(int argc, char *argv[])
 {
 	unsigned long start = getTickCount();
 	//LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("P4Helper", LOG_LEVEL_LOGIC);
-	// LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("BridgeNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("CsmaNetDevice",LOG_LEVEL_LOGIC);
@@ -186,45 +146,37 @@ main(int argc, char *argv[])
 	int num_group = k / 2;		// number of group of core switches
 	int num_core = (k / 2);		// number of core switch in a group
 	int total_host = k*k*k / 4;	// number of hosts in the entire network	
-								//char filename [] = "Fat-tree.xml";// filename for Flow Monitor xml output file
-
-								// Define variables for On/Off Application
-								// These values will be used to serve the purpose that addresses of server and client are selected randomly
-								// Note: the format of host's address is 10.pod.switch.(host+2)
-								//
-								//int podRand = 0;	//	
-								//int swRand = 0;		// Random values for servers' address
-								//int hostRand = 0;	//
-
-								//int rand1 =0;		//
-								//int rand2 =0;		// Random values for clients' address	
-								//int rand3 =0;		//
-
-								// Initialize other variables
-								//
+								
+	// Initialize other variables
+        //
 	int i = 0;
 	int j = 0;
 	int h = 0;
 
-	// Initialize parameters for On/Off application
+	// Initialize parameters for UdpEcho Client/Server application
 	//
-	
+
 	int port = 9;
-	unsigned int packetSize = 3;		// 1024 bytes
+	unsigned int packetSize = 3;		// send packet data size (byte)
 	double interval = 1; // send packet interval time (s)
-	unsigned maxPackets=1; // send packet max number
+	unsigned maxPackets = 2; // send packet max number
 
-	//char dataRate_OnOff[] = "1Mbps";
-	//unsigned int maxBytes = packetSize;		// unlimited
 
-											// Initialize parameters for Csma and PointToPoint protocol
-											//
+	// Initialize parameters for Csma and PointToPoint protocol
+	//
 	char dataRate[] = "1000Mbps";	// 1Gbps
-	int delay = 0.001;		// 0.001 ms
+	int delay = 0.001;		// 0.001 (ms)
+
+	// Initalize parameters for UdpEcho Client/Server Appilication 
+	//
+	int clientStartTime = 1; // UdpEchoClient Start Time (s)
+	int clientStopTime = 100;
+	int serverStartTime = 0; // UdpEchoServer Start Time (s)
+	int serverStopTime = 101;
 
 
-							// Output some useful information
-							//	
+	// Output some useful information
+	//	
 	std::cout << "Value of k =  " << k << "\n";
 	std::cout << "Total number of hosts =  " << total_host << "\n";
 	std::cout << "Number of hosts under each switch =  " << num_host << "\n";
@@ -271,7 +223,9 @@ main(int argc, char *argv[])
 		}
 	}
 
-	//=========== Initialize settings for On/Off Application ===========//
+	std::cout << "Finished creating Node Containers" << "\n";
+
+	//=========== Initialize settings for UdpEcho Client/Server Application ===========//
 	//
 
 	// Generate traffics for the simulation
@@ -287,28 +241,26 @@ main(int argc, char *argv[])
 	for (int client_i = 0; client_i < half_host_num; client_i++)
 	{
 		int server_i = total_host - client_i - 1;
-		
+
 		int s_p, s_q, s_t;
 		s_p = server_i / (num_edge*num_host);
 		s_q = (server_i - s_p*num_edge*num_host) / num_host;
 		s_t = server_i%num_host;
-		
+
 		int p, q, t;
 		p = client_i / (num_edge*num_host);
 		q = (client_i - p*num_edge*num_host) / num_host;
 		t = client_i%num_host;
-		
+
 		//specify dst ip (server ip)
 		addr = toString(10, s_p, s_q, s_t + 2);
-		//InetSocketAddress dst = InetSocketAddress(Ipv4Address(addr));
 		Ipv4Address dstIp = Ipv4Address(addr);
 
 		//install server app
 		UdpEchoServerHelper echoServer(port);
 		ApplicationContainer serverApp = echoServer.Install(host[s_p][s_q].Get(s_t));
-		serverApp.Start(Seconds(0.0));
-		serverApp.Stop(Seconds(101.0));
-
+		serverApp.Start(Seconds(serverStartTime));
+		serverApp.Stop(Seconds(serverStopTime));
 
 		//install client app
 		UdpEchoClientHelper echoClient(dstIp, port);
@@ -320,42 +272,6 @@ main(int argc, char *argv[])
 
 	std::cout << "Finished creating UdpEchoClient/UdpEchoServer traffic" << "\n";
 
-	/*char *addr;
-	//add = toString(10, 0, 0, 2);
-	int half_host_num = total_host / 2;
-	half_host_num = 1;
-	for (int client_i = 0; client_i < half_host_num; client_i++)
-	{
-		int server_i = total_host - client_i - 1;
-		int s_p, s_q, s_t;
-		s_p = server_i / (num_edge*num_host);
-		s_q = (server_i - s_p*num_edge*num_host) / num_host;
-		s_t = server_i%num_host;
-		//std::cout<<client_i<<" "<<server_i<<std::endl;
-		//std::cout<<s_p<<" "<<s_q<<" "<<s_t<<std::endl;
-		int p, q, t;
-		p = client_i / (num_edge*num_host);
-		q = (client_i - p*num_edge*num_host) / num_host;
-		t = client_i%num_host;
-		//std::cout<<p<<" "<<q<<" "<<t<<std::endl;
-		addr = toString(10, s_p, s_q, s_t + 2);
-		//OnOffHelper oo = OnOffHelper("ns3::TcpSocketFactory", Address(InetSocketAddress(Ipv4Address(addr), port))); // ip address of server
-		InetSocketAddress dst = InetSocketAddress(Ipv4Address(addr));
-		OnOffHelper oo = OnOffHelper("ns3::TcpSocketFactory", dst); // ip address of server
-		oo.SetAttribute("PacketSize", UintegerValue(packetSize));
-		oo.SetAttribute("DataRate", StringValue(dataRate_OnOff));
-		oo.SetAttribute("MaxBytes", UintegerValue(maxBytes));
-		NodeContainer onoff;
-		onoff.Add(host[p][q].Get(t));
-		app[client_i] = oo.Install(onoff);
-
-		PacketSinkHelper sink = PacketSinkHelper("ns3::TcpSocketFactory", dst);
-		ApplicationContainer sinkApp = sink.Install(host[s_p][s_q].Get(s_t));
-		sinkApp.Start(Seconds(0.0));
-		sinkApp.Stop(Seconds(101.0));
-	}
-
-	std::cout << "Finished creating On/Off traffic" << "\n";*/
 
 	// Inintialize Address Helper
 	//	
@@ -381,11 +297,11 @@ main(int argc, char *argv[])
 
 	for (i = 0; i<num_pod; i++) {
 		for (j = 0; j<num_bridge; j++) {
-			//NetDeviceContainer link1 = csma.Install(NodeContainer(edge[i].Get(j), bridge[i].Get(j)));
-			std::vector<Ptr<CsmaNetDevice>> link3 = csma.InstallSelf(NodeContainer(edge[i].Get(j), bridge[i].Get(j)));
-			NetDeviceContainer link1;
-			link1.Add(link3[0]);
-			link1.Add(link3[1]);
+			NetDeviceContainer link1 = csma.Install(NodeContainer(edge[i].Get(j), bridge[i].Get(j)));
+			//std::vector<Ptr<CsmaNetDevice>> link3 = csma.InstallSelf(NodeContainer(edge[i].Get(j), bridge[i].Get(j)));
+			//NetDeviceContainer link1;
+			//link1.Add(link3[0]);
+			//link1.Add(link3[1]);
 			hostSw[i][j].Add(link1.Get(0));
 			bridgeDevices[i][j].Add(link1.Get(1));
 
@@ -461,67 +377,52 @@ main(int argc, char *argv[])
 	}
 	std::cout << "Finished connecting core switches and aggregation switches  " << "\n";
 	std::cout << "------------- " << "\n";
-        /*
-	//=========== Show  Switch Received Packet Num ===========//
-	//
-	//SwitchInfo_t coreSwitchInfos[num_group][num_core];
 	
-	for (i = 0; i < num_group; i++)
-	{
-		for (j = 0; j < num_core; j++)
-		{
-			ShowSwitchInfos(core[i].Get(j));
-		}
-	}
-	*/
-
 
 	//=========== Start the simulation ===========//
 	//
 
 	std::cout << "Start Simulation.. " << "\n";
-	
 
 	for (i = 0; i<total_host; i++) {
-		app[i].Start(Seconds(1.0));
-		app[i].Stop(Seconds(100.0));
+		app[i].Start(Seconds(clientStartTime));
+		app[i].Stop(Seconds(clientStopTime));
 	}
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
 	// Calculate Throughput using Flowmonitor
 	//
-	//	FlowMonitorHelper flowmon;
-	//	Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+	//  FlowMonitorHelper flowmon;
+	//  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
 	// Run simulation.
 	//
 	unsigned long simulate_start = getTickCount();
 	NS_LOG_INFO("Run Simulation.");
-	Simulator::Stop(Seconds(102.0));
-	Config::ConnectWithoutContext("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
-		MakeCallback(&SinkRx));
+	Simulator::Stop(Seconds(serverStopTime+1));
 	Packet::EnablePrinting();
 
 	Simulator::Run();
 
-	//  	monitor->CheckForLostPackets ();
+	//  monitor->CheckForLostPackets ();
 	//	monitor->SerializeToXmlFile(filename, true, true);
 
 	std::cout << "Simulation finished " << "\n";
+
 	//=========== Show  Switch Received Packet Num ===========//
-        //
-  	
-	std::cout<<"=========== Show  Switch Received Packet Num ==========="<<std::endl; 
+	//
+
+	std::cout << "=========== Show  Switch Received Packet Num ===========" << std::endl;
 	// Show Core Switch 
-        for (i = 0; i < num_group; i++)
-        {
-                for (j = 0; j < num_core; j++)
-                {
-			std::cout<<"Core Switch [group,core] ["<<i<<","<<j<<"]:";
-                        ShowSwitchInfos(core[i].Get(j));
-                }
-        }
-	
+	for (i = 0; i < num_group; i++)
+	{
+		for (j = 0; j < num_core; j++)
+		{
+			std::cout << "Core Switch [group,core] [" << i << "," << j << "]:";
+			ShowSwitchInfos(core[i].Get(j));
+		}
+	}
+
 	// Show Agg Switch
 	for (i = 0; i < num_pod; i++)
 	{
@@ -541,11 +442,11 @@ main(int argc, char *argv[])
 			ShowSwitchInfos(edge[i].Get(j));
 		}
 	}
-	
-	std::cout<<"=========================================================="<<std::endl;
-	
+
+	std::cout << "==========================================================" << std::endl;
+
 	//=========== Show Host Received Packet Num ===========//
-        //
+	//
 	std::cout << "============= Show Host Received Packet Num ==============" << std::endl;
 	for (i = 0; i < num_pod; i++)
 	{
@@ -567,5 +468,6 @@ main(int argc, char *argv[])
 	std::cout << "Running time: " << end - start << "ms" << std::endl;
 	return 0;
 }
+
 
 
