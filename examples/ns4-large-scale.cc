@@ -1,5 +1,4 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-
 /*
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 as
@@ -44,14 +43,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("P4Example");
 
-static void SinkRx (Ptr<const Packet> p, const Address &ad) {
-    std::cout << "Rx" << "Received from  "<< ad << std::endl;
-}
-
-static void PingRtt (std::string context, Time rtt) {
-    std::cout << "Rtt" << context << " " << rtt << std::endl;
-}
-
 struct SwitchNodeC_t
 {
 	NetDeviceContainer switchDevices;
@@ -67,57 +58,98 @@ struct HostNodeC_t
 	std::string hostIpv4Str;
 };
 
+void ShowSwitchInfos(Ptr<Node> s)
+{
+	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
 
-	unsigned long mainStart=getTickCount();
+	unsigned long mainStart = getTickCount();
 
 	// init global variable 	
-	P4GlobalVar::g_homePath="/home/kphf1995cm/";
+	P4GlobalVar::g_homePath = "/home/kphf1995cm/";
 	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
-	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
+	P4GlobalVar::g_ns3SrcName = "ns-3.26/";
 	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
 	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
 	P4GlobalVar::g_nsType = NS4;
-	P4GlobalVar::g_runtimeCliTime=10;
-        SwitchApi::InitApiMap();
+	P4GlobalVar::g_runtimeCliTime = 10;
+	SwitchApi::InitApiMap();
 	P4GlobalVar::InitNfStrUintMap();
 
 	int podNum = 2;
-	int toBuild=1;  // whether build flow table entired by program
-	int application=0;   //application type (0 onOff Sink)
-	
+	int toBuild = 1;  // whether build flow table entired by program
+	// Initialize parameters for UdpEcho Client/Server application
+	//
+	int port = 9;
+	unsigned int packetSize = 20;           // send packet data size (byte)
+	double interval = 100; // send packet interval time (ms)
+	unsigned maxPackets = 100; // send packet max number
+
+
+	// Initialize parameters for Csma and PointToPoint protocol
+	//
+	char dataRate[] = "100Gbps";    // 100Gbps
+	double delay = 0.001;           // 0.001 (ms)
+
+	// Initalize parameters for UdpEcho Client/Server Appilication 
+	//
+	int clientStartTime = 1; // UdpEchoClient Start Time (s)
+	int clientStopTime = 11;
+	int serverStartTime = 0; // UdpEchoServer Start Time (s)
+	int serverStopTime = 12;
+
 	// start debug module
-	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
-	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
-	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
-	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
-	LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
-	
+	//LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("BuildFlowtableHelper", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("P4SwitchInterface", LOG_LEVEL_LOGIC);
+
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
 	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo.txt";
 	NS_LOG_LOGIC(topoPath);
 	std::string topoInput(topoPath);
-        
+
 	// define command line parse way
 	CommandLine cmd;
 	cmd.AddValue("format", "Format to use for data input [Orbis|Inet|Rocketfuel|CsmaTopo].",
 		topoFormat);
 	cmd.AddValue("model", "Select p4 model[0] or traditional bridge model[1]", P4GlobalVar::g_nsType);
 	cmd.AddValue("podnum", "Numbers of built tree topo levels", podNum);
-	cmd.AddValue("build","Build flow table entries by program[1] or not[0]",toBuild);
-	cmd.AddValue("application","Application type OnoffSink[0] UdpClientServer[1]",application);
+	cmd.AddValue("build", "Build flow table entries by program[1] or not[0]", toBuild);
+	cmd.AddValue("inter", "UdpEchoClient send packet interval time/s [default 100ms]", interval);
+	cmd.AddValue("delay", " Csma channel delay time/ms [default 0.001ms]", delay);
+	cmd.AddValue("cs", " Client application start time/s [default 1s]", clientStartTime);
+	cmd.AddValue("ce", " Client application stop time/s [default 11s]", clientStopTime);
+	cmd.AddValue("ss", " Server application start time/s [default 0s]", serverStartTime);
+	cmd.AddValue("se", " Server application stop time/s [default 12s]", serverStopTime);
 	cmd.Parse(argc, argv);
-	
+
+	maxPackets = (clientStopTime - clientStartTime) / interval * 1000;
+
+	std::cout << "------------Network Parameters Setting-----------------" << std::endl;
+	std::cout << "NS4 Simulate Mode:" << std::endl;
+	std::cout << "Pod Num: " << podNum << std::endl;
+	std::cout << "Simulate Time: " << clientStopTime - clientStartTime << " s" << std::endl;
+	std::cout << "Csma Channel DataRate: " << dataRate << std::endl;
+	std::cout << "Csma Channel Delay: " << delay << " ms" << std::endl;
+	std::cout << "Send Packet Interval: " << interval << " ms" << std::endl;
+	std::cout << "Send Packet MaxNum: " << maxPackets << std::endl;
+	std::cout << "Send Packet Data Size: " << packetSize << " byte" << std::endl;
+
+
 	// build topo
 	/*
 	You can build network topo by program or handwork, we use handwork to build topo to test topology reader program.
 	*/
-	FattreeTopoHelper treeTopo(podNum,topoPath);
+	FattreeTopoHelper treeTopo(podNum, topoPath);
 	//BinaryTreeTopoHelper treeTopo(podNum,topoPath);
 	treeTopo.Write();
-        
+
 	// read topo
 	P4TopologyReaderHelper p4TopoHelp;
 	p4TopoHelp.SetFileName(topoInput);
@@ -140,37 +172,37 @@ int main(int argc, char *argv[])
 	const unsigned int switchNum = csmaSwitch.GetN();
 
 	// get switch network function
-	std::vector<std::string> switchNetFunc=topoReader->GetSwitchNetFunc();
+	std::vector<std::string> switchNetFunc = topoReader->GetSwitchNetFunc();
 
-	NS_LOG_LOGIC("switchNum:" << switchNum<< "hostNum:" << hostNum);
+	NS_LOG_LOGIC("switchNum:" << switchNum << "hostNum:" << hostNum);
 
 	// set default network link parameter
 	CsmaHelper csma;
-	csma.SetChannelAttribute("DataRate", StringValue("1000Mbps"));
-	csma.SetChannelAttribute("Delay", TimeValue(MilliSeconds(0.01)));
+	csma.SetChannelAttribute("DataRate", StringValue(dataRate));
+	csma.SetChannelAttribute("Delay", TimeValue(MilliSeconds(delay)));
 
 	// init network link info
 	P4TopologyReader::ConstLinksIterator_t iter;
 	SwitchNodeC_t switchNodes[switchNum];
 	HostNodeC_t hostNodes[hostNum];
 	unsigned int fromIndex, toIndex;
-	std::string dataRate,delay;
+	std::string tdataRate, tdelay;
 	for (iter = topoReader->LinksBegin(); iter != topoReader->LinksEnd(); iter++)
 	{
-		if(iter->GetAttributeFailSafe("DataRate",dataRate))
-			csma.SetChannelAttribute("DataRate", StringValue(dataRate));
-		if(iter->GetAttributeFailSafe("Delay",delay))
-                        csma.SetChannelAttribute("Delay", StringValue(delay));
+		if (iter->GetAttributeFailSafe("DataRate", tdataRate))
+			csma.SetChannelAttribute("DataRate", StringValue(tdataRate));
+		if (iter->GetAttributeFailSafe("Delay", tdelay))
+			csma.SetChannelAttribute("Delay", StringValue(tdelay));
 
 		NetDeviceContainer link = csma.Install(NodeContainer(iter->GetFromNode(), iter->GetToNode()));
 		fromIndex = iter->GetFromIndex();
 		toIndex = iter->GetToIndex();
-		if (iter->GetFromType()=='s' && iter->GetToType()=='s')
+		if (iter->GetFromType() == 's' && iter->GetToType() == 's')
 		{
 			unsigned int fromSwitchPortNumber = switchNodes[fromIndex].switchDevices.GetN();
 			unsigned int toSwitchPortNumber = switchNodes[toIndex].switchDevices.GetN();
 			switchNodes[fromIndex].switchDevices.Add(link.Get(0));
-			switchNodes[fromIndex].switchPortInfos.push_back("s"+UintToString(toIndex)+"_"+UintToString(toSwitchPortNumber));
+			switchNodes[fromIndex].switchPortInfos.push_back("s" + UintToString(toIndex) + "_" + UintToString(toSwitchPortNumber));
 
 			switchNodes[toIndex].switchDevices.Add(link.Get(1));
 			switchNodes[toIndex].switchPortInfos.push_back("s" + UintToString(fromIndex) + "_" + UintToString(fromSwitchPortNumber));
@@ -181,8 +213,8 @@ int main(int argc, char *argv[])
 			{
 				unsigned int fromSwitchPortNumber = switchNodes[fromIndex].switchDevices.GetN();
 				switchNodes[fromIndex].switchDevices.Add(link.Get(0));
-				switchNodes[fromIndex].switchPortInfos.push_back("h" + UintToString(toIndex-switchNum));
-				
+				switchNodes[fromIndex].switchPortInfos.push_back("h" + UintToString(toIndex - switchNum));
+
 				hostNodes[toIndex - switchNum].hostDevice.Add(link.Get(1));
 				hostNodes[toIndex - switchNum].linkSwitchIndex = fromIndex;
 				hostNodes[toIndex - switchNum].linkSwitchPort = fromSwitchPortNumber;
@@ -208,19 +240,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// view host link info
-	for (unsigned int i = 0; i < hostNum; i++)
-		std::cout << "h" << i << ": " << hostNodes[i].linkSwitchIndex << " " << hostNodes[i].linkSwitchPort<<std::endl;
-
-	// view switch port info
-	for (unsigned int i = 0; i < switchNum; i++)
-	{
-		std::cout << "s" << i << ": ";
-		for (size_t k = 0; k < switchNodes[i].switchPortInfos.size(); k++)
-			std::cout << switchNodes[i].switchPortInfos[k] << " ";
-		std::cout << std::endl;
-	}
-
 	// add internet stack to the hosts
 	InternetStackHelper internet;
 	internet.Install(hosts);
@@ -234,34 +253,34 @@ int main(int argc, char *argv[])
 		hostNodes[i].hostIpv4 = ipv4.Assign(hostNodes[i].hostDevice);
 		//ipv4.NewNetwork();
 		hostNodes[i].hostIpv4Str = Uint32ipToHex(hostNodes[i].hostIpv4.GetAddress(0).Get());
-		std::cout<<i<<" "<<hostNodes[i].hostIpv4Str<<std::endl;
+		//std::cout << i << " " << hostNodes[i].hostIpv4Str << std::endl;
 	}
-	
+
 	//build needed parameter to build flow table entries 
 	std::vector<unsigned int> linkSwitchIndex(hostNum);
 	std::vector<unsigned int> linkSwitchPort(hostNum);
 	std::vector<std::string> hostIpv4(hostNum);
 	std::vector<std::vector<std::string>> switchPortInfo(switchNum);
-	for(unsigned int i=0;i<hostNum;i++)
+	for (unsigned int i = 0; i < hostNum; i++)
 	{
-		linkSwitchIndex[i]=hostNodes[i].linkSwitchIndex;
-		linkSwitchPort[i]=hostNodes[i].linkSwitchPort;
-		hostIpv4[i]=hostNodes[i].hostIpv4Str;
+		linkSwitchIndex[i] = hostNodes[i].linkSwitchIndex;
+		linkSwitchPort[i] = hostNodes[i].linkSwitchPort;
+		hostIpv4[i] = hostNodes[i].hostIpv4Str;
 	}
-	for(unsigned int i=0;i<switchNum;i++)
+	for (unsigned int i = 0; i < switchNum; i++)
 	{
-		switchPortInfo[i]=switchNodes[i].switchPortInfos;
+		switchPortInfo[i] = switchNodes[i].switchPortInfos;
 	}
 
 	//build flow table entries by program
-	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
+	if (toBuild == 1 && P4GlobalVar::g_nsType == NS4)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
 		//BuildFlowtableHelper flowtableHelper("fattree",podNum);
 		BuildFlowtableHelper flowtableHelper;
-		flowtableHelper.Build(linkSwitchIndex,linkSwitchPort,hostIpv4,switchPortInfo);
+		flowtableHelper.Build(linkSwitchIndex, linkSwitchPort, hostIpv4, switchPortInfo);
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
-		flowtableHelper.Show();
+		//flowtableHelper.Show();
 	}
 
 	//bridge siwtch and switch devices
@@ -277,7 +296,7 @@ int main(int argc, char *argv[])
 			P4GlobalVar::g_networkFunc = P4GlobalVar::g_nfStrUintMap[switchNetFunc[i]];
 			P4GlobalVar::SetP4MatchTypeJsonPath();
 			P4GlobalVar::g_flowTablePath = P4GlobalVar::g_flowTableDir + flowTableName;
-			bridge.Install(csmaSwitch.Get(i),switchNodes[i].switchDevices);// do what?
+			bridge.Install(csmaSwitch.Get(i), switchNodes[i].switchDevices);// do what?
 		}
 	}
 	else
@@ -290,73 +309,57 @@ int main(int argc, char *argv[])
 	}
 
 	//build application
-	Config::SetDefault("ns3::Ipv4RawSocketImpl::Protocol",StringValue("2"));
-	if(application==0) //Onoff Sink
+	Config::SetDefault("ns3::Ipv4RawSocketImpl::Protocol", StringValue("2"));
+	// Udp Echo Client Server Application
+	NS_LOG_LOGIC("Udp Echo Client Server");
+	unsigned int halfHostNum = hostNum / 2;
+	for (unsigned int i = 0; i < halfHostNum; i++)
 	{
-		NS_LOG_LOGIC("OnoffSink");
-		ApplicationContainer apps;
-		unsigned int halfHostNum=hostNum/2;
-		for(unsigned int i=0;i<halfHostNum;i++)
-		{
-			unsigned int serverI=hostNum-i-1;
-			Ipv4Address serverAddr=hostNodes[serverI].hostIpv4.GetAddress(0);
-			InetSocketAddress dst=InetSocketAddress(serverAddr);
-			
-			OnOffHelper onOff=OnOffHelper("ns3::TcpSocketFactory",dst);
-			onOff.SetAttribute("PacketSize",UintegerValue(1024));
-			onOff.SetAttribute("DataRate",StringValue("1Mbps"));
-			onOff.SetAttribute("MaxBytes",StringValue("0"));
+		unsigned int serverI = hostNum - i - 1;
+		UdpEchoServerHelper echoServer(port);
+		ApplicationContainer serverApps = echoServer.Install(hosts.Get(serverI));
+		serverApps.Start(Seconds(serverStartTime));
+		serverApps.Stop(Seconds(serverStopTime));
+		Ipv4Address serverAddr = hostNodes[serverI].hostIpv4.GetAddress(0);
 
-			apps=onOff.Install(hosts.Get(i));
-			apps.Start(Seconds(1.0));
-			apps.Stop(Seconds(100.0));
-
-			PacketSinkHelper sink=PacketSinkHelper("ns3::TcpSocketFactory",dst);
-			apps=sink.Install(hosts.Get(serverI));
-			apps.Start(Seconds(0.0));
-			apps.Stop(Seconds(101.0));
-		}
-	}
-	if(application==1) // Udp Echo Client Server Application
-	{
-		NS_LOG_LOGIC("Udp Echo Client Server");
-                unsigned int halfHostNum=hostNum/2;
-                for(unsigned int i=0;i<halfHostNum;i++)
-                {
-                        unsigned int serverI=hostNum-i-1;
-			UdpEchoServerHelper echoServer(9);
-			ApplicationContainer serverApps=echoServer.Install(hosts.Get(serverI));
-			serverApps.Start(Seconds(1.0));
-			serverApps.Stop(Seconds(10.0));			
-                        Ipv4Address serverAddr=hostNodes[serverI].hostIpv4.GetAddress(0);
-
-			UdpEchoClientHelper echoClient(serverAddr,9);
-			echoClient.SetAttribute ("MaxPackets", UintegerValue (20));
-  			echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
-  			echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-  			ApplicationContainer clientApps = echoClient.Install (hosts.Get (i));
-			clientApps.Start (Seconds (2.0));
-  			clientApps.Stop (Seconds (10.0));
-                }
-
+		UdpEchoClientHelper echoClient(serverAddr, port);
+		echoClient.SetAttribute("MaxPackets", UintegerValue(maxPackets));
+		echoClient.SetAttribute("Interval", TimeValue(MilliSeconds(interval)));
+		echoClient.SetAttribute("PacketSize", UintegerValue(packetSize));
+		ApplicationContainer clientApps = echoClient.Install(hosts.Get(i));
+		clientApps.Start(Seconds(clientStartTime));
+		clientApps.Stop(Seconds(clientStopTime));
 	}
 
-	csma.EnablePcapAll ("p4-example", false);
-	Config::ConnectWithoutContext("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
-		MakeCallback(&SinkRx));
-	Config::Connect("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt",
-		MakeCallback(&PingRtt));
-  	Packet::EnablePrinting ();
+	csma.EnablePcapAll("p4-example", false);
+	Packet::EnablePrinting();
 
-	unsigned long simulateStart=getTickCount();        
-	Simulator::Run ();
-  	Simulator::Destroy ();
+	unsigned long simulateStart = getTickCount();
+	std::cout << "-----------------Start Simulation-------------------- " << "\n";
+	Simulator::Stop(Seconds(serverStopTime + 1));
+
+	Simulator::Run();
+	std::cout << "=========== Show  Switch Received Packet Num ===========" << std::endl;
+	for (unsigned int i=0;i<switchNum;i++)
+	{
+		std::cout << "Switch " << i << ":";
+		ShowSwitchInfos(csmaSwitch.Get(i));
+	}
+	std::cout << "============= Show Host Received Packet Num ==============" << std::endl;
+	for (unsigned int i = 0; i < hostNum; i++)
+	{
+		std::cout << "Host " << i << ":";
+		ShowSwitchInfos(hosts.Get(i));
+	}
+
+	Simulator::Destroy();
 	//NS_LOG_INFO("Done.");
-	unsigned long end=getTickCount();
+	unsigned long end = getTickCount();
 
 	std::cout << "Host Num: " << hostNum << " Switch Num: " << switchNum << std::endl;
-	std::cout << "Program Running time: " << end - mainStart<<"ms" << std::endl;
-	std::cout << "Simulate Running time: " << end - simulateStart<<"ms" << std::endl;
-	//return 0;
+	std::cout << "Simulate Running time: " << end - simulateStart << "ms" << std::endl;
+	std::cout << "Running time: " << end - mainStart << "ms" << std::endl;
+	return 0;
 }
+
 

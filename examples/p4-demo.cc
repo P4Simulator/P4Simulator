@@ -58,6 +58,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("P4Example");
 
+void ShowSwitchInfos(Ptr<Node> s)
+{
+	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+}
+
 int main (int argc, char *argv[]) 
 {
 
@@ -154,6 +159,18 @@ int main (int argc, char *argv[])
   
   //NS_LOG_INFO ("Run Simulation.");
   Simulator::Run ();
+
+  //********************Show Node Received Packet*******************************
+  std::cout << "=========== Show  Switch Received Packet Num ===========" << std::endl;
+  std::cout << "Switch " << 0 << ":";
+  ShowSwitchInfos(csmaSwitch.Get(0));
+  std::cout << "============= Show Host Received Packet Num ==============" << std::endl;
+  for(int i=0;i<4;i++)
+  {
+    std::cout<<"Host "<<i<<":";
+    ShowSwitchInfos(terminals.Get(i));
+  }
+  //****************************************************************************
 
   //view switch flowtable info after simulate
   P4GlobalVar::g_p4Controller.ViewP4SwitchFlowTableInfo(0);

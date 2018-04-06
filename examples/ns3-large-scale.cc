@@ -48,17 +48,17 @@
 - Simulation Settings:
 - Number of pods (k): 4-24 (run the simulation with varying values of k)
 - Number of hosts: 16-3456
-- UdpEchoClient/Server Communication Pairs: 
-  [k] client connect with [hostNum-k-1] server (k from 0 to halfHostNum-1)
+- UdpEchoClient/Server Communication Pairs:
+[k] client connect with [hostNum-k-1] server (k from 0 to halfHostNum-1)
 - Simulation running time: 100 seconds
-- Traffic flow pattern: 
+- Traffic flow pattern:
 - Routing protocol: Nix-Vector
 */
 
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("P4Example");
+NS_LOG_COMPONENT_DEFINE("P4Example");
 
 unsigned long getTickCount(void)
 {
@@ -107,33 +107,72 @@ char * toString(int a, int b, int c, int d) {
 	return address;
 }
 
-typedef std::unordered_map<uint64_t, uint32_t>::iterator TupleIter_t;
+//typedef std::unordered_map<uint64_t, uint32_t>::iterator TupleIter_t;
 
 //Output switch received packet info
 //
 void ShowSwitchInfos(Ptr<Node> s)
 {
 	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
-	std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
+	/*std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
 	for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
 	{
 		std::cout << iter->first << " " << iter->second << std::endl;
-	}
+	}*/
 }
 
 int
 main(int argc, char *argv[])
 {
 	unsigned long start = getTickCount();
-	LogComponentEnable ("P4Example", LOG_LEVEL_LOGIC);
+	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("BridgeNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("CsmaNetDevice",LOG_LEVEL_LOGIC);
 
 	int pod = 4;
+	// Initialize parameters for UdpEcho Client/Server application
+	//
+	int port = 9;
+	unsigned int packetSize = 20;		// send packet data size (byte)
+	double interval = 100; // send packet interval time (ms)
+	unsigned maxPackets = 100; // send packet max number
+
+
+	// Initialize parameters for Csma and PointToPoint protocol
+	//
+	char dataRate[] = "100Gbps";	// 100Gbps
+	double delay = 0.001;		// 0.001 (ms)
+
+	// Initalize parameters for UdpEcho Client/Server Appilication 
+	//
+	int clientStartTime = 1; // UdpEchoClient Start Time (s)
+	int clientStopTime = 11;
+	int serverStartTime = 0; // UdpEchoServer Start Time (s)
+	int serverStopTime = 12;
+
 	CommandLine cmd;
-	cmd.AddValue("pod", "Numbers of pod", pod);
+	cmd.AddValue("podnum", "Numbers of pod [default 4]", pod);
+	cmd.AddValue("inter", "UdpEchoClient send packet interval time/s [default 100ms]", interval);
+	cmd.AddValue("delay", " Csma channel delay time/ms [default 0.001ms]", delay);
+	cmd.AddValue("cs", " Client application start time/s [default 1s]", clientStartTime);
+	cmd.AddValue("ce", " Client application stop time/s [default 11s]", clientStopTime);
+	cmd.AddValue("ss", " Server application start time/s [default 0s]", serverStartTime);
+	cmd.AddValue("se", " Server application stop time/s [default 12s]", serverStopTime);
 	cmd.Parse(argc, argv);
+
+	maxPackets = (clientStopTime - clientStartTime) / interval * 1000;
+
+	std::cout << "------------Network Parameters Setting-----------------" << std::endl;
+	std::cout << "NS3 Simulate Mode:" << std::endl;
+	std::cout << "Pod Num: " << pod << std::endl;
+	std::cout << "Simulate Time: " << clientStopTime - clientStartTime << " s" << std::endl;
+	std::cout << "Csma Channel DataRate: " << dataRate << std::endl;
+	std::cout << "Csma Channel Delay: " << delay << " ms" << std::endl;
+	std::cout << "Send Packet Interval: " << interval << " ms" << std::endl;
+	std::cout << "Send Packet MaxNum: " << maxPackets << std::endl;
+	std::cout << "Send Packet Data Size: " << packetSize << " byte" << std::endl;
+
 
 	//=========== Define parameters based on value of k ===========//
 	//
@@ -146,34 +185,12 @@ main(int argc, char *argv[])
 	int num_group = k / 2;		// number of group of core switches
 	int num_core = (k / 2);		// number of core switch in a group
 	int total_host = k*k*k / 4;	// number of hosts in the entire network	
-								
-	// Initialize other variables
-        //
+
+								// Initialize other variables
+								//
 	int i = 0;
 	int j = 0;
 	int h = 0;
-
-	// Initialize parameters for UdpEcho Client/Server application
-	//
-
-	int port = 9;
-	unsigned int packetSize = 3;		// send packet data size (byte)
-	double interval = 1; // send packet interval time (ms)
-	unsigned maxPackets = 2; // send packet max number
-
-
-	// Initialize parameters for Csma and PointToPoint protocol
-	//
-	char dataRate[] = "1000Mbps";	// 1Gbps
-	double delay = 0.001;		// 0.001 (ms)
-
-	// Initalize parameters for UdpEcho Client/Server Appilication 
-	//
-	int clientStartTime = 1; // UdpEchoClient Start Time (s)
-	int clientStopTime = 100;
-	int serverStartTime = 0; // UdpEchoServer Start Time (s)
-	int serverStopTime = 101;
-
 
 	// Output some useful information
 	//	
@@ -373,7 +390,7 @@ main(int argc, char *argv[])
 	}
 	std::cout << "Finished connecting core switches and aggregation switches  " << "\n";
 	std::cout << "------------- " << "\n";
-	
+
 
 	//=========== Start the simulation ===========//
 	//
@@ -395,7 +412,7 @@ main(int argc, char *argv[])
 	//
 	unsigned long simulate_start = getTickCount();
 	NS_LOG_INFO("Run Simulation.");
-	Simulator::Stop(Seconds(serverStopTime+1));
+	Simulator::Stop(Seconds(serverStopTime + 1));
 	Packet::EnablePrinting();
 
 	Simulator::Run();
@@ -464,6 +481,7 @@ main(int argc, char *argv[])
 	std::cout << "Running time: " << end - start << "ms" << std::endl;
 	return 0;
 }
+
 
 
 

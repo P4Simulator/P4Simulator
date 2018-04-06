@@ -29,6 +29,13 @@ namespace ns3 {
 
 	P4SwitchInterface::~P4SwitchInterface()
 	{
+                //********TO DO (Whether need delete m_p4Model)*******************
+		/*if(m_p4Model!=NULL)
+		{
+			delete m_p4Model;
+			m_p4Model=NULL;
+		}*/
+                //***************************************************************
 		NS_LOG_FUNCTION(this);
 	}
 
