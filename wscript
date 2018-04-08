@@ -35,7 +35,8 @@ def build(bld):
         'helper/p4-topology-reader-helper.cc',
         'helper/binary-tree-topo-helper.cc',
         'helper/fattree-topo-helper.cc',
-        'helper/build-flowtable-helper.cc'
+        'helper/build-flowtable-helper.cc',
+	'model/key-hash.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('ns4')
@@ -61,7 +62,8 @@ def build(bld):
         'helper/build-flowtable-helper.h',
 	'model/global.h',
 	'model/switch-api.h',
-	'model/exception-handle.h'
+	'model/exception-handle.h',
+	'model/key-hash.h'
         ]
 
     if bld.env['ENABLE_EXAMPLES']:
