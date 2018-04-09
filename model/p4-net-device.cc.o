@@ -121,39 +121,79 @@ void P4NetDevice::ReceiveFromDevice(Ptr<ns3::NetDevice> device,
 	PacketType packetType)
 {
 	NS_LOG_FUNCTION(this);
+	
+	//************view received packet real content******************************
+	/*
+	int pkgSize = packetIn->GetSize();
+	NS_LOG_LOGIC("received packet_in size:" << pkgSize);
+	packetIn->EnablePrinting();
+	packetIn->Print(std::cout);
+	std::cout << std::endl;
+	*/
+	//**************************************************************************
 
 	Mac48Address src48 = Mac48Address::ConvertFrom(source);
 	Mac48Address dst48 = Mac48Address::ConvertFrom(destination);
 
-	int inPort = GetPortNumber(device);
+	int portNum = GetPortNumber(device);
+	struct Ns3PacketAndPort *ns3Packet = new (struct Ns3PacketAndPort);
+	ns3Packet->portNum = portNum;
+	
+	//*************************Copy Pointer***************************
+	//ns3Packet->packet = (ns3::Packet*)packetIn.operator ->();
+	ns3Packet->packet = (ns3::Packet*)PeekPointer(packetIn);// Attention: Need to call ns3Packet->packet->UnRef() to delete (Add reference)
+	//packetIn->Unref();// Decrease packet reference
+	//****************************************************************
 
 	EthernetHeader eeh;
 	eeh.SetDestination(dst48);
 	eeh.SetSource(src48);
 	eeh.SetLengthType(protocol);
 
-	Ptr<ns3::Packet> ns3Packet((ns3::Packet*)PeekPointer(packetIn));
+	ns3Packet->packet->AddHeader(eeh);
 
-	ns3Packet->AddHeader(eeh);
+	//TO DO: call P4Model receive packet, no return value, have to modify
+	p4Model->ReceivePacket(ns3Packet,protocol,destination);
 
-	//Call P4Model receive packet, no return value
-	p4Model->ReceivePacket(ns3Packet, inPort, protocol, destination);
-}
-
-void P4NetDevice::SendNs3Packet(Ptr<ns3::Packet> packetOut, int outPort, uint16_t protocol, Address const &destination)
-{
-	if (packetOut)
-	{
-		EthernetHeader eeh;
-		packetOut->RemoveHeader(eeh);
-		if (outPort != 511)
-		{
-			NS_LOG_LOGIC("EgressPortNum: " << outPort);
-			Ptr<NetDevice> outNetDevice = GetBridgePort(outPort);
-			outNetDevice->Send(packetOut->Copy(), destination, protocol);
+	/*if (egressPacketAndPort) {
+		egressPacketAndPort->packet->RemoveHeader(eeh);
+		int egressPortNum = egressPacketAndPort->portNum;
+		// judge whether packet drop
+		if (egressPortNum != 511) {
+			NS_LOG_LOGIC("EgressPortNum: " << egressPortNum);
+			Ptr<NetDevice> outNetDevice = GetBridgePort(egressPortNum);
+			outNetDevice->Send(egressPacketAndPort->packet->Copy(), destination, protocol);
 		}
 		else
 			std::cout << "Drop Packet!!!(511)\n";
+	}
+	else
+		std::cout << "Null Packet!\n";*/
+}
+
+void P4NetDevice::SendNs3Packet(Ns3PacketAndPort *ns3Packet, uint16_t protocol, Address const &destination)
+{
+	if (ns3Packet) {
+
+		EthernetHeader eeh;
+		ns3Packet->packet->RemoveHeader(eeh);
+		int egressPortNum = ns3Packet->portNum;
+		// judge whether packet drop
+		if (egressPortNum != 511) {
+			NS_LOG_LOGIC("EgressPortNum: " << egressPortNum);
+			Ptr<NetDevice> outNetDevice = GetBridgePort(egressPortNum);
+			//outNetDevice->Send(ns3Packet->packet->Copy(), destination, protocol);
+			//******************Copy packet*****************************
+			Ptr<Packet> pkt(ns3Packet->packet,false);//No Call Ref
+			//*********************************************************
+			outNetDevice->Send(pkt->Copy(), destination, protocol);
+			//*************************Call Delete*****************************
+			delete ns3Packet;
+			//*****************************************************************
+		}
+		else
+			std::cout << "Drop Packet!!!(511)\n";
+
 	}
 	else
 		std::cout << "Null Packet!\n";

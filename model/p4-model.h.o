@@ -51,6 +51,43 @@ namespace ns3 {
 
 	class P4NetDevice;
 
+	/**
+        * \brief Structure of a ns packet and port. An inelegant way of representing
+        *  both packets along with its metadata.
+        *
+        * \TODO Find a better way.
+        */
+        struct Ns3PacketAndPort {
+                int portNum;
+                Packet * packet;
+		// ************Add Construct func*****************
+		public:
+			Ns3PacketAndPort():portNum(0),packet(NULL)
+			{}
+			~Ns3PacketAndPort()
+			{
+				//packet->Unref();
+				packet=NULL;
+			}
+		// *******************************************
+        };
+
+        /**
+        * \brief Structure of a bm packet and port. An inelegant way of representing
+        *  both packets along with its metadata.
+        *
+        * \TODO Find a better way.
+        */
+        struct Bm2PacketAndPort {
+                int portNum;
+                std::unique_ptr<bm::Packet> packet;
+		// ****************Add Construct func***********************
+		public:
+			Bm2PacketAndPort() :portNum(0)
+			{}
+		// ********************************************************
+        };
+
 
 	/**
 	*
@@ -104,9 +141,11 @@ namespace ns3 {
 		* \brief Process a packet using P4 pipeline. Called every time
 		* there is a packet needing processing from P4 Device.
 		*
+		* \param ns3packet Original ns-3 packet and input port from P4 Device
+		* \return Processed ns-3 packet to be put back to P4 Device for
+		* transmission.
 		*/
-
-		int ReceivePacket(Ptr<ns3::Packet> packetIn, int inPort, uint16_t protocol, Address const &destination);
+		int ReceivePacket(Ns3PacketAndPort *ns3Packet,uint16_t protocol,Address const &destination);
 
 		/**
 		* \brief Initialize the P4 Model
@@ -153,14 +192,14 @@ namespace ns3 {
 		* \param ns3packet A `ns::Packet` instance
 		* \return A `bm::Packet` instance transformed from a ns::Packet instance.
 		*/
-		//struct Bm2PacketAndPort * Ns3ToBmv2(struct Ns3PacketAndPort * ns3Packet);
+		struct Bm2PacketAndPort * Ns3ToBmv2(struct Ns3PacketAndPort * ns3Packet);
 
 		/**
 		* \brief Transform a bm::packet and a ns::packet
 		*
 		* Called when putting a packet back to the P4 Device.
 		*/
-		//struct Ns3PacketAndPort * Bmv2ToNs3(struct Bm2PacketAndPort *);
+		struct Ns3PacketAndPort * Bmv2ToNs3(struct Bm2PacketAndPort *);
 
 		/**
 		* \brief Packet ID

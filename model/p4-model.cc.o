@@ -141,25 +141,22 @@ int P4Model::InitFromCommandLineOptionsLocal(int argc, char *argv[], bm::TargetP
 	return status;
 }
 
-int P4Model::ReceivePacket(Ptr<ns3::Packet> packetIn, int inPort, 
-	uint16_t protocol, Address const &destination) 
-{
-	
-	// **************Change ns3::Packet to bm::Packet***************************
-	int ns3Length = packetIn->GetSize();
-	uint8_t* ns3Buffer = new uint8_t[ns3Length];
-	packetIn->CopyData(ns3Buffer,ns3Length);
-	std::unique_ptr<bm::Packet> packet = new_packet_ptr(inPort, m_pktID++,
-		ns3Length, bm::PacketBuffer(2048, (char*)ns3Buffer, ns3Length));
-	delete ns3Buffer;
-	// *************************************************************************
-	if (packet) {
 
+int P4Model::ReceivePacket(
+	
+	Ns3PacketAndPort *ns3Packet,uint16_t protocol, Address const &destination) {
+	struct Bm2PacketAndPort * bm2Packet = Ns3ToBmv2(ns3Packet);
+	std::unique_ptr<bm::Packet> packet = std::move(bm2Packet->packet);
+	int portNum = bm2Packet->portNum;
+	// *******************Delete bm2Packetet***********************
+	delete bm2Packet;
+	// ************************************************************
+	if (packet) {
 		int len = packet.get()->get_data_size();
-		packet.get()->set_ingress_port(inPort);
+		packet.get()->set_ingress_port(portNum);
 		bm::PHV *phv = packet.get()->get_phv();
 		phv->reset_metadata();
-		phv->get_field("standard_metadata.ingress_port").set(inPort);
+		phv->get_field("standard_metadata.ingress_port").set(portNum);
 		phv->get_field("standard_metadata.packet_length").set(len);
 
 		if (phv->has_field("intrinsic_metadata.ingress_global_timestamp")) {
@@ -188,18 +185,59 @@ int P4Model::ReceivePacket(Ptr<ns3::Packet> packetIn, int inPort,
 		egressMau->apply(packet.get());
 		deparser->deparse(packet.get());
 
-		// *************************Change bm::Packet to ns3::Packet***********************
-		void *bm2Buffer = packet.get()->data();
-		size_t bm2Length = packet.get()->get_data_size();
-		ns3::Packet ns3Packet((uint8_t*)bm2Buffer,bm2Length);
-		Ptr<ns3::Packet> packetOut(&ns3Packet);
-		// ********************************************************************************
+		// Build return value
+		struct Bm2PacketAndPort* outPacket = new struct Bm2PacketAndPort;
+		outPacket->packet = std::move(packet);
+		outPacket->portNum = egressPort;
 
-		m_pNetDevice->SendNs3Packet(packetOut, egressPort, protocol, destination);
+		struct Ns3PacketAndPort* egressPacketAndPort=Bmv2ToNs3(outPacket);
+
+		m_pNetDevice->SendNs3Packet(egressPacketAndPort,protocol,destination);
 
 		return 0;
 	}
 	return -1;
 }
 
+struct Ns3PacketAndPort * P4Model::Bmv2ToNs3(
+	struct Bm2PacketAndPort *bm2Packet) {
+	struct Ns3PacketAndPort * ret = new struct Ns3PacketAndPort;
+	void *buffer = bm2Packet->packet.get()->data();
+	size_t length = bm2Packet->packet.get()->get_data_size();
+	ret->packet = new ns3::Packet((uint8_t*)buffer, length);
+	ret->portNum = bm2Packet->portNum;
+	// ************Delete bm2Packet**********************
+	delete bm2Packet;
+	// **************************************************
+	return ret;
+}
+
+struct Bm2PacketAndPort * P4Model::Ns3ToBmv2(
+	struct Ns3PacketAndPort *ns3Packet) {
+	int length = ns3Packet->packet->GetSize();
+	uint8_t* buffer = new uint8_t[length];
+	struct Bm2PacketAndPort* ret = new struct Bm2PacketAndPort;
+
+	int portNum = ns3Packet->portNum;
+	if (ns3Packet->packet->CopyData(buffer, length)) {
+		// *************Call Delete***********************
+		delete ns3Packet;
+		// ************************************************
+		std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(portNum, m_pktID++,
+			length, bm::PacketBuffer(2048, (char*)buffer, length));
+		// *************Delete Buffer**********************
+		delete buffer;
+		// ************************************************
+		ret->packet = std::move(packet_);
+	}
+	// ***************Add Copy Failure****************
+	else
+	{
+		delete ns3Packet;
+		std::cerr<<"Ns3ToBmv2 Failed!!!"<<std::endl;
+	}
+	// **********************************************
+	ret->portNum = portNum;
+	return ret;
+}
 
