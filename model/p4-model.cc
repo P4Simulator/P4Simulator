@@ -147,9 +147,11 @@ int P4Model::ReceivePacket(
 	Ns3PacketAndPort *ns3Packet,uint16_t protocol, Address const &destination) {
 	struct Bm2PacketAndPort * bm2Packet = Ns3ToBmv2(ns3Packet);
 	std::unique_ptr<bm::Packet> packet = std::move(bm2Packet->packet);
-
+	int portNum = bm2Packet->portNum;
+	// *******************Delete bm2Packetet***********************
+	delete bm2Packet;
+	// ************************************************************
 	if (packet) {
-		int portNum = bm2Packet->portNum;
 		int len = packet.get()->get_data_size();
 		packet.get()->set_ingress_port(portNum);
 		bm::PHV *phv = packet.get()->get_phv();
@@ -204,6 +206,9 @@ struct Ns3PacketAndPort * P4Model::Bmv2ToNs3(
 	size_t length = bm2Packet->packet.get()->get_data_size();
 	ret->packet = new ns3::Packet((uint8_t*)buffer, length);
 	ret->portNum = bm2Packet->portNum;
+	// ************Delete bm2Packet**********************
+	delete bm2Packet;
+	// **************************************************
 	return ret;
 }
 
@@ -215,10 +220,23 @@ struct Bm2PacketAndPort * P4Model::Ns3ToBmv2(
 
 	int portNum = ns3Packet->portNum;
 	if (ns3Packet->packet->CopyData(buffer, length)) {
+		// *************Call Delete***********************
+		delete ns3Packet;
+		// ************************************************
 		std::unique_ptr<bm::Packet> packet_ = new_packet_ptr(portNum, m_pktID++,
 			length, bm::PacketBuffer(2048, (char*)buffer, length));
+		// *************Delete Buffer**********************
+		delete buffer;
+		// ************************************************
 		ret->packet = std::move(packet_);
 	}
+	// ***************Add Copy Failure****************
+	else
+	{
+		delete ns3Packet;
+		std::cerr<<"Ns3ToBmv2 Failed!!!"<<std::endl;
+	}
+	// **********************************************
 	ret->portNum = portNum;
 	return ret;
 }

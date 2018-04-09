@@ -60,6 +60,16 @@ namespace ns3 {
         struct Ns3PacketAndPort {
                 int portNum;
                 Packet * packet;
+		// ************Add Construct func*****************
+		public:
+			Ns3PacketAndPort():portNum(0),packet(NULL)
+			{}
+			~Ns3PacketAndPort()
+			{
+				//packet->Unref();
+				packet=NULL;
+			}
+		// *******************************************
         };
 
         /**
@@ -71,6 +81,11 @@ namespace ns3 {
         struct Bm2PacketAndPort {
                 int portNum;
                 std::unique_ptr<bm::Packet> packet;
+		// ****************Add Construct func***********************
+		public:
+			Bm2PacketAndPort() :portNum(0)
+			{}
+		// ********************************************************
         };
 
 

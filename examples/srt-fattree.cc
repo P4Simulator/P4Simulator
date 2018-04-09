@@ -107,18 +107,18 @@ char * toString(int a, int b, int c, int d) {
 	return address;
 }
 
-typedef std::unordered_map<uint64_t, uint32_t>::iterator TupleIter_t;
+//typedef std::unordered_map<uint32_t, uint32_t>::iterator TupleIter_t;
 
 //Output switch received packet info
 //
 void ShowSwitchInfos(Ptr<Node> s)
 {
 	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
-	std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
-	for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
-	{
-		std::cout << iter->first << " " << iter->second << std::endl;
-	}
+	//std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
+	//for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
+	//{
+	//	std::cout << iter->first << " " << iter->second << std::endl;
+	//}
 }
 
 int
@@ -462,6 +462,7 @@ main(int argc, char *argv[])
 	unsigned long end = getTickCount();
 	std::cout << "Simulate Running time: " << end - simulate_start << "ms" << std::endl;
 	std::cout << "Running time: " << end - start << "ms" << std::endl;
+	std::cout<<"NS4 Runing Succesfully!!!"<<std::endl;
 	return 0;
 }
 
