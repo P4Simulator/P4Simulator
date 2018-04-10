@@ -49,7 +49,7 @@ namespace ns3 {
 			outPort = port;
 		}
 	};
-
+	std::ostream& operator<<(std::ostream &os,const FlowTableEntry_t &entry);
 	struct SwitchNode_t
 	{
 		std::vector<FlowTableEntry_t> flowTableEntries;
@@ -134,8 +134,7 @@ namespace ns3 {
 			{
 				std::cout << "s" << i << ":" << std::endl;
 				for (size_t j = 0; j < m_switchNodes[i].flowTableEntries.size(); j++)
-					std::cout << m_switchNodes[i].flowTableEntries[j].srcIp << " " <<
-					m_switchNodes[i].flowTableEntries[j].dstIp << " " << m_switchNodes[i].flowTableEntries[j].outPort << std::endl;
+					std::cout << m_switchNodes[i].flowTableEntries[j]<<std::endl;
 			}
 		}
 		void ShowHostSwitchNode()

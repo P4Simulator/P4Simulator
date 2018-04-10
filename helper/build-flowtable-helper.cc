@@ -68,7 +68,10 @@ namespace ns3 {
 					{
 						std::string dstIp = m_hostNodes[p].ipAddr;
 						//random select a out port
+						// ***********************TO DO********************************************
 						unsigned int transferPort = otherPortIndex[rand() % otherPortIndex.size()];
+						//unsigned int transferPort = otherPortIndex[0];
+						// ************************************************************************
 						m_switchNodes[curEdgeSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, transferPort));
 					}
 				}
@@ -110,7 +113,10 @@ namespace ns3 {
 					{
 						std::string dstIp = m_hostNodes[p].ipAddr;
 						//random select a out port
+						// ********************************TO DO***********************************
 						unsigned int transferPort = otherPortIndex[rand() % otherPortIndex.size()];
+						//unsigned int transferPort = otherPortIndex[0];
+						// ************************************************************************
 						m_switchNodes[curAggrSwitchIndex].flowTableEntries.push_back(FlowTableEntry_t("", dstIp, transferPort));
 					}
 				}
@@ -420,6 +426,29 @@ namespace ns3 {
 		}
 	}
 
+	static std::string ChangeToHex(unsigned int port)
+	{	
+	std::string res;
+	unsigned int mod;
+	if (port < 10)
+	{
+		res.insert(res.begin(), port + '0');
+		return res;
+	}
+	else
+	{
+		while (port)
+		{
+			mod = port % 16;
+			if(mod<10)
+				res.insert(res.begin(), mod + '0');
+			else
+				res.insert(res.begin(), mod-10 + 'a');
+			port /= 16;
+		}
+		return res;
+	}
+	}
 	void BuildFlowtableHelper::Write(std::string fileDir)
 	{
 		std::ofstream fp;
@@ -464,13 +493,19 @@ namespace ns3 {
 
 					lineBuffer.clear();
 					lineBuffer.str("");
-					lineBuffer << "table_add forward_table set_port " << m_switchNodes[i].flowTableEntries[j].dstIp << " => " << m_switchNodes[i].flowTableEntries[j].outPort << std::endl;
+					lineBuffer << "table_add forward_table set_port " << m_switchNodes[i].flowTableEntries[j].dstIp << " => 0x" << ChangeToHex(m_switchNodes[i].flowTableEntries[j].outPort) << std::endl;
 					fp << lineBuffer.str();
 				}
 			}
 			fp.close();
 		}
 	}
+
+std::ostream& operator<<(std::ostream &os, const FlowTableEntry_t &entry)
+{
+	os << "dstIp:" << entry.dstIp << " " << "outPort:" << entry.outPort;
+	return os;
+}
 
 }
 

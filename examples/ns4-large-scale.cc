@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 
 	// Initialize parameters for Csma and PointToPoint protocol
 	//
-	char dataRate[] = "100Gbps";    // 100Gbps
+	char dataRate[] = "40Gbps";    // 40Gbps
 	double delay = 0.001;           // 0.001 (ms)
 
 	// Initalize parameters for UdpEcho Client/Server Appilication 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
 	// start debug module
 	//LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
-	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("BuildFlowtableHelper", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("P4SwitchInterface", LOG_LEVEL_LOGIC);
@@ -278,8 +278,8 @@ int main(int argc, char *argv[])
 	if (toBuild == 1 && P4GlobalVar::g_nsType == NS4)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
-		//BuildFlowtableHelper flowtableHelper("fattree",podNum);
-		BuildFlowtableHelper flowtableHelper;
+		BuildFlowtableHelper flowtableHelper("fattree",podNum);
+		//BuildFlowtableHelper flowtableHelper;
 		flowtableHelper.Build(linkSwitchIndex, linkSwitchPort, hostIpv4, switchPortInfo);
 		flowtableHelper.Write(P4GlobalVar::g_flowTableDir);
 		//flowtableHelper.Show();

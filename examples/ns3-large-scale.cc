@@ -141,7 +141,7 @@ main(int argc, char *argv[])
 
 	// Initialize parameters for Csma and PointToPoint protocol
 	//
-	char dataRate[] = "100Gbps";	// 100Gbps
+	char dataRate[] = "40Gbps";	// 40Gbps
 	double delay = 0.001;		// 0.001 (ms)
 
 	// Initalize parameters for UdpEcho Client/Server Appilication 
