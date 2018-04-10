@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
 	int application=0;   //application type (0 onOff Sink)
 	
 	// start debug module
-	LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
 	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
-	LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
-	LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
-	LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("BuildFlowtableHelper",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("P4SwitchInterface",LOG_LEVEL_LOGIC);
 	
 	// define topo format,path
 	std::string topoFormat("CsmaTopo");
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 			OnOffHelper onOff=OnOffHelper("ns3::TcpSocketFactory",dst);
 			onOff.SetAttribute("PacketSize",UintegerValue(1024));
 			onOff.SetAttribute("DataRate",StringValue("1Mbps"));
-			onOff.SetAttribute("MaxBytes",StringValue("0"));
+			onOff.SetAttribute("MaxBytes",UintegerValue(20));
 
 			apps=onOff.Install(hosts.Get(i));
 			apps.Start(Seconds(1.0));

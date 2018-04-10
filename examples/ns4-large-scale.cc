@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
 	// start debug module
 	//LogComponentEnable("P4Example", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
+	LogComponentEnable("P4NetDevice", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("CsmaTopologyReader", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("BuildFlowtableHelper", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("P4SwitchInterface", LOG_LEVEL_LOGIC);
@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
 	NodeContainer csmaSwitch = topoReader->GetSwitchNodeContainer();
 	const unsigned int hostNum = hosts.GetN();
 	const unsigned int switchNum = csmaSwitch.GetN();
+
+	unsigned long linkStart = getTickCount();
 
 	// get switch network function
 	std::vector<std::string> switchNetFunc = topoReader->GetSwitchNetFunc();
@@ -331,12 +333,12 @@ int main(int argc, char *argv[])
 		clientApps.Stop(Seconds(clientStopTime));
 	}
 
-	csma.EnablePcapAll("p4-example", false);
+	//csma.EnablePcapAll("p4-example", false);
 	Packet::EnablePrinting();
 
 	unsigned long simulateStart = getTickCount();
 	std::cout << "-----------------Start Simulation-------------------- " << "\n";
-	Simulator::Stop(Seconds(serverStopTime + 1));
+	//Simulator::Stop(Seconds(serverStopTime + 1));
 
 	Simulator::Run();
 	std::cout << "=========== Show  Switch Received Packet Num ===========" << std::endl;
@@ -358,7 +360,9 @@ int main(int argc, char *argv[])
 
 	std::cout << "Host Num: " << hostNum << " Switch Num: " << switchNum << std::endl;
 	std::cout << "Simulate Running time: " << end - simulateStart << "ms" << std::endl;
-	std::cout << "Running time: " << end - mainStart << "ms" << std::endl;
+	std::cout << "From Main Running time: " << end - mainStart << "ms" << std::endl;
+        std::cout << "From Link Running time: " << end - linkStart << "ms" << std::endl;
+
 	return 0;
 }
 
