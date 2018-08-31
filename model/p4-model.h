@@ -91,6 +91,9 @@ namespace ns3 {
 		int receive_(int port_num, const char *buffer, int len) {
 			return 0;
 		}
+		int receive_(port_t port_num, const char *buffer, int len){
+			return 0;
+		}
 
 		/**
 		* \brief a function from bm called to initialize the P4 device.

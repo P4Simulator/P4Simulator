@@ -1,69 +1,12 @@
-20 16 48
-4 s 12 s  
-4 s 13 s  
-4 s 0 s  
-4 s 1 s  
-4 s 3 s  
-5 s 12 s  
-5 s 13 s  
-5 s 2 s  
-6 s 14 s  
-6 s 15 s  
-6 s 2 s  
-7 s 14 s  
-7 s 15 s  
-7 s 0 s  
-7 s 1 s  
-7 s 3 s  
-8 s 16 s  
-8 s 17 s  
-8 s 0 s  
-8 s 1 s  
-8 s 3 s  
-9 s 16 s  
-9 s 17 s  
-9 s 2 s  
-10 s 18 s  
-10 s 19 s  
-10 s 2 s  
-11 s 18 s  
-11 s 19 s  
-11 s 0 s  
-11 s 1 s  
-11 s 3 s  
-12 s 20 h  
-12 s 21 h  
-13 s 22 h  
-13 s 23 h  
-14 s 24 h  
-14 s 25 h  
-15 s 26 h  
-15 s 27 h  
-16 s 28 h  
-16 s 29 h  
-17 s 30 h  
-17 s 31 h  
-18 s 32 h  
-18 s 33 h  
-19 s 34 h  
-19 s 35 h  
+5 2 6
+1 s 3 s  
+1 s 0 s  
+2 s 4 s  
+2 s 0 s  
+3 s 5 h  
+4 s 6 h  
 0 SIMPLE_ROUTER
 1 SIMPLE_ROUTER
 2 SIMPLE_ROUTER
 3 SIMPLE_ROUTER
 4 SIMPLE_ROUTER
-5 SIMPLE_ROUTER
-6 SIMPLE_ROUTER
-7 SIMPLE_ROUTER
-8 SIMPLE_ROUTER
-9 SIMPLE_ROUTER
-10 SIMPLE_ROUTER
-11 SIMPLE_ROUTER
-12 SIMPLE_ROUTER
-13 SIMPLE_ROUTER
-14 SIMPLE_ROUTER
-15 SIMPLE_ROUTER
-16 SIMPLE_ROUTER
-17 SIMPLE_ROUTER
-18 SIMPLE_ROUTER
-19 SIMPLE_ROUTER

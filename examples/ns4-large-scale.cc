@@ -60,7 +60,7 @@ struct HostNodeC_t
 
 void ShowSwitchInfos(Ptr<Node> s)
 {
-	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+	//std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -69,9 +69,9 @@ int main(int argc, char *argv[])
 	unsigned long mainStart = getTickCount();
 
 	// init global variable 	
-	P4GlobalVar::g_homePath = "/home/kphf1995cm/";
-	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
-	P4GlobalVar::g_ns3SrcName = "ns-3.26/";
+	P4GlobalVar::g_homePath = "/home/netarchlab/";
+	P4GlobalVar::g_ns3RootName = "ns-allinone-3.27/";
+	P4GlobalVar::g_ns3SrcName = "ns-3.27/";
 	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
 	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
 	P4GlobalVar::g_nsType = NS4;
@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 	std::string topoFormat("CsmaTopo");
 	std::string topoPath = P4GlobalVar::g_topoDir + "csmaTopo.txt";
 	NS_LOG_LOGIC(topoPath);
+	std::cout<<topoPath<<std::endl;
 	std::string topoInput(topoPath);
 
 	// define command line parse way
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
 	FattreeTopoHelper treeTopo(podNum, topoPath);
 	//BinaryTreeTopoHelper treeTopo(podNum,topoPath);
 	treeTopo.Write();
+	std::cout<<"Build Topo Success!"<<std::endl;
 
 	// read topo
 	P4TopologyReaderHelper p4TopoHelp;
@@ -158,12 +160,14 @@ int main(int argc, char *argv[])
 	if (topoReader != 0)
 	{
 		topoReader->Read();
+		std::cout<<"topoReader!=0"<<std::endl;
 	}
 	if (topoReader->LinksSize() == 0)
 	{
 		NS_LOG_ERROR("Problems reading the topology file. Failing.");
 		return -1;
 	}
+	std::cout<<"Read Topo Success!"<<std::endl;
 
 	// get switch and host node
 	NodeContainer hosts = topoReader->GetHostNodeContainer();
