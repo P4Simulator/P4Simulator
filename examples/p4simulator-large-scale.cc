@@ -72,9 +72,9 @@ int main(int argc, char *argv[])
 	P4GlobalVar::g_homePath = "/home/netarchlab/";
 	P4GlobalVar::g_ns3RootName = "ns-allinone-3.27/";
 	P4GlobalVar::g_ns3SrcName = "ns-3.27/";
-	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
-	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
-	P4GlobalVar::g_nsType = NS4;
+	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/p4simulator/test/";
+	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/p4simulator/topo/";
+	P4GlobalVar::g_nsType = P4Simulator;
 	P4GlobalVar::g_runtimeCliTime = 10;
 	SwitchApi::InitApiMap();
 	P4GlobalVar::InitNfStrUintMap();
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 	maxPackets = (clientStopTime - clientStartTime) / interval * 1000;
 
 	std::cout << "------------Network Parameters Setting-----------------" << std::endl;
-	std::cout << "NS4 Simulate Mode:" << std::endl;
+	std::cout << "P4Simulator Simulate Mode:" << std::endl;
 	std::cout << "Pod Num: " << podNum << std::endl;
 	std::cout << "Simulate Time: " << clientStopTime - clientStartTime << " s" << std::endl;
 	std::cout << "Csma Channel DataRate: " << dataRate << std::endl;
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 	}
 
 	//build flow table entries by program
-	if (toBuild == 1 && P4GlobalVar::g_nsType == NS4)
+	if (toBuild == 1 && P4GlobalVar::g_nsType == P4Simulator)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
 		BuildFlowtableHelper flowtableHelper("fattree",podNum);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 	}
 
 	//bridge siwtch and switch devices
-	if (P4GlobalVar::g_nsType == NS4)
+	if (P4GlobalVar::g_nsType == P4Simulator)
 	{
 		P4GlobalVar::g_populateFlowTableWay = LOCAL_CALL;
 		std::string flowTableName;

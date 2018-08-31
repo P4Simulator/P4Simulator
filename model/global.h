@@ -31,7 +31,7 @@ namespace ns3 {
 #define LOCAL_CALL 0
 #define RUNTIME_CLI 1
 #define NS3 1
-#define NS4 0
+#define P4Simulator 0
 
 // nf info
 unsigned const int ROUTER = 0;

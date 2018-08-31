@@ -47,7 +47,7 @@ namespace ns3 {
 	/**
 	* \brief Programmable Data Plane Device
 	*
-	* The key and most exciting part of NS4.
+	* The key and most exciting part of P4Simulator.
 	*
 	* P4NetDevice is a subclass of NetDevice in the ns-3 domain and serves as
 	* the network layer of a P4 target. It is compatible with other net devices
@@ -186,7 +186,7 @@ namespace ns3 {
 	}; //namespace ns3
 
 }
-#endif/* NS4_NS4_MODEL_H_H */
+#endif/* P4Simulator_P4Simulator_MODEL_H_H */
 
 
 
