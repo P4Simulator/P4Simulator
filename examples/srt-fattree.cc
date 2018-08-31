@@ -113,7 +113,7 @@ char * toString(int a, int b, int c, int d) {
 //
 void ShowSwitchInfos(Ptr<Node> s)
 {
-	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+	//std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
 	//std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
 	//for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
 	//{
@@ -462,7 +462,7 @@ main(int argc, char *argv[])
 	unsigned long end = getTickCount();
 	std::cout << "Simulate Running time: " << end - simulate_start << "ms" << std::endl;
 	std::cout << "Running time: " << end - start << "ms" << std::endl;
-	std::cout<<"NS4 Runing Succesfully!!!"<<std::endl;
+	std::cout<<"P4Simulator Runing Succesfully!!!"<<std::endl;
 	return 0;
 }
 

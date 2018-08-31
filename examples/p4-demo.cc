@@ -60,7 +60,7 @@ NS_LOG_COMPONENT_DEFINE ("P4Example");
 
 void ShowSwitchInfos(Ptr<Node> s)
 {
-	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+	//std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
 }
 
 int main (int argc, char *argv[]) 
@@ -70,11 +70,11 @@ int main (int argc, char *argv[])
   LogComponentEnable ("P4NetDevice", LOG_LEVEL_LOGIC);
   
   // init 
-  P4GlobalVar::g_homePath="/home/kphf1995cm/";
-  P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
-  P4GlobalVar::g_ns3SrcName="ns-3.26/";
-  P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
-  P4GlobalVar::g_nsType=NS4;
+  //P4GlobalVar::g_homePath="/home/kphf1995cm/";
+  //P4GlobalVar::g_ns3RootName="ns-allinone-3.27/";
+  //P4GlobalVar::g_ns3SrcName="ns-3.27/";
+  P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/p4simulator/test/";
+  P4GlobalVar::g_nsType=P4Simulator;
   P4GlobalVar::g_runtimeCliTime=10;
   SwitchApi::InitApiMap();
   
@@ -104,7 +104,7 @@ int main (int argc, char *argv[])
       switchDevices.Add (link.Get (1));
     }
   Ptr<Node> switchNode = csmaSwitch.Get (0);
-  if (P4GlobalVar::g_nsType==NS4) //ns4 mode
+  if (P4GlobalVar::g_nsType==P4Simulator) //p4simulator mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
       P4GlobalVar::g_networkFunc=SILKROAD;

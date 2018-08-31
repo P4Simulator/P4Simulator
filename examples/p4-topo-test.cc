@@ -73,12 +73,12 @@ int main(int argc, char *argv[])
 	unsigned long mainStart=getTickCount();
 
 	// init global variable 	
-	P4GlobalVar::g_homePath="/home/kphf1995cm/";
-	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
-	P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
-	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
-	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/topo/";
-	P4GlobalVar::g_nsType = NS4;
+	//P4GlobalVar::g_homePath="/home/kphf1995cm/";
+	//P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
+	//P4GlobalVar::g_ns3SrcName = "ns-3.26/"; 
+	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/p4simulator/test/";
+	P4GlobalVar::g_topoDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/p4simulator/topo/";
+	P4GlobalVar::g_nsType = P4Simulator;
 	P4GlobalVar::g_runtimeCliTime=10;
         SwitchApi::InitApiMap();
 	P4GlobalVar::InitNfStrUintMap();
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 	}
 
 	//build flow table entries by program
-	if(toBuild==1&&P4GlobalVar::g_nsType==NS4)
+	if(toBuild==1&&P4GlobalVar::g_nsType==P4Simulator)
 	{
 		NS_LOG_LOGIC("BuildFlowtableHelper");
 		//BuildFlowtableHelper flowtableHelper("fattree",podNum);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 	}
 
 	//bridge siwtch and switch devices
-	if (P4GlobalVar::g_nsType == NS4)
+	if (P4GlobalVar::g_nsType == P4Simulator)
 	{
 		P4GlobalVar::g_populateFlowTableWay = LOCAL_CALL;
 		std::string flowTableName;

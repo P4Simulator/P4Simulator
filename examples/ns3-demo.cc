@@ -68,7 +68,7 @@ int main (int argc, char *argv[])
   P4GlobalVar::g_homePath="/home/kphf1995cm/";
   P4GlobalVar::g_ns3RootName="ns-allinone-3.26/";
   P4GlobalVar::g_ns3SrcName="ns-3.26/";
-  P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/ns4/test/";
+  P4GlobalVar::g_nfDir=P4GlobalVar::g_homePath+P4GlobalVar::g_ns3RootName+P4GlobalVar::g_ns3SrcName+"src/p4simulator/test/";
   P4GlobalVar::g_nsType=NS3;
   P4GlobalVar::g_runtimeCliTime=10;
   SwitchApi::InitApiMap();
@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
       switchDevices.Add (link.Get (1));
     }
   Ptr<Node> switchNode = csmaSwitch.Get (0);
-  if (P4GlobalVar::g_nsType==NS4) //ns4 mode
+  if (P4GlobalVar::g_nsType==P4Simulator) //p4simulator mode
     {
       P4GlobalVar::g_populateFlowTableWay=LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
       P4GlobalVar::g_networkFunc=SILKROAD;
@@ -189,10 +189,10 @@ int main (int argc, char *argv[])
   //P4GlobalVar::g_p4Controller.ViewP4SwitchFlowTableInfo(0);
 
   //********View switch receive packet Num***************************
-    std::cout<<"CsmaSwitch :"<<csmaSwitch.Get(0)->m_packetNum<<std::endl;
-    unsigned int tN=terminals.GetN();
-    for(unsigned int i=0;i<tN;i++)
-        std::cout<<"Terminal "<<i<<" : "<<terminals.Get(i)->m_packetNum<<std::endl;
+    //std::cout<<"CsmaSwitch :"<<csmaSwitch.Get(0)->m_packetNum<<std::endl;
+    //unsigned int tN=terminals.GetN();
+    //for(unsigned int i=0;i<tN;i++)
+        //std::cout<<"Terminal "<<i<<" : "<<terminals.Get(i)->m_packetNum<<std::endl;
   //*****************************************************************
 
   //*******View OnOffApplication Send Packet Num*************************

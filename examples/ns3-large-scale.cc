@@ -113,7 +113,7 @@ char * toString(int a, int b, int c, int d) {
 //
 void ShowSwitchInfos(Ptr<Node> s)
 {
-	std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
+	//std::cout << "Receive Packet Sum: " << s->m_packetNum << std::endl;
 	/*std::cout << "Receive Tuple Packet Num (TupleHash Num):" << std::endl;
 	for (TupleIter_t iter = s->m_tupleNum.begin(); iter != s->m_tupleNum.end(); iter++)
 	{

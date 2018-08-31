@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
 	P4GlobalVar::g_homePath = "/home/kphf1995cm/";
 	P4GlobalVar::g_ns3RootName = "ns-allinone-3.26/";
 	P4GlobalVar::g_ns3SrcName = "ns-3.26/";
-	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/ns4/test/";
-	P4GlobalVar::g_nsType = NS3; // NS4 0   NS3 1
+	P4GlobalVar::g_nfDir = P4GlobalVar::g_homePath + P4GlobalVar::g_ns3RootName + P4GlobalVar::g_ns3SrcName + "src/p4simulator/test/";
+	P4GlobalVar::g_nsType = NS3; // P4Simulator 0   NS3 1
 	P4GlobalVar::g_runtimeCliTime = 10;
 	SwitchApi::InitApiMap();
 	P4GlobalVar::InitNfStrUintMap();
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 	// Add running changeable variable
 	//
 	CommandLine cmd;
-	cmd.AddValue("ns", "Network simulator type [NS4 0 NS3 1]", P4GlobalVar::g_nsType);
+	cmd.AddValue("ns", "Network simulator type [P4Simulator 0 NS3 1]", P4GlobalVar::g_nsType);
 	cmd.AddValue("inter", "UdpEchoClient send packet interval time/s [default 1ms]",interval);
 	cmd.AddValue("delay"," Csma channel delay time/ms [default 0.001ms]",delay);
 	cmd.Parse(argc, argv);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	if (P4GlobalVar::g_nsType == NS3)
 		std::cout << "NS3 Simulate Mode:" << std::endl;
 	else
-		std::cout << "NS4 Simulate Mode:" << std::endl;
+		std::cout << "P4Simulator Simulate Mode:" << std::endl;
 	std::cout << "Simulate Time: " << clientStopTime - clientStartTime <<" s"<< std::endl;
 	std::cout << "Csma Channel DataRate: " << dataRate << std::endl;
 	std::cout << "Csma Channel Delay: " << delay << " ms" << std::endl;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	}
 	
 	//std::cout << "---------------Bridge switch and network device----------------" << std::endl;
-	if (P4GlobalVar::g_nsType == NS4) //ns4 mode
+	if (P4GlobalVar::g_nsType == P4Simulator) //p4simulator mode
 	{
 		P4GlobalVar::g_populateFlowTableWay = LOCAL_CALL;//LOCAL_CALL RUNTIME_CLI
 		P4GlobalVar::g_networkFunc = ROUTER;
@@ -200,17 +200,17 @@ int main(int argc, char *argv[])
 
 	Simulator::Run();
 
-	if (P4GlobalVar::g_nsType == NS4) //ns4 mode
+	if (P4GlobalVar::g_nsType == P4Simulator) //p4simulator mode
 	{
 		//view switch flowtable info after simulate
 		//P4GlobalVar::g_p4Controller.ViewP4SwitchFlowTableInfo(0);
 	}
 
 	//********View switch receive packet Num***************************
-	std::cout << "CsmaSwitch :" << csmaSwitch.Get(0)->m_packetNum << std::endl;
-	unsigned int tN = terminals.GetN();
-	for (unsigned int i = 0; i<tN; i++)
-		std::cout << "Terminal " << i << " : " << terminals.Get(i)->m_packetNum << std::endl;
+	//std::cout << "CsmaSwitch :" << csmaSwitch.Get(0)->m_packetNum << std::endl;
+	//unsigned int tN = terminals.GetN();
+	//for (unsigned int i = 0; i<tN; i++)
+		//std::cout << "Terminal " << i << " : " << terminals.Get(i)->m_packetNum << std::endl;
 	//*****************************************************************
 
 
