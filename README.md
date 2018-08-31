@@ -1,13 +1,11 @@
-## P4Simulator : A P4-driven Network Simulator
+Welcome to the P4Simulator wiki!
 
-P4Simulator is a P4-driven network simulator and the first research effort on applying P4 to network simulation. For key features, follow [our paper poster](https://github.com/ns-4/NS4/blob/master/p4-simulator-poster.pdf) and [our paper](https://github.com/ns-4/P4Simulator-DEV/blob/master/p4-simulator-sosr.pdf).
+P4Simulator is a P4-driven network simulator aiming at combining P4, the state-of-the-art programmable data plane language and ns-3, one of the most popular network simulators. P4Simulator is now being developed by students at NetArch Lab at Tsinghua University. P4Simulator is an open-source project under [Apache License 2.0](https://github.com/ns-4/P4Simulator-DEV/blob/master/License.md)
 
-We also provided beginners' guide to help you get started.
+For a new beginner to get started, one should follow the instructions.
 
-1. [P4Simulator Overview](https://github.com/ns-4/NS4/wiki/P4Simulator-Overview)
-2. [Build and Install P4Simulator](https://github.com/ns-4/NS4/wiki/Build-and-Install-P4Simulator)
-3. [A Hands-on Example](https://github.com/ns-4/P4Simulator/wiki/A-Hands-on-Example)
+1. [P4Simulator Overview](https://github.com/ns-4/P4Simulator-DEV/wiki/P4Simulator-Overview)
+2. [Build and Install P4Simulator](https://github.com/ns-4/P4Simulator-DEV/wiki/Build-and-Install-P4Simulator)
+3. [A Hands-on Example](https://github.com/ns-4/P4Simulator-DEV/wiki/A-Hands-on-Example)
 
-P4Simulator is now being developed by NetArch Lab at Tsinghua University. P4Simulator is an open-source project under [Apache License 2.0](https://github.com/ns-4/NS4/blob/master/License.md). We are longing for contributions. See [How to Contribute](https://github.com/ns-4/NS4/wiki/How-to-contribute) for details.
-
-*This project is still under development at this time and may not support all P4 programs.*
+We are longing for contributions. See [How to Contribute](https://github.com/ns-4/P4Simulator-DEV/wiki/How-to-contribute) for details.
